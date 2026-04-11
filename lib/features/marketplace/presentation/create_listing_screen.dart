@@ -11,8 +11,10 @@ import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/email_verification_banner.dart';
+import '../../../services/subscription_providers.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../discover/data/places_service.dart';
+import '../../provider/providers/provider_providers.dart';
 import '../data/marketplace_service.dart';
 import '../domain/marketplace_listing.dart';
 import 'listing_helpers.dart';
@@ -633,8 +635,10 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
       return;
     }
 
+    if (!mounted) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_existingUrls.isEmpty && _newImages.isEmpty) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.addAtLeastOnePhoto)),
       );
@@ -646,7 +650,26 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     setState(() => _loading = true);
     try {
       final svc = ref.read(marketplaceServiceProvider);
+      if (!mounted) return;
       final l10n = context.l10n;
+
+      // Check listing limits for new listings (free users only)
+      if (widget.editListing == null) {
+        final isProvider = ref.read(isProviderOwnerProvider);
+        final isPremium = ref.read(isPremiumProvider);
+        
+        // Free regular users are limited to 3 listings
+        // Providers (bike shops) and premium users have unlimited listings
+        if (!isProvider && !isPremium) {
+          final count = await svc.getMyListingCount(user.uid);
+          if (count >= 3) {
+            if (!mounted) return;
+            setState(() => _loading = false);
+            _showUpgradeDialog();
+            return;
+          }
+        }
+      }
 
       // Upload new images
       List<String> newUrls = [];
@@ -726,6 +749,41 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  void _showUpgradeDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = context.l10n;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.upgradeToPremium),
+        content: Text(
+          'Free users can create up to 3 marketplace listings.\n\n'
+          'Get unlimited listings by:\n'
+          '• Upgrading to Premium (${l10n.premiumPrice}/month)\n'
+          '• Registering as a bike shop or service provider',
+          style: AppTextStyles.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.push('/subscription');
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: isDark ? Colors.white : Colors.black,
+              foregroundColor: isDark ? Colors.black : Colors.white,
+            ),
+            child: Text(l10n.upgradeToPremium),
+          ),
+        ],
+      ),
+    );
   }
 
   // ─── Helpers ───────────────────────────────────────────────────────────────

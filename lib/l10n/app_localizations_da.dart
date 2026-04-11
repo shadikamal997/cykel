@@ -1726,7 +1726,7 @@ class AppLocalizationsDa extends AppLocalizations {
   String get premiumPerMonth => '/måned';
 
   @override
-  String get premiumPriceNote => 'Ca. \$3 USD · Opsig når som helst';
+  String get premiumPriceNote => 'Ca. \$2.99 USD · Opsig når som helst';
 
   @override
   String get cancelPremiumTitle => 'Opsig Premium?';

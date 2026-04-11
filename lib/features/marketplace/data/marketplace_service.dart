@@ -66,6 +66,16 @@ class MarketplaceService {
       .snapshots()
       .map((s) => s.docs.map(MarketplaceListing.fromFirestore).toList());
 
+  /// Get count of active listings for a user (excludes sold listings).
+  Future<int> getMyListingCount(String uid) async {
+    final snap = await _col
+        .where('sellerId', isEqualTo: uid)
+        .where('isSold', isEqualTo: false)
+        .count()
+        .get();
+    return snap.count ?? 0;
+  }
+
   Future<MarketplaceListing?> getById(String id) async {
     final doc = await _col.doc(id).get();
     if (!doc.exists) return null;

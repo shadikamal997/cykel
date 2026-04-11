@@ -3,20 +3,22 @@ service firebase.storage {
   match /b/{bucket}/o {
 
     // ── User Profile Photos ───────────────────────────────────────────────
-    // Owner can read/write/delete their own profile photo; anyone can read (public avatar)
+    // Authenticated users only — prevents enumeration attacks
+    // Owner can read/write/delete their profile photo
 
     match /users/{userId}/profile.jpg {
-      allow read: if true;
+      allow read: if request.auth != null;
       allow write, delete: if request.auth != null && request.auth.uid == userId
         && request.resource.size < 5 * 1024 * 1024  // 5 MB max
         && request.resource.contentType.matches('image/.*');
     }
 
     // ── Listing Images ────────────────────────────────────────────────────
-    // Public read, only the uploader (marketplace/{uid}/...) can write
+    // Authenticated users only — prevents scraping
+    // Only the uploader (marketplace/{uid}/...) can write
 
     match /marketplace/{userId}/{fileName} {
-      allow read: if true;
+      allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == userId
         && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
@@ -27,7 +29,7 @@ service firebase.storage {
     // DEPRECATED: New listings should use /marketplace/{userId}/ path
     // Write disabled for security - old images can only be read
     match /listings/{listingId}/images/{fileName} {
-      allow read: if true;
+      allow read: if request.auth != null;
       // Disabled write for legacy path - use new path
       allow write: if false;
       allow delete: if false;
@@ -45,11 +47,11 @@ service firebase.storage {
     }
 
     // ── Provider Photos ───────────────────────────────────────────────────
-    // Public read, only provider owner can write
+    // Authenticated users only — prevents scraping
     // ProviderId in path must match the document's userId field
 
     match /providers/{providerId}/photos/{fileName} {
-      allow read: if true;
+      allow read: if request.auth != null;
       allow write: if request.auth != null
         && request.auth.uid == providerId
         && request.resource.size < 5 * 1024 * 1024
@@ -80,11 +82,11 @@ service firebase.storage {
     }
 
     // ── Location Photos ──────────────────────────────────────────────────
-    // Public read, only provider owner can write for their locations
+    // Authenticated users only — prevents scraping
     // ProviderId in path = the provider who owns the location
 
     match /locations/{providerId}/{fileName} {
-      allow read: if true;
+      allow read: if request.auth != null;
       allow write: if request.auth != null
         && request.auth.uid == providerId
         && request.resource.size < 5 * 1024 * 1024
@@ -94,11 +96,11 @@ service firebase.storage {
     }
 
     // ── Event Images ─────────────────────────────────────────────────────
-    // Public read, only event organizer (userId) can write
-    // Used for group ride event photos
+    // Authenticated users only — prevents scraping
+    // Only event organizer (userId) can write/delete
 
     match /events/{userId}/{fileName} {
-      allow read: if true;
+      allow read: if request.auth != null;
       allow write: if request.auth != null
         && request.auth.uid == userId
         && request.resource.size < 5 * 1024 * 1024

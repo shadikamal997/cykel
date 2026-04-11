@@ -1724,7 +1724,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get premiumPerMonth => '/month';
 
   @override
-  String get premiumPriceNote => 'Approx. \$3 USD · Cancel anytime';
+  String get premiumPriceNote => 'Approx. \$2.99 USD · Cancel anytime';
 
   @override
   String get cancelPremiumTitle => 'Cancel Premium?';

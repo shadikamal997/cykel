@@ -418,7 +418,7 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
 
                 // Privacy & GDPR section
-                _GdprSection(),
+                const _GdprSection(),
                 const SizedBox(height: 16),
 
                 // Support section

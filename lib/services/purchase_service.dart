@@ -96,7 +96,7 @@ class PurchaseService {
   ProductDetails? _premiumProduct;
   ProductDetails? get premiumProduct => _premiumProduct;
 
-  /// Formatted price string from the store (e.g. "kr 20,00" or "$4.99").
+  /// Formatted price string from the store (e.g. "kr 20,00" or "$2.99").
   String? get formattedPrice => _premiumProduct?.price;
 
   // ── Initialise ─────────────────────────────────────────────────────────

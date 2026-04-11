@@ -578,9 +578,11 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
       return;
     }
 
+    if (!mounted) return;
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedLocation == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.searchAddressFirst)),
       );
@@ -589,6 +591,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
 
     final user = ref.read(currentUserProvider);
     if (user == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.mustBeLoggedIn)),
       );
@@ -605,6 +608,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     );
     
     if (dateTime.isBefore(DateTime.now().subtract(const Duration(minutes: 5)))) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.eventDateTimePast)),
       );

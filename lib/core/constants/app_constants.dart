@@ -15,7 +15,7 @@ class AppConstants {
   // --- Subscription ---
   static const String premiumProductIdIos = 'dk.cykel.premium.monthly';
   static const String premiumProductIdAndroid = 'dk.cykel.premium.monthly';
-  static const double premiumPriceUsd = 5.0;
+  static const double premiumPriceUsd = 2.99;
 
   // --- Firestore Collections ---
   static const String colUsers = 'users';

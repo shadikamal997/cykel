@@ -86,6 +86,7 @@ class DataExportService {
       );
 
       // Share using SharePlus recommended API
+      // ignore: deprecated_member_use, deprecated_member_use_from_same_package
       await Share.shareXFiles(
         [xFile],
         subject: 'CYKEL Data Export',

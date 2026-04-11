@@ -106,7 +106,7 @@ class AuthRepository {
       throw Exception('No user signed in');
     }
     if (!user.emailVerified) {
-      throw EmailNotVerifiedException();
+      throw const EmailNotVerifiedException();
     }
   }
 

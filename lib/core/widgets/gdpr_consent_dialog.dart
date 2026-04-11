@@ -19,7 +19,7 @@ class GDPRConsentDialog extends StatefulWidget {
 }
 
 class _GDPRConsentDialogState extends State<GDPRConsentDialog> {
-  bool _locationConsent = true; // Required for core functionality
+  final bool _locationConsent = true; // Required for core functionality
   bool _analyticsConsent = true;
   bool _marketingConsent = false;
 

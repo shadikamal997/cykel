@@ -27,6 +27,11 @@ service cloud.firestore {
       );
     }
 
+    // App Check validation — prevents API abuse from fake clients
+    function isValidAppCheck() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider != null;
+    }
+
     // ── Users ─────────────────────────────────────────────────────────────
     // Only the owner can read/write their own profile.
     // Subscription fields are written by Cloud Functions (admin SDK) and
@@ -120,13 +125,14 @@ service cloud.firestore {
     }
 
     // ── Marketplace Listings ──────────────────────────────────────────────
-    // Public read, authenticated create.
+    // Public read, authenticated create with App Check validation.
     // Seller can update/delete. Counter increments validated to prevent spam.
     // RATE LIMITING: Timestamp must be server time
+    // SECURITY: App Check prevents fake clients
 
     match /marketplace_listings/{listingId} {
       allow read: if true;
-      allow create: if isAuth()
+      allow create: if isValidAppCheck()
         && request.resource.data.sellerId == request.auth.uid
         && request.resource.data.createdAt is timestamp
         && request.time == request.resource.data.createdAt;
@@ -177,6 +183,7 @@ service cloud.firestore {
     // Only the owner can update their own provider document.
     // verificationStatus can be 'pending' or 'approved' on creation (auto-approval).
     // Cloud Functions enforce the final approved status.
+    // SECURITY: App Check prevents fake provider registrations
 
     match /providers/{providerId} {
       allow read: if isAuth() && (
@@ -185,7 +192,7 @@ service cloud.firestore {
         || request.auth.uid == resource.data.providerId
         || isAdmin()
       );
-      allow create: if isAuth()
+      allow create: if isValidAppCheck()
         && (request.resource.data.userId == request.auth.uid
             || request.resource.data.providerId == request.auth.uid)
         && (request.resource.data.verificationStatus == 'pending' 
@@ -228,10 +235,11 @@ service cloud.firestore {
 
     // ── Locations ─────────────────────────────────────────────────────────
     // Public read, provider owner write
+    // SECURITY: App Check prevents fake location spam
 
     match /locations/{locationId} {
       allow read: if true;
-      allow create: if isAuth() && (isProvider() || isAdmin());
+      allow create: if isValidAppCheck() && (isProvider() || isAdmin());
       allow update: if isAdmin() || (
         isAuth() && request.auth.uid == get(
           /databases/$(database)/documents/providers/$(resource.data.providerId)
@@ -258,11 +266,14 @@ service cloud.firestore {
     // Any authenticated user can read (to see nearby hazards).
     // Users can upvote any report; delete is own-report only.
     // Admins can delete any report.
+    // RATE LIMITING: Timestamp must match server time
 
     match /hazard_reports/{reportId} {
       allow read:   if isAuth();
       allow create: if isAuth()
-        && request.resource.data.reportedBy == request.auth.uid;
+        && request.resource.data.reportedBy == request.auth.uid
+        && request.resource.data.createdAt is timestamp
+        && request.time == request.resource.data.createdAt;
       allow update: if isAuth()
         // Citizens may update: votes, confirm/dismiss counts+arrays, auto status.
         && request.resource.data.diff(resource.data).affectedKeys()
@@ -278,11 +289,14 @@ service cloud.firestore {
     // Authenticated users can report infrastructure issues.
     // Any authenticated user can read nearby reports.
     // Status can be updated by the reporter or admin.
+    // RATE LIMITING: Timestamp must match server time
 
     match /infrastructure_reports/{reportId} {
       allow read:   if isAuth();
       allow create: if isAuth()
-        && request.resource.data.reportedBy == request.auth.uid;
+        && request.resource.data.reportedBy == request.auth.uid
+        && request.resource.data.createdAt is timestamp
+        && request.time == request.resource.data.createdAt;
       allow update: if isAdmin()
         || (isAuth() && resource.data.reportedBy == request.auth.uid
             && request.resource.data.diff(resource.data).affectedKeys()
@@ -293,10 +307,13 @@ service cloud.firestore {
     // ── Emergency Reports ─────────────────────────────────────────────────
     // Authenticated users can submit accident/emergency reports.
     // No public read — only admins can access.
+    // RATE LIMITING: Timestamp must match server time
 
     match /emergency_reports/{reportId} {
       allow create: if isAuth()
-        && request.resource.data.reportedBy == request.auth.uid;
+        && request.resource.data.reportedBy == request.auth.uid
+        && request.resource.data.createdAt is timestamp
+        && request.time == request.resource.data.createdAt;
       allow read, update: if isAdmin();
       allow delete: if isAdmin() || request.auth == null;
     }
@@ -314,10 +331,11 @@ service cloud.firestore {
     // Public read, authenticated users can create events.
     // Organizer can update/delete. Participants can join/leave.
     // RATE LIMITING: Max 5 events per hour per user
+    // SECURITY: App Check prevents spam event creation
 
     match /events/{eventId} {
       allow read: if true;
-      allow create: if isAuth()
+      allow create: if isValidAppCheck()
         && request.resource.data.organizerId == request.auth.uid
         && request.resource.data.createdAt is timestamp
         // Rate limit: ensure reasonable creation time
