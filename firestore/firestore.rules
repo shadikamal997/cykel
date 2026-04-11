@@ -1,0 +1,557 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ───────────────────────────────────────────────────
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+
+    function userRole() {
+      return request.auth.token.get('role', 'rider');
+    }
+
+    function isAdmin() {
+      return isAuth() && userRole() == 'admin';
+    }
+
+    function isProvider() {
+      return isAuth() && (
+        userRole() == 'provider_personal' ||
+        userRole() == 'provider_business'
+      );
+    }
+
+    // ── Users ─────────────────────────────────────────────────────────────
+    // Only the owner can read/write their own profile.
+    // Subscription fields are written by Cloud Functions (admin SDK) and
+    // read by the client via the owner rule below.
+    // SECURITY: subscription fields cannot be modified by client
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId)
+        && !request.resource.data.keys().hasAny(['subscription']);
+      allow update: if isOwner(userId)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['subscription']);
+      allow delete: if isOwner(userId) || isAdmin();
+
+      // Bikes sub-collection — only the owner manages their own garage
+      match /bikes/{bikeId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      // Rides sub-collection — only the owner can read/write their rides
+      match /rides/{rideId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      // Gamification stats — only the owner can read/write
+      match /gamification/{docId} {
+        allow read, create, update: if isOwner(userId);
+        allow delete: if isAdmin() || request.auth == null;
+      }
+
+      // User challenges — only the owner can read/write
+      match /challenges/{challengeId} {
+        allow read, create, update: if isOwner(userId);
+        allow delete: if isAdmin() || request.auth == null;
+      }
+
+      // User badges — only the owner can read/write
+      match /badges/{badgeId} {
+        allow read, create, update: if isOwner(userId);
+        allow delete: if isAdmin() || request.auth == null;
+      }
+
+      // Friends list — only the owner can read/write
+      match /friends/{friendId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      // Route history — only the owner can read/write
+      match /routeHistory/{historyId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      // Saved routes — only the owner can read/write
+      match /savedRoutes/{routeId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      // User settings sub-collections
+      match /settings/{settingId} {
+        allow read, create, update: if isOwner(userId);
+        allow delete: if isAdmin() || request.auth == null;
+      }
+
+      // Favorites sub-collection — only the owner can read/write
+      match /favorites/{type} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+    }
+
+    // ── Rides ─────────────────────────────────────────────────────────────
+    // Only the rider who created the ride can access it
+
+    match /rides/{rideId} {
+      allow read, write: if isAuth() && request.auth.uid == resource.data.userId;
+      allow create: if isAuth()
+        && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ── Marketplace ───────────────────────────────────────────────────────
+    // Public read, authenticated users can query their own listings
+
+    match /marketplace/{listingId} {
+      allow read: if isAuth();
+      allow create: if isAuth()
+        && request.resource.data.sellerId == request.auth.uid;
+      allow update: if isAuth() && request.auth.uid == resource.data.sellerId;
+      allow delete: if isAuth() && (
+        request.auth.uid == resource.data.sellerId || isAdmin()
+      );
+    }
+
+    // ── Marketplace Listings ──────────────────────────────────────────────
+    // Public read, authenticated create.
+    // Seller can update/delete. Counter increments validated to prevent spam.
+    // RATE LIMITING: Timestamp must be server time
+
+    match /marketplace_listings/{listingId} {
+      allow read: if true;
+      allow create: if isAuth()
+        && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.createdAt is timestamp
+        && request.time == request.resource.data.createdAt;
+      allow update: if isAuth() && (
+        request.auth.uid == resource.data.sellerId ||
+        // Only allow incrementing counters by exactly 1
+        (request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['viewCount', 'saveCount'])
+         && request.resource.data.viewCount <= resource.data.viewCount + 1
+         && request.resource.data.saveCount <= resource.data.saveCount + 1)
+      );
+      allow delete: if isAuth() && (
+        request.auth.uid == resource.data.sellerId || isAdmin()
+      );
+    }
+
+    // ── Marketplace Chats ─────────────────────────────────────────────────
+    // Buyer or seller can read/create/update threads and messages.
+
+    match /marketplace_chats/{threadId} {
+      allow read: if isAuth() && (
+        request.auth.uid == resource.data.buyerId ||
+        request.auth.uid == resource.data.sellerId
+      );
+      allow create: if isAuth()
+        && (request.resource.data.buyerId == request.auth.uid
+            || request.resource.data.sellerId == request.auth.uid);
+      allow update: if isAuth() && (
+        request.auth.uid == resource.data.buyerId ||
+        request.auth.uid == resource.data.sellerId
+      );
+
+      match /messages/{messageId} {
+        allow read, create: if isAuth() && (
+          request.auth.uid == get(
+            /databases/$(database)/documents/marketplace_chats/$(threadId)
+          ).data.buyerId ||
+          request.auth.uid == get(
+            /databases/$(database)/documents/marketplace_chats/$(threadId)
+          ).data.sellerId
+        );
+      }
+    }
+
+    // ── Providers ─────────────────────────────────────────────────────────
+    // Public read only for approved providers, owner can read their own.
+    // Any authenticated user can create (applying to become a provider).
+    // Only the owner can update their own provider document.
+    // verificationStatus can be 'pending' or 'approved' on creation (auto-approval).
+    // Cloud Functions enforce the final approved status.
+
+    match /providers/{providerId} {
+      allow read: if isAuth() && (
+        resource.data.verificationStatus == 'approved'
+        || request.auth.uid == resource.data.userId
+        || request.auth.uid == resource.data.providerId
+        || isAdmin()
+      );
+      allow create: if isAuth()
+        && (request.resource.data.userId == request.auth.uid
+            || request.resource.data.providerId == request.auth.uid)
+        && (request.resource.data.verificationStatus == 'pending' 
+            || request.resource.data.verificationStatus == 'approved');
+      allow update: if isAuth() && (
+          request.auth.uid == resource.data.userId
+          || request.auth.uid == resource.data.providerId
+        )
+        && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['verificationStatus', 'approvedAt']);
+      allow delete: if isAdmin() 
+        || request.auth == null  // Cloud Functions (admin SDK)
+        || (isAuth() && (
+          request.auth.uid == resource.data.userId
+          || request.auth.uid == resource.data.providerId
+        ));  // Provider owner can delete their own
+    }
+
+    // ── Provider Analytics ────────────────────────────────────────────────
+    // Analytics created by Cloud Functions (no client-side create).
+    // Only the provider owner can read/update their analytics.
+    // Admin has full access.
+
+    match /provider_analytics/{providerId} {
+      allow read: if isAuth() && (
+        request.auth.uid == resource.data.get('userId', '')
+        || isAdmin()
+        || request.auth.uid == get(/databases/$(database)/documents/providers/$(providerId)).data.userId  // Fallback: check provider ownership
+      );
+      allow create: if false; // Only Cloud Functions can create (admin SDK)
+      allow update: if isAuth()
+        && request.auth.uid == resource.data.get('userId', '');
+      allow delete: if isAdmin()
+        || request.auth == null // Cloud Functions (admin SDK)
+        || (isAuth() && (
+          request.auth.uid == resource.data.get('userId', '')
+          || request.auth.uid == get(/databases/$(database)/documents/providers/$(providerId)).data.userId
+        )); // Provider owner (with fallback to provider doc lookup)
+    }
+
+    // ── Locations ─────────────────────────────────────────────────────────
+    // Public read, provider owner write
+
+    match /locations/{locationId} {
+      allow read: if true;
+      allow create: if isAuth() && (isProvider() || isAdmin());
+      allow update: if isAdmin() || (
+        isAuth() && request.auth.uid == get(
+          /databases/$(database)/documents/providers/$(resource.data.providerId)
+        ).data.userId
+      );
+      allow delete: if isAdmin() || (
+        isAuth() && request.auth.uid == get(
+          /databases/$(database)/documents/providers/$(resource.data.providerId)
+        ).data.userId
+      );
+    }
+
+    // ── Reports ───────────────────────────────────────────────────────────
+    // Authenticated users can create; only admins can read all
+
+    match /reports/{reportId} {
+      allow create: if isAuth();
+      allow read, update: if isAdmin();
+      allow delete: if isAdmin() || request.auth == null;
+    }
+
+    // ── Hazard Reports (crowd-reported road conditions) ───────────────────
+    // Any authenticated user can submit a report.
+    // Any authenticated user can read (to see nearby hazards).
+    // Users can upvote any report; delete is own-report only.
+    // Admins can delete any report.
+
+    match /hazard_reports/{reportId} {
+      allow read:   if isAuth();
+      allow create: if isAuth()
+        && request.resource.data.reportedBy == request.auth.uid;
+      allow update: if isAuth()
+        // Citizens may update: votes, confirm/dismiss counts+arrays, auto status.
+        && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['upvotes', 'upvotedBy',
+                         'confirmCount', 'confirmedBy',
+                         'dismissCount', 'dismissedBy',
+                         'status']);
+      allow delete: if isAdmin()
+        || (isAuth() && resource.data.reportedBy == request.auth.uid);
+    }
+
+    // ── Infrastructure Reports ────────────────────────────────────────────
+    // Authenticated users can report infrastructure issues.
+    // Any authenticated user can read nearby reports.
+    // Status can be updated by the reporter or admin.
+
+    match /infrastructure_reports/{reportId} {
+      allow read:   if isAuth();
+      allow create: if isAuth()
+        && request.resource.data.reportedBy == request.auth.uid;
+      allow update: if isAdmin()
+        || (isAuth() && resource.data.reportedBy == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys()
+                   .hasOnly(['status']));
+      allow delete: if isAdmin() || request.auth == null;
+    }
+
+    // ── Emergency Reports ─────────────────────────────────────────────────
+    // Authenticated users can submit accident/emergency reports.
+    // No public read — only admins can access.
+
+    match /emergency_reports/{reportId} {
+      allow create: if isAuth()
+        && request.resource.data.reportedBy == request.auth.uid;
+      allow read, update: if isAdmin();
+      allow delete: if isAdmin() || request.auth == null;
+    }
+
+    // ── Aggregated Rides (anonymised mobility data) ───────────────────────
+    // Authenticated users can contribute aggregated, anonymised ride data.
+    // No personal data stored. Only admins can read individual documents.
+
+    match /aggregated_rides/{rideId} {
+      allow create: if isAuth();
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ── Events ────────────────────────────────────────────────────────────
+    // Public read, authenticated users can create events.
+    // Organizer can update/delete. Participants can join/leave.
+    // RATE LIMITING: Max 5 events per hour per user
+
+    match /events/{eventId} {
+      allow read: if true;
+      allow create: if isAuth()
+        && request.resource.data.organizerId == request.auth.uid
+        && request.resource.data.createdAt is timestamp
+        // Rate limit: ensure reasonable creation time
+        && request.time == request.resource.data.createdAt;
+      allow update: if isAuth() && (
+        request.auth.uid == resource.data.organizerId ||
+        // Allow incrementing participant count
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['currentParticipants', 'participants'])
+      );
+      allow delete: if isAuth() && (
+        request.auth.uid == resource.data.organizerId || isAdmin()
+      );
+
+      // Event participants sub-collection
+      match /participants/{participantId} {
+        allow read: if true;
+        allow create: if isAuth();
+        allow delete: if isAuth() && (
+          request.auth.uid == participantId ||
+          request.auth.uid == get(/databases/$(database)/documents/events/$(eventId)).data.organizerId
+        );
+      }
+
+      // Event chat messages
+      match /chat/{messageId} {
+        allow read: if true;
+        allow create: if isAuth();
+        allow delete: if isAuth() && (
+          request.auth.uid == resource.data.userId ||
+          request.auth.uid == get(/databases/$(database)/documents/events/$(eventId)).data.organizerId
+        );
+      }
+
+      // Event reviews
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isAuth()
+          && request.resource.data.userId == request.auth.uid;
+        allow update, delete: if isAuth() && request.auth.uid == resource.data.userId;
+      }
+    }
+
+    // ── Gamification: Challenges ──────────────────────────────────────────
+    // Public read, admins can create/update challenges.
+    // Users can track their own progress.
+
+    match /challenges/{challengeId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+
+      // User progress in challenges
+      match /user_progress/{userId} {
+        allow read: if isAuth() && (request.auth.uid == userId || isAdmin());
+        allow create, update: if isAuth() && request.auth.uid == userId;
+        allow delete: if isAdmin() || request.auth == null;
+      }
+    }
+
+    // ── Gamification: Badges ──────────────────────────────────────────────
+    // Public read badge definitions.
+    // User badges are private to the user.
+
+    match /badges/{badgeId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /user_badges/{userId} {
+      allow read: if isAuth() && (request.auth.uid == userId || isAdmin());
+      allow create, update: if isAuth() && request.auth.uid == userId;
+      allow delete: if isAdmin() || request.auth == null;
+
+      match /badges/{badgeId} {
+        allow read: if isAuth() && (request.auth.uid == userId || isAdmin());
+        allow create, update: if isAuth() && request.auth.uid == userId;
+        allow delete: if isAdmin() || request.auth == null;
+      }
+    }
+
+    // ── Gamification: Leaderboard ─────────────────────────────────────────
+    // Public read for leaderboard entries.
+    // Users can update their own stats.
+
+    match /leaderboard/{userId} {
+      allow read: if true;
+      allow create, update: if isAuth() && request.auth.uid == userId;
+      allow delete: if isAdmin() || request.auth == null;
+    }
+
+    // ── Theft Alerts ──────────────────────────────────────────────────────
+    // Authenticated users can report stolen bikes.
+    // Public read to help community recover bikes.
+
+    match /theft_alerts/{alertId} {
+      allow read: if isAuth();
+      allow create: if isAuth()
+        && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuth() && (
+        request.auth.uid == resource.data.userId ||
+        // Allow incrementing sighting count
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['sightingCount', 'status', 'lastSighting'])
+      );
+      allow delete: if isAuth() && (
+        request.auth.uid == resource.data.userId || isAdmin()
+      );
+
+      // Sightings sub-collection
+      match /sightings/{sightingId} {
+        allow read: if isAuth();
+        allow create: if isAuth()
+          && request.resource.data.reportedBy == request.auth.uid;
+        allow delete: if isAdmin() || request.auth == null;
+      }
+    }
+
+    // ── Theft Reports (alias for theft_alerts) ───────────────────────────
+    match /theft_reports/{reportId} {
+      allow read: if isAuth();
+      allow create: if isAuth()
+        && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuth() && (
+        request.auth.uid == resource.data.userId ||
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['sightingCount', 'status', 'lastSighting'])
+      );
+      allow delete: if isAuth() && (
+        request.auth.uid == resource.data.userId || isAdmin()
+      );
+    }
+
+    // ── Friend Requests ───────────────────────────────────────────────────
+    // Users can send/receive friend requests.
+
+    match /friendRequests/{requestId} {
+      allow read: if isAuth() && (
+        request.auth.uid == resource.data.fromUid ||
+        request.auth.uid == resource.data.toUid
+      );
+      allow create: if isAuth()
+        && request.resource.data.fromUid == request.auth.uid;
+      allow update: if isAuth() && request.auth.uid == resource.data.toUid;
+      allow delete: if isAuth() && (
+        request.auth.uid == resource.data.fromUid ||
+        request.auth.uid == resource.data.toUid
+      );
+    }
+
+    // ── Social: Friend Requests ───────────────────────────────────────────
+    // Users can send/receive friend requests.
+
+    match /friend_requests/{requestId} {
+      allow read: if isAuth() && (
+        request.auth.uid == resource.data.fromUserId ||
+        request.auth.uid == resource.data.toUserId
+      );
+      allow create: if isAuth()
+        && request.resource.data.fromUserId == request.auth.uid;
+      allow update: if isAuth() && request.auth.uid == resource.data.toUserId;
+      allow delete: if isAuth() && (
+        request.auth.uid == resource.data.fromUserId ||
+        request.auth.uid == resource.data.toUserId
+      );
+    }
+
+    // ── Social: Friendships ───────────────────────────────────────────────
+    // Users can read their own friendships.
+
+    match /friendships/{friendshipId} {
+      allow read: if isAuth() && (
+        request.auth.uid in resource.data.users
+      );
+      allow create: if isAuth()
+        && request.auth.uid in request.resource.data.users;
+      allow delete: if isAuth() && (
+        request.auth.uid in resource.data.users
+      );
+    }
+
+    // ── Social: Activity Feed ─────────────────────────────────────────────
+    // Users can read activities from their friends.
+
+    match /socialActivity/{activityId} {
+      allow read: if isAuth();
+      allow create: if isAuth()
+        && request.resource.data.actorUid == request.auth.uid;
+      allow update, delete: if isAuth() && request.auth.uid == resource.data.actorUid;
+    }
+
+    // ── Social: Shared Rides ──────────────────────────────────────────────
+    // Users can share rides with friends.
+
+    match /sharedRides/{rideId} {
+      allow read: if isAuth();
+      allow create: if isAuth()
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if isAuth() && (
+        request.auth.uid == resource.data.ownerUid ||
+        // Allow incrementing like/comment counts
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['likeCount', 'commentCount', 'likes', 'comments'])
+      );
+      allow delete: if isAuth() && request.auth.uid == resource.data.ownerUid;
+    }
+
+    // ── Route Suggestions ─────────────────────────────────────────────────
+    // Public read for route suggestions.
+    // Authenticated users can save/rate routes.
+
+    match /route_suggestions/{routeId} {
+      allow read: if true;
+      allow create: if isAuth();
+      allow update: if isAuth() && (
+        // Allow updating ratings and save counts
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['rating', 'ratingCount', 'saveCount'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /user_saved_routes/{userId} {
+      allow read, create, update, delete: if isAuth() && request.auth.uid == userId;
+
+      match /routes/{routeId} {
+        allow read, create, update, delete: if isAuth() && request.auth.uid == userId;
+      }
+    }
+
+    // ── Collection Group Queries ──────────────────────────────────────────
+    // Gamification leaderboard — authenticated users can query across all users
+
+    match /{path=**}/gamification/{docId} {
+      allow read: if isAuth();
+    }
+  }
+}

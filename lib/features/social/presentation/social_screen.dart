@@ -1,0 +1,1221 @@
+/// CYKEL — Social Screen
+/// Friends list, activity feed, and shared rides
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/l10n/l10n.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/optimized_image.dart';
+import '../../auth/providers/auth_providers.dart';
+import '../data/social_provider.dart';
+import '../domain/social.dart';
+
+class SocialScreen extends ConsumerStatefulWidget {
+  const SocialScreen({super.key});
+
+  @override
+  ConsumerState<SocialScreen> createState() => _SocialScreenState();
+}
+
+class _SocialScreenState extends ConsumerState<SocialScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final incomingRequests = ref.watch(incomingFriendRequestsProvider);
+    final pendingCount = incomingRequests.valueOrNull?.length ?? 0;
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text(context.l10n.community),
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Stack(
+              children: [
+                const Icon(Icons.person_add_outlined),
+                if (pendingCount > 0)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '$pendingCount',
+                        style: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            onPressed: () => _showFriendRequests(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () => _showSearchUsers(context),
+          ),
+        ],
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+          unselectedLabelColor: AppColors.textSecondary,
+          indicatorColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+          tabs: [
+            Tab(text: context.l10n.socialActivityTab),
+            Tab(text: context.l10n.socialFriendsTab),
+            Tab(text: context.l10n.socialMyRidesTab),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: const [
+          _ActivityFeedTab(),
+          _FriendsTab(),
+          _MySharedRidesTab(),
+        ],
+      ),
+    );
+  }
+
+  void _showFriendRequests(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => const _FriendRequestsSheet(),
+    );
+  }
+
+  void _showSearchUsers(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => const _SearchUsersSheet(),
+    );
+  }
+}
+
+// ─── Activity Feed Tab ────────────────────────────────────────────────────────
+
+class _ActivityFeedTab extends ConsumerWidget {
+  const _ActivityFeedTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final feedAsync = ref.watch(friendsFeedProvider);
+
+    return feedAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text(context.l10n.socialErrorLoading(e.toString()))),
+      data: (rides) {
+        if (rides.isEmpty) {
+          return _EmptyState(
+            icon: '📱',
+            title: context.l10n.socialNoActivity,
+            subtitle: context.l10n.socialAddFriends,
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(friendsFeedProvider);
+          },
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: rides.length,
+            itemBuilder: (context, index) => _SharedRideCard(
+              ride: rides[index],
+              showOwner: true,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ─── Friends Tab ──────────────────────────────────────────────────────────────
+
+class _FriendsTab extends ConsumerWidget {
+  const _FriendsTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final friendsAsync = ref.watch(friendsProvider);
+
+    return friendsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text(context.l10n.socialErrorLoading(e.toString()))),
+      data: (friends) {
+        if (friends.isEmpty) {
+          return _EmptyState(
+            icon: '👥',
+            title: context.l10n.socialNoFriends,
+            subtitle: context.l10n.socialSearchCyclists,
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          itemCount: friends.length,
+          itemBuilder: (context, index) => _FriendTile(friend: friends[index]),
+        );
+      },
+    );
+  }
+}
+
+// ─── My Shared Rides Tab ──────────────────────────────────────────────────────
+
+class _MySharedRidesTab extends ConsumerWidget {
+  const _MySharedRidesTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ridesAsync = ref.watch(userSharedRidesProvider);
+
+    return ridesAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text(context.l10n.socialErrorLoading(e.toString()))),
+      data: (rides) {
+        if (rides.isEmpty) {
+          return _EmptyState(
+            icon: '🚴',
+            title: context.l10n.socialNoSharedRides,
+            subtitle: context.l10n.socialShareRides,
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          itemCount: rides.length,
+          itemBuilder: (context, index) => _SharedRideCard(
+            ride: rides[index],
+            isOwnRide: true,
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ─── Friend Tile ──────────────────────────────────────────────────────────────
+
+class _FriendTile extends ConsumerWidget {
+  const _FriendTile({required this.friend});
+
+  final Friend friend;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+        child: friend.photoUrl != null
+            ? OptimizedAvatarImage(
+                imageUrl: friend.photoUrl!,
+                radius: 20,
+              )
+            : Text(
+                friend.displayName.isNotEmpty
+                    ? friend.displayName[0].toUpperCase()
+                    : '?',
+                style: const TextStyle(
+                  color: AppColors.textOnPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+      ),
+      title: Text(friend.displayName, style: AppTextStyles.bodyMedium),
+      subtitle: Text(
+        context.l10n.socialTotalKm(friend.totalKm.toStringAsFixed(1)),
+        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+      ),
+      trailing: PopupMenuButton<String>(
+        icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        color: const Color(0xFFF8F9FA),
+        elevation: 4,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        offset: const Offset(0, 8),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        onSelected: (value) {
+          if (value == 'remove') {
+            _removeFriend(context, ref);
+          }
+        },
+        itemBuilder: (_) => [
+          PopupMenuItem(
+            value: 'remove',
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.person_remove_outlined,
+                  size: 22,
+                  color: Color(0xFFE53E3E),
+                ),
+                const SizedBox(width: 14),
+                Text(
+                  context.l10n.socialRemoveFriend,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFFE53E3E),
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _removeFriend(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(context.l10n.socialRemoveFriendQuestion),
+        content: Text(context.l10n.socialConfirmRemoveFriend(friend.displayName)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(context.l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(context.l10n.socialRemove),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final user = ref.read(currentUserProvider);
+      if (user == null) return;
+
+      try {
+        await ref.read(socialServiceProvider).removeFriend(user.uid, friend.uid);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.socialFriendRemoved)),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.socialErrorLoading(e.toString()))),
+          );
+        }
+      }
+    }
+  }
+}
+
+// ─── Shared Ride Card ─────────────────────────────────────────────────────────
+
+class _SharedRideCard extends ConsumerWidget {
+  const _SharedRideCard({
+    required this.ride,
+    this.showOwner = false,
+    this.isOwnRide = false,
+  });
+
+  final SharedRide ride;
+  final bool showOwner;
+  final bool isOwnRide;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider);
+    final isLiked = ride.likes.contains(user?.uid);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          if (showOwner)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+                    child: ride.ownerPhotoUrl != null
+                        ? OptimizedAvatarImage(
+                            imageUrl: ride.ownerPhotoUrl!,
+                            radius: 16,
+                          )
+                        : Text(
+                            ride.ownerDisplayName.isNotEmpty
+                                ? ride.ownerDisplayName[0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                              color: AppColors.textOnPrimary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          ride.ownerDisplayName,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          _timeAgo(context, ride.sharedAt),
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // Stats
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Row(
+              children: [
+                _StatItem(
+                  icon: Icons.route,
+                  value: '${ride.distanceKm.toStringAsFixed(1)} km',
+                ),
+                const SizedBox(width: 24),
+                _StatItem(
+                  icon: Icons.schedule,
+                  value: '${ride.durationMinutes} min',
+                ),
+                const SizedBox(width: 24),
+                _StatItem(
+                  icon: Icons.speed,
+                  value: '${(ride.distanceKm / (ride.durationMinutes / 60)).toStringAsFixed(1)} km/t',
+                ),
+              ],
+            ),
+          ),
+
+          // Route info
+          if (ride.startAddress != null || ride.endAddress != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.place, size: 14, color: AppColors.textSecondary),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      [ride.startAddress, ride.endAddress]
+                          .where((s) => s != null)
+                          .join(' → '),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // Caption
+          if (ride.caption != null && ride.caption!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text(
+                ride.caption!,
+                style: AppTextStyles.bodySmall,
+              ),
+            ),
+
+          // Actions
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: AppColors.border)),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: Icon(
+                    isLiked ? Icons.favorite : Icons.favorite_border,
+                    color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: isLiked ? 1.0 : 0.5),
+                    size: 20,
+                  ),
+                  onPressed: () => _toggleLike(ref),
+                ),
+                Text(
+                  '${ride.likes.length}',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                IconButton(
+                  icon: const Icon(
+                    Icons.chat_bubble_outline,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
+                  onPressed: () => _showComments(context),
+                ),
+                Text(
+                  '${ride.commentsCount}',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const Spacer(),
+                if (isOwnRide)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: AppColors.textSecondary,
+                      size: 20,
+                    ),
+                    onPressed: () => _deleteRide(context, ref),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _timeAgo(BuildContext context, DateTime date) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inMinutes < 60) return context.l10n.socialMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return context.l10n.socialHoursAgo(diff.inHours);
+    if (diff.inDays < 7) return context.l10n.socialDaysAgo(diff.inDays);
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Future<void> _toggleLike(WidgetRef ref) async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+    await ref.read(socialServiceProvider).toggleLike(ride.id, user.uid);
+  }
+
+  void _showComments(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _CommentsSheet(ride: ride),
+    );
+  }
+
+  Future<void> _deleteRide(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(context.l10n.socialDeleteRideQuestion),
+        content: Text(context.l10n.socialConfirmDeleteRide),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(context.l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(context.l10n.delete),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await ref.read(socialServiceProvider).deleteSharedRide(ride.id);
+    }
+  }
+}
+
+class _StatItem extends StatelessWidget {
+  const _StatItem({required this.icon, required this.value});
+
+  final IconData icon;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+        const SizedBox(width: 4),
+        Text(value, style: AppTextStyles.bodySmall),
+      ],
+    );
+  }
+}
+
+// ─── Friend Requests Sheet ────────────────────────────────────────────────────
+
+class _FriendRequestsSheet extends ConsumerWidget {
+  const _FriendRequestsSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final incomingAsync = ref.watch(incomingFriendRequestsProvider);
+    final outgoingAsync = ref.watch(outgoingFriendRequestsProvider);
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.textSecondary.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              Text(context.l10n.friendRequests, style: AppTextStyles.headline3),
+              const SizedBox(height: 16),
+
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  children: [
+                    // Incoming
+                    Text(
+                      context.l10n.socialReceived,
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    incomingAsync.when(
+                      loading: () => const LinearProgressIndicator(),
+                      error: (e, _) => Text(context.l10n.socialErrorLoading(e.toString())),
+                      data: (requests) {
+                        if (requests.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Text(context.l10n.socialNoRequests),
+                          );
+                        }
+                        return Column(
+                          children: requests.map((r) => _RequestTile(
+                            request: r,
+                            isIncoming: true,
+                          )).toList(),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Outgoing
+                    Text(
+                      context.l10n.socialSent,
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    outgoingAsync.when(
+                      loading: () => const LinearProgressIndicator(),
+                      error: (e, _) => Text(context.l10n.socialErrorLoading(e.toString())),
+                      data: (requests) {
+                        if (requests.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Text(context.l10n.socialNoSentRequests),
+                          );
+                        }
+                        return Column(
+                          children: requests.map((r) => _RequestTile(
+                            request: r,
+                            isIncoming: false,
+                          )).toList(),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _RequestTile extends ConsumerWidget {
+  const _RequestTile({required this.request, required this.isIncoming});
+
+  final FriendRequest request;
+  final bool isIncoming;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final displayName = isIncoming ? request.fromDisplayName : request.toDisplayName;
+    final photoUrl = isIncoming ? request.fromPhotoUrl : request.toPhotoUrl;
+
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+        child: photoUrl != null
+            ? OptimizedAvatarImage(imageUrl: photoUrl, radius: 20)
+            : Text(
+                displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+                style: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+      ),
+      title: Text(displayName, style: AppTextStyles.bodyMedium),
+      subtitle: Text(
+        _timeAgo(context, request.sentAt),
+        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+      ),
+      trailing: isIncoming
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.check, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+                  onPressed: () => _accept(context, ref),
+                ),
+                IconButton(
+                  icon: Icon(Icons.close, color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.7)),
+                  onPressed: () => _decline(context, ref),
+                ),
+              ],
+            )
+          : const Icon(Icons.schedule, color: AppColors.textSecondary),
+    );
+  }
+
+  String _timeAgo(BuildContext context, DateTime date) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inMinutes < 60) return context.l10n.socialMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return context.l10n.socialHoursAgo(diff.inHours);
+    return context.l10n.socialDaysAgo(diff.inDays);
+  }
+
+  Future<void> _accept(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(socialServiceProvider).acceptFriendRequest(request.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.socialFriendAdded)),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.socialErrorLoading(e.toString()))),
+        );
+      }
+    }
+  }
+
+  Future<void> _decline(BuildContext context, WidgetRef ref) async {
+    await ref.read(socialServiceProvider).declineFriendRequest(request.id);
+  }
+}
+
+// ─── Search Users Sheet ───────────────────────────────────────────────────────
+
+class _SearchUsersSheet extends ConsumerStatefulWidget {
+  const _SearchUsersSheet();
+
+  @override
+  ConsumerState<_SearchUsersSheet> createState() => _SearchUsersSheetState();
+}
+
+class _SearchUsersSheetState extends ConsumerState<_SearchUsersSheet> {
+  final _searchController = TextEditingController();
+  List<UserSearchResult> _results = [];
+  bool _searching = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search() async {
+    final query = _searchController.text.trim();
+    if (query.length < 2) return;
+
+    setState(() => _searching = true);
+
+    try {
+      final user = ref.read(currentUserProvider);
+      if (user == null) return;
+
+      final results = await ref.read(socialServiceProvider).searchUsers(
+        query: query,
+        currentUid: user.uid,
+      );
+
+      setState(() => _results = results);
+    } finally {
+      setState(() => _searching = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.textSecondary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          Text(context.l10n.socialFindCyclists, style: AppTextStyles.headline3),
+          const SizedBox(height: 16),
+
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: context.l10n.socialSearchByName,
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searching
+                  ? const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : IconButton(
+                      icon: const Icon(Icons.arrow_forward),
+                      onPressed: _search,
+                    ),
+              border: const OutlineInputBorder(),
+            ),
+            onSubmitted: (_) => _search(),
+          ),
+          const SizedBox(height: 16),
+
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _results.length,
+              itemBuilder: (context, index) => _SearchResultTile(
+                result: _results[index],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SearchResultTile extends ConsumerWidget {
+  const _SearchResultTile({required this.result});
+
+  final UserSearchResult result;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+        child: result.photoUrl != null
+            ? OptimizedAvatarImage(imageUrl: result.photoUrl!, radius: 20)
+            : Text(
+                result.displayName.isNotEmpty
+                    ? result.displayName[0].toUpperCase()
+                    : '?',
+                style: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+      ),
+      title: Text(result.displayName, style: AppTextStyles.bodyMedium),
+      subtitle: Text(
+        context.l10n.socialTotalKm(result.totalKm.toStringAsFixed(1)),
+        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+      ),
+      trailing: result.isFriend
+          ? Icon(Icons.check, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)
+          : result.hasPendingRequest
+              ? const Icon(Icons.schedule, color: AppColors.textSecondary)
+              : ElevatedButton(
+                  onPressed: () => _sendRequest(context, ref),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                    foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  child: Text(context.l10n.socialAdd),
+                ),
+    );
+  }
+
+  Future<void> _sendRequest(BuildContext context, WidgetRef ref) async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+
+    try {
+      await ref.read(socialServiceProvider).sendFriendRequest(
+        fromUid: user.uid,
+        fromDisplayName: user.displayName,
+        fromPhotoUrl: user.photoUrl,
+        toUid: result.uid,
+        toDisplayName: result.displayName,
+        toPhotoUrl: result.photoUrl,
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.socialFriendRequestSent)),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    }
+  }
+}
+
+// ─── Comments Sheet ───────────────────────────────────────────────────────────
+
+class _CommentsSheet extends ConsumerStatefulWidget {
+  const _CommentsSheet({required this.ride});
+
+  final SharedRide ride;
+
+  @override
+  ConsumerState<_CommentsSheet> createState() => _CommentsSheetState();
+}
+
+class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
+  final _commentController = TextEditingController();
+  bool _sending = false;
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendComment() async {
+    final text = _commentController.text.trim();
+    if (text.isEmpty) return;
+
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+
+    setState(() => _sending = true);
+
+    try {
+      await ref.read(socialServiceProvider).addComment(
+        sharedRideId: widget.ride.id,
+        authorUid: user.uid,
+        authorDisplayName: user.displayName,
+        authorPhotoUrl: user.photoUrl,
+        text: text,
+      );
+      _commentController.clear();
+    } finally {
+      setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final commentsAsync = ref.watch(rideCommentsProvider(widget.ride.id));
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+          ),
+          child: Column(
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.textSecondary.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              Text(context.l10n.comments, style: AppTextStyles.headline3),
+              const SizedBox(height: 16),
+
+              Expanded(
+                child: commentsAsync.when(
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => Center(child: Text(context.l10n.socialErrorLoading(e.toString()))),
+                  data: (comments) {
+                    if (comments.isEmpty) {
+                      return Center(
+                        child: Text(context.l10n.socialNoComments),
+                      );
+                    }
+                    return ListView.builder(
+                      controller: scrollController,
+                      itemCount: comments.length,
+                      itemBuilder: (context, index) => _CommentTile(
+                        comment: comments[index],
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // Input field
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _commentController,
+                      decoration: InputDecoration(
+                        hintText: context.l10n.socialWriteComment,
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      maxLines: 2,
+                      minLines: 1,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    onPressed: _sending ? null : _sendComment,
+                    icon: _sending
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.send),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CommentTile extends StatelessWidget {
+  const _CommentTile({required this.comment});
+
+  final RideComment comment;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+            child: comment.authorPhotoUrl != null
+                ? OptimizedAvatarImage(
+                    imageUrl: comment.authorPhotoUrl!,
+                    radius: 16,
+                  )
+                : Text(
+                    comment.authorDisplayName.isNotEmpty
+                        ? comment.authorDisplayName[0].toUpperCase()
+                        : '?',
+                    style: const TextStyle(
+                      color: AppColors.textOnPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      comment.authorDisplayName,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _timeAgo(context, comment.createdAt),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(comment.text, style: AppTextStyles.bodySmall),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _timeAgo(BuildContext context, DateTime date) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inMinutes < 60) return context.l10n.socialMinutesAgoShort(diff.inMinutes);
+    if (diff.inHours < 24) return context.l10n.socialHoursAgoShort(diff.inHours);
+    return context.l10n.socialDaysAgoShort(diff.inDays);
+  }
+}
+
+// ─── Empty State ──────────────────────────────────────────────────────────────
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final String icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(icon, style: const TextStyle(fontSize: 64)),
+            const SizedBox(height: 16),
+            Text(title, style: AppTextStyles.headline3),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

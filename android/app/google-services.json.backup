@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "875600194960",
+    "project_id": "cykel-32383",
+    "storage_bucket": "cykel-32383.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:875600194960:android:0ee5db983651cd1bc09715",
+        "android_client_info": {
+          "package_name": "dk.cykel.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "875600194960-h3spi5tbiabd6107u5c7tm2rmi0d3r6j.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "dk.cykel.app",
+            "certificate_hash": "d37dba777f3e3cd82503f30282306eb7184fb3f6"
+          }
+        },
+        {
+          "client_id": "875600194960-hq3vhlr27r3kn33g7rkgi9b01ke92tu8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCoFV2AmtJJTYhd5SWuTSBG5AaAtuhtU0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "875600194960-hq3vhlr27r3kn33g7rkgi9b01ke92tu8.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "875600194960-hipo365d98o9smmevji1hh5kmsp0ekik.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "dk.cykel.cykel"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:875600194960:android:73e00e095dae785bc09715",
+        "android_client_info": {
+          "package_name": "dk.cykel.cykel"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "875600194960-p5e5nut7ge8jd6v3gb1i7dok5agamunr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "dk.cykel.cykel",
+            "certificate_hash": "d37dba777f3e3cd82503f30282306eb7184fb3f6"
+          }
+        },
+        {
+          "client_id": "875600194960-hq3vhlr27r3kn33g7rkgi9b01ke92tu8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCoFV2AmtJJTYhd5SWuTSBG5AaAtuhtU0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "875600194960-hq3vhlr27r3kn33g7rkgi9b01ke92tu8.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "875600194960-hipo365d98o9smmevji1hh5kmsp0ekik.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "dk.cykel.cykel"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

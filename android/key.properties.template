@@ -1,0 +1,28 @@
+# Android Release Signing Configuration
+# 
+# INSTRUCTIONS:
+# 1. Generate your release keystore by running:
+#    keytool -genkey -v -keystore ~/cykel-release-key.keystore \
+#      -alias cykel -keyalg RSA -keysize 2048 -validity 10000
+#
+# 2. Copy this file to "key.properties" (without .template)
+#
+# 3. Fill in the values below with your keystore details
+#
+# 4. NEVER commit key.properties to git (it's already in .gitignore)
+#
+# ⚠️ BACKUP YOUR KEYSTORE FILE - If you lose it, you cannot update your app!
+
+# Path to your keystore file (absolute or relative to android/ directory)
+# Example: /Users/yourname/cykel-release-key.keystore
+# Or relative: ../cykel-release-key.keystore
+storeFile=YOUR_KEYSTORE_PATH_HERE
+
+# The password you set when creating the keystore
+storePassword=YOUR_STORE_PASSWORD_HERE
+
+# The alias you used when creating the keystore (default: cykel)
+keyAlias=cykel
+
+# The key password (usually same as storePassword)
+keyPassword=YOUR_KEY_PASSWORD_HERE
