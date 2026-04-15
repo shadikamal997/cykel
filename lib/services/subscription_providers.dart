@@ -57,3 +57,15 @@ final premiumPriceProvider = Provider<String?>((ref) {
   ref.watch(purchaseInitProvider);
   return ref.read(purchaseServiceProvider).formattedPrice;
 });
+
+/// Phase 2: Student discount subscription price (kr 10/month).
+final studentPriceProvider = Provider<String?>((ref) {
+  ref.watch(purchaseInitProvider);
+  return ref.read(purchaseServiceProvider).formattedStudentPrice;
+});
+
+/// Phase 2: Annual subscription price (kr 200/year).
+final annualPriceProvider = Provider<String?>((ref) {
+  ref.watch(purchaseInitProvider);
+  return ref.read(purchaseServiceProvider).formattedAnnualPrice;
+});

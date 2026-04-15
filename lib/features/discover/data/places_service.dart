@@ -70,18 +70,41 @@ class PlacesService {
           'bounded': center != null ? '1' : '0',
         },
       );
+      
+      debugPrint('[PlacesService] Searching for: "$query" (lang=$language, center=${center != null ? '${center.latitude},${center.longitude}' : 'null'})');
+      debugPrint('[PlacesService] Request URL: $uri');
+      
       final response = await http.get(
         uri,
         headers: {
           'Accept-Language': language,
           'User-Agent': 'CYKELApp/1.0',
         },
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          debugPrint('[PlacesService] ❌ Request timeout after 10 seconds');
+          throw TimeoutException('Search request timed out');
+        },
       );
+      
+      debugPrint('[PlacesService] Response status: ${response.statusCode}');
+      
       if (response.statusCode != 200) {
-        debugPrint('Nominatim HTTP ${response.statusCode}');
+        debugPrint('[PlacesService] ❌ HTTP ${response.statusCode}: ${response.body}');
         return [];
       }
+      
+      debugPrint('[PlacesService] Response body length: ${response.body.length} bytes');
+      
       final data = json.decode(response.body) as List;
+      debugPrint('[PlacesService] ✅ Found ${data.length} results');
+      
+      if (data.isEmpty) {
+        debugPrint('[PlacesService] ⚠️  No results returned from Nominatim for query "$query"');
+        return [];
+      }
+      
       return data.map((item) {
         final m = item as Map<String, dynamic>;
         // Build a short, readable label: prefer name + road + city
@@ -126,8 +149,14 @@ class PlacesService {
           lng: double.parse(m['lon'] as String),
         );
       }).toList();
+    } on TimeoutException catch (e) {
+      debugPrint('[PlacesService] ❌ Timeout error: $e');
+      return [];
+    } on FormatException catch (e, st) {
+      debugPrint('[PlacesService] ❌ JSON parsing error: $e\n$st');
+      return [];
     } catch (e, st) {
-      debugPrint('PlacesService.autocomplete error: $e\n$st');
+      debugPrint('[PlacesService] ❌ Unexpected error: $e\n$st');
       return [];
     }
   }

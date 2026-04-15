@@ -21,7 +21,14 @@ import '../core/constants/app_constants.dart';
 
 // ─── Subscription Status Model ───────────────────────────────────────────────
 
-enum SubscriptionPlan { free, premium }
+/// Phase 1: Extended subscription tiers.
+enum SubscriptionPlan {
+  free,           // Free tier
+  premium,        // Standard premium (kr 20/month)
+  student,        // Student discount premium (kr 10/month) - Phase 1
+  annual,         // Annual premium (kr 200/year) - Phase 1
+  family,         // Family plan (kr 50/month, up to 5 accounts) - Future phase
+}
 
 class SubscriptionStatus {
   const SubscriptionStatus({
@@ -36,14 +43,41 @@ class SubscriptionStatus {
   final DateTime? expiresAt;
   final String? productId;
 
-  bool get isPremium => plan == SubscriptionPlan.premium && isActive;
+  /// Whether user has any paid premium tier (including student, annual, family).
+  bool get isPremium =>
+      (plan == SubscriptionPlan.premium ||
+          plan == SubscriptionPlan.student ||
+          plan == SubscriptionPlan.annual ||
+          plan == SubscriptionPlan.family) &&
+      isActive;
+
+  /// Legacy check for standard premium tier only.
+  bool get isStandardPremium => plan == SubscriptionPlan.premium && isActive;
+
+  /// Whether user has student tier (Phase 1).
+  bool get isStudent => plan == SubscriptionPlan.student && isActive;
+
+  /// Whether user has annual tier (Phase 1).
+  bool get isAnnual => plan == SubscriptionPlan.annual && isActive;
+
+  /// Whether user has family tier (Future).
+  bool get isFamily => plan == SubscriptionPlan.family && isActive;
 
   factory SubscriptionStatus.fromFirestore(Map<String, dynamic>? data) {
     if (data == null) return const SubscriptionStatus();
+
+    // Parse plan string to enum
+    SubscriptionPlan parsedPlan = SubscriptionPlan.free;
+    final planStr = data['plan'] as String?;
+    if (planStr != null) {
+      parsedPlan = SubscriptionPlan.values.firstWhere(
+        (p) => p.name == planStr,
+        orElse: () => SubscriptionPlan.free,
+      );
+    }
+
     return SubscriptionStatus(
-      plan: data['plan'] == 'premium'
-          ? SubscriptionPlan.premium
-          : SubscriptionPlan.free,
+      plan: parsedPlan,
       isActive: data['active'] as bool? ?? false,
       expiresAt: (data['expiresAt'] as Timestamp?)?.toDate(),
       productId: data['productId'] as String?,
@@ -51,7 +85,7 @@ class SubscriptionStatus {
   }
 
   Map<String, dynamic> toMap() => {
-        'plan': plan == SubscriptionPlan.premium ? 'premium' : 'free',
+        'plan': plan.name,
         'active': isActive,
         'expiresAt':
             expiresAt != null ? Timestamp.fromDate(expiresAt!) : null,
@@ -80,24 +114,49 @@ class PurchaseService {
   StreamSubscription<List<PurchaseDetails>>? _purchaseSub;
 
   /// The set of product IDs used across platforms.
+  /// Phase 2: Includes student and annual subscriptions.
   static final Set<String> _productIds = {
+    // Standard premium monthly
     AppConstants.premiumProductIdIos,
     if (AppConstants.premiumProductIdAndroid != AppConstants.premiumProductIdIos)
       AppConstants.premiumProductIdAndroid,
+    // Student discount monthly
+    AppConstants.studentProductIdIos,
+    if (AppConstants.studentProductIdAndroid != AppConstants.studentProductIdIos)
+      AppConstants.studentProductIdAndroid,
+    // Annual premium
+    AppConstants.annualProductIdIos,
+    if (AppConstants.annualProductIdAndroid != AppConstants.annualProductIdIos)
+      AppConstants.annualProductIdAndroid,
   };
 
-  /// Resolved product ID for the current platform.
+  /// Resolved product IDs for the current platform.
   static String get platformProductId => Platform.isIOS
       ? AppConstants.premiumProductIdIos
       : AppConstants.premiumProductIdAndroid;
 
+  static String get studentProductId => Platform.isIOS
+      ? AppConstants.studentProductIdIos
+      : AppConstants.studentProductIdAndroid;
+
+  static String get annualProductId => Platform.isIOS
+      ? AppConstants.annualProductIdIos
+      : AppConstants.annualProductIdAndroid;
+
   // ── Loaded product details ─────────────────────────────────────────────
 
   ProductDetails? _premiumProduct;
+  ProductDetails? _studentProduct;
+  ProductDetails? _annualProduct;
+
   ProductDetails? get premiumProduct => _premiumProduct;
+  ProductDetails? get studentProduct => _studentProduct;
+  ProductDetails? get annualProduct => _annualProduct;
 
   /// Formatted price string from the store (e.g. "kr 20,00" or "$2.99").
   String? get formattedPrice => _premiumProduct?.price;
+  String? get formattedStudentPrice => _studentProduct?.price;
+  String? get formattedAnnualPrice => _annualProduct?.price;
 
   // ── Initialise ─────────────────────────────────────────────────────────
 
@@ -112,7 +171,17 @@ class PurchaseService {
     // Load product details
     final response = await _iap.queryProductDetails(_productIds);
     if (response.productDetails.isNotEmpty) {
-      _premiumProduct = response.productDetails.first;
+      // Map products by ID
+      for (final product in response.productDetails) {
+        if (product.id == platformProductId) {
+          _premiumProduct = product;
+        } else if (product.id == studentProductId) {
+          _studentProduct = product;
+        } else if (product.id == annualProductId) {
+          _annualProduct = product;
+        }
+      }
+      debugPrint('[PurchaseService] Loaded ${response.productDetails.length} products');
     } else {
       debugPrint(
           '[PurchaseService] No products found. Errors: ${response.error}');
@@ -132,13 +201,31 @@ class PurchaseService {
 
   // ── Purchase ───────────────────────────────────────────────────────────
 
-  /// Initiate the purchase flow for Premium.
+  /// Initiate the purchase flow for Premium (standard monthly).
   /// Returns `false` if the product was not loaded or the store is unavailable.
   Future<bool> buyPremium() async {
     if (_premiumProduct == null) return false;
 
     final purchaseParam = PurchaseParam(productDetails: _premiumProduct!);
     // Subscription purchase — not consumable.
+    return _iap.buyNonConsumable(purchaseParam: purchaseParam);
+  }
+
+  /// Initiate the purchase flow for Student Premium (kr 10/month).
+  /// Phase 2: Student discount tier.
+  Future<bool> buyStudentPremium() async {
+    if (_studentProduct == null) return false;
+
+    final purchaseParam = PurchaseParam(productDetails: _studentProduct!);
+    return _iap.buyNonConsumable(purchaseParam: purchaseParam);
+  }
+
+  /// Initiate the purchase flow for Annual Premium (kr 200/year).
+  /// Phase 2: Annual subscription.
+  Future<bool> buyAnnualPremium() async {
+    if (_annualProduct == null) return false;
+
+    final purchaseParam = PurchaseParam(productDetails: _annualProduct!);
     return _iap.buyNonConsumable(purchaseParam: purchaseParam);
   }
 

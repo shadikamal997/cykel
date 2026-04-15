@@ -13,9 +13,18 @@ class AppConstants {
   static const String defaultLocale = 'da_DK';
 
   // --- Subscription ---
+  // Phase 2: Multiple subscription tiers
   static const String premiumProductIdIos = 'dk.cykel.premium.monthly';
   static const String premiumProductIdAndroid = 'dk.cykel.premium.monthly';
+  static const String studentProductIdIos = 'dk.cykel.premium.student';
+  static const String studentProductIdAndroid = 'dk.cykel.premium.student';
+  static const String annualProductIdIos = 'dk.cykel.premium.yearly';
+  static const String annualProductIdAndroid = 'dk.cykel.premium.yearly';
+
   static const double premiumPriceUsd = 2.99;
+  static const double premiumPriceDkk = 20.0;
+  static const double studentPriceDkk = 10.0;
+  static const double annualPriceDkk = 200.0;
 
   // --- Firestore Collections ---
   static const String colUsers = 'users';

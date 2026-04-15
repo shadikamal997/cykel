@@ -116,8 +116,8 @@ class MapRegion {
       id: json['id'] as String,
       name: json['name'] as String,
       bounds: LatLngBounds(
-        northeast: LatLng(ne['lat'] as double, ne['lng'] as double),
-        southwest: LatLng(sw['lat'] as double, sw['lng'] as double),
+        northeast: LatLng((ne['lat'] as num).toDouble(), (ne['lng'] as num).toDouble()),
+        southwest: LatLng((sw['lat'] as num).toDouble(), (sw['lng'] as num).toDouble()),
       ),
       zoomLevels: List<int>.from(json['zoomLevels'] as List),
       status: DownloadStatus.values.firstWhere(

@@ -4,6 +4,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../bike_share/domain/bike_share_station.dart';
+
 // ─── Route Preference ─────────────────────────────────────────────────────────
 
 enum RoutePreference {
@@ -131,6 +133,63 @@ enum TimeOfDay {
   }
 }
 
+// ─── Point of Interest (POI) for Tourist Mode ────────────────────────────────
+
+enum POIType {
+  landmark,      // Historical landmarks, monuments
+  museum,        // Museums, galleries
+  viewpoint,     // Scenic viewpoints, photo spots
+  restaurant,    // Restaurants, cafes
+  park,          // Parks, gardens
+  culture,       // Cultural centers, theaters
+  shopping,      // Shopping areas, markets
+  waterfront;    // Harbor, beach, waterside areas
+
+  String get icon {
+    switch (this) {
+      case POIType.landmark: return '🏛️';
+      case POIType.museum: return '🏛️';
+      case POIType.viewpoint: return '📸';
+      case POIType.restaurant: return '🍽️';
+      case POIType.park: return '🌳';
+      case POIType.culture: return '🎭';
+      case POIType.shopping: return '🛍️';
+      case POIType.waterfront: return '⛵';
+    }
+  }
+
+  String get displayName {
+    switch (this) {
+      case POIType.landmark: return 'Landmark';
+      case POIType.museum: return 'Museum';
+      case POIType.viewpoint: return 'Viewpoint';
+      case POIType.restaurant: return 'Restaurant';
+      case POIType.park: return 'Park';
+      case POIType.culture: return 'Cultural';
+      case POIType.shopping: return 'Shopping';
+      case POIType.waterfront: return 'Waterfront';
+    }
+  }
+}
+
+class PointOfInterest {
+  const PointOfInterest({
+    required this.name,
+    required this.type,
+    required this.location,
+    this.description,
+    this.rating,
+    this.distanceFromRouteM,
+  });
+
+  final String name;
+  final POIType type;
+  final LatLng location;
+  final String? description;
+  final double? rating; // 1-5 rating
+  final double? distanceFromRouteM; // Distance from route in meters
+}
+
 // ─── Route Suggestion Reason ──────────────────────────────────────────────────
 
 enum SuggestionReason {
@@ -225,6 +284,18 @@ class RouteSuggestion {
     this.bikeLanePercentage,
     this.trafficLevel,
     this.lightingLevel,
+    // Phase 4: Family-friendly attributes
+    this.trafficFreePercentage,
+    this.safetyScore,
+    this.maxSpeed,
+    this.hasPlaygrounds,
+    // Phase 5: Tourist mode attributes
+    this.pointsOfInterest = const [],
+    this.scenicScore,
+    this.culturalScore,
+    this.waterfrontPercentage,
+    // Phase 6: Bike share integration
+    this.nearbyStations = const [],
   });
 
   final String id;
@@ -243,9 +314,81 @@ class RouteSuggestion {
   final int? trafficLevel; // 1-5
   final int? lightingLevel; // 1-5
 
+  // Phase 4: Family-friendly attributes
+  final double? trafficFreePercentage; // % of route on traffic-free paths (parks, dedicated paths)
+  final int? safetyScore; // 1-5, combines traffic, lighting, surface quality
+  final int? maxSpeed; // Maximum speed limit along route (km/h)
+  final bool? hasPlaygrounds; // Route passes by playgrounds/parks
+
+  // Phase 5: Tourist mode attributes
+  final List<PointOfInterest> pointsOfInterest; // POIs along or near the route
+  final int? scenicScore; // 1-5, how scenic/picturesque the route is
+  final int? culturalScore; // 1-5, cultural/historical significance
+  final double? waterfrontPercentage; // % of route along waterfront/harbor
+
+  // Phase 6: Bike share integration
+  final List<BikeShareStation> nearbyStations; // Bike share stations near start/end points
+
   String get primaryReason => reasons.isNotEmpty
       ? '${reasons.first.icon} ${reasons.first.displayName}'
       : '';
+
+  // Phase 4: Family-friendly indicator
+  bool get isFamilyFriendly {
+    // Route is family-friendly if:
+    // - Traffic-free percentage > 60% OR
+    // - Safety score >= 4 AND bike lane percentage > 70%
+    if (trafficFreePercentage != null && trafficFreePercentage! > 60) {
+      return true;
+    }
+    if (safetyScore != null && safetyScore! >= 4 &&
+        bikeLanePercentage != null && bikeLanePercentage! > 70) {
+      return true;
+    }
+    return false;
+  }
+
+  // Phase 5: Tourist-friendly indicator
+  bool get isTouristFriendly {
+    // Route is tourist-friendly if:
+    // - Scenic score >= 4 OR
+    // - Cultural score >= 4 OR
+    // - Has 3+ POIs OR
+    // - Waterfront percentage > 40%
+    if (scenicScore != null && scenicScore! >= 4) return true;
+    if (culturalScore != null && culturalScore! >= 4) return true;
+    if (pointsOfInterest.length >= 3) return true;
+    if (waterfrontPercentage != null && waterfrontPercentage! > 40) return true;
+    return false;
+  }
+
+  // Phase 5: Get POI count by type
+  int getPoiCountByType(POIType type) {
+    return pointsOfInterest.where((poi) => poi.type == type).length;
+  }
+
+  // Phase 6: Bike share helpers
+  bool get hasBikeShareStations => nearbyStations.isNotEmpty;
+  
+  int get availableBikeShareCount {
+    return nearbyStations.where((s) => s.hasAvailableVehicles).length;
+  }
+  
+  List<BikeShareStation> getStationsByProvider(BikeShareProvider provider) {
+    return nearbyStations.where((s) => s.provider == provider).toList();
+  }
+  
+  bool get hasBikeShareAtStart {
+    // Check if any station is within 500m of start location
+    return nearbyStations.any((station) => 
+      station.distanceFromPoint(startLocation) < 0.5);
+  }
+  
+  bool get hasBikeShareAtEnd {
+    // Check if any station is within 500m of end location
+    return nearbyStations.any((station) => 
+      station.distanceFromPoint(endLocation) < 0.5);
+  }
 }
 
 // ─── User Route History ───────────────────────────────────────────────────────
@@ -331,6 +474,20 @@ class RouteSettings {
     this.usageBasedSuggestions = true,
     this.weatherBasedSuggestions = true,
     this.timeBasedSuggestions = true,
+    // Phase 4: Family mode preferences
+    this.familyFriendlyMode = false,
+    this.preferTrafficFree = false,
+    this.maxSpeedLimit,
+    // Phase 5: Tourist mode preferences
+    this.touristMode = false,
+    this.preferScenic = false,
+    this.preferCultural = false,
+    this.preferWaterfront = false,
+    // Phase 6: Bike share preferences
+    this.bikeShareMode = false,
+    this.requireStationAtStart = false,
+    this.requireStationAtEnd = false,
+    this.preferredProviders = const [],
   });
 
   final List<RoutePreference> preferences;
@@ -341,6 +498,23 @@ class RouteSettings {
   final bool usageBasedSuggestions;
   final bool weatherBasedSuggestions;
   final bool timeBasedSuggestions;
+  
+  // Phase 4: Family mode preferences
+  final bool familyFriendlyMode; // Prioritize safe, low-traffic routes
+  final bool preferTrafficFree; // Prefer parks and dedicated paths
+  final int? maxSpeedLimit; // Filter routes by max speed limit (km/h)
+
+  // Phase 5: Tourist mode preferences
+  final bool touristMode; // Prioritize scenic, cultural routes with POIs
+  final bool preferScenic; // Prefer scenic/picturesque routes
+  final bool preferCultural; // Prefer routes with cultural/historical significance
+  final bool preferWaterfront; // Prefer routes along water (harbor, lakes, coast)
+
+  // Phase 6: Bike share preferences
+  final bool bikeShareMode; // Filter routes with bike share stations
+  final bool requireStationAtStart; // Only show routes with station at start
+  final bool requireStationAtEnd; // Only show routes with station at end
+  final List<BikeShareProvider> preferredProviders; // Filter by specific providers
 
   factory RouteSettings.fromFirestore(Map<String, dynamic> data) {
     return RouteSettings(
@@ -358,6 +532,26 @@ class RouteSettings {
       usageBasedSuggestions: data['usageBasedSuggestions'] as bool? ?? true,
       weatherBasedSuggestions: data['weatherBasedSuggestions'] as bool? ?? true,
       timeBasedSuggestions: data['timeBasedSuggestions'] as bool? ?? true,
+      // Phase 4
+      familyFriendlyMode: data['familyFriendlyMode'] as bool? ?? false,
+      preferTrafficFree: data['preferTrafficFree'] as bool? ?? false,
+      maxSpeedLimit: data['maxSpeedLimit'] as int?,
+      // Phase 5
+      touristMode: data['touristMode'] as bool? ?? false,
+      preferScenic: data['preferScenic'] as bool? ?? false,
+      preferCultural: data['preferCultural'] as bool? ?? false,
+      preferWaterfront: data['preferWaterfront'] as bool? ?? false,
+      // Phase 6
+      bikeShareMode: data['bikeShareMode'] as bool? ?? false,
+      requireStationAtStart: data['requireStationAtStart'] as bool? ?? false,
+      requireStationAtEnd: data['requireStationAtEnd'] as bool? ?? false,
+      preferredProviders: (data['preferredProviders'] as List<dynamic>?)
+              ?.map((e) => BikeShareProvider.values.firstWhere(
+                    (p) => p.name == e,
+                    orElse: () => BikeShareProvider.bycyklen,
+                  ))
+              .toList() ??
+          [],
     );
   }
 
@@ -370,6 +564,20 @@ class RouteSettings {
         'usageBasedSuggestions': usageBasedSuggestions,
         'weatherBasedSuggestions': weatherBasedSuggestions,
         'timeBasedSuggestions': timeBasedSuggestions,
+        // Phase 4
+        'familyFriendlyMode': familyFriendlyMode,
+        'preferTrafficFree': preferTrafficFree,
+        'maxSpeedLimit': maxSpeedLimit,
+        // Phase 5
+        'touristMode': touristMode,
+        'preferScenic': preferScenic,
+        'preferCultural': preferCultural,
+        'preferWaterfront': preferWaterfront,
+        // Phase 6
+        'bikeShareMode': bikeShareMode,
+        'requireStationAtStart': requireStationAtStart,
+        'requireStationAtEnd': requireStationAtEnd,
+        'preferredProviders': preferredProviders.map((p) => p.name).toList(),
       };
 
   RouteSettings copyWith({
@@ -381,6 +589,17 @@ class RouteSettings {
     bool? usageBasedSuggestions,
     bool? weatherBasedSuggestions,
     bool? timeBasedSuggestions,
+    bool? familyFriendlyMode,
+    bool? preferTrafficFree,
+    int? maxSpeedLimit,
+    bool? touristMode,
+    bool? preferScenic,
+    bool? preferCultural,
+    bool? preferWaterfront,
+    bool? bikeShareMode,
+    bool? requireStationAtStart,
+    bool? requireStationAtEnd,
+    List<BikeShareProvider>? preferredProviders,
   }) {
     return RouteSettings(
       preferences: preferences ?? this.preferences,
@@ -391,6 +610,17 @@ class RouteSettings {
       usageBasedSuggestions: usageBasedSuggestions ?? this.usageBasedSuggestions,
       weatherBasedSuggestions: weatherBasedSuggestions ?? this.weatherBasedSuggestions,
       timeBasedSuggestions: timeBasedSuggestions ?? this.timeBasedSuggestions,
+      familyFriendlyMode: familyFriendlyMode ?? this.familyFriendlyMode,
+      preferTrafficFree: preferTrafficFree ?? this.preferTrafficFree,
+      maxSpeedLimit: maxSpeedLimit ?? this.maxSpeedLimit,
+      touristMode: touristMode ?? this.touristMode,
+      preferScenic: preferScenic ?? this.preferScenic,
+      preferCultural: preferCultural ?? this.preferCultural,
+      preferWaterfront: preferWaterfront ?? this.preferWaterfront,
+      bikeShareMode: bikeShareMode ?? this.bikeShareMode,
+      requireStationAtStart: requireStationAtStart ?? this.requireStationAtStart,
+      requireStationAtEnd: requireStationAtEnd ?? this.requireStationAtEnd,
+      preferredProviders: preferredProviders ?? this.preferredProviders,
     );
   }
 }

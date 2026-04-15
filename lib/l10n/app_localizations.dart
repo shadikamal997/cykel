@@ -3275,7 +3275,7 @@ abstract class AppLocalizations {
   /// No description provided for @premiumPriceNote.
   ///
   /// In en, this message translates to:
-  /// **'Approx. \$3 USD · Cancel anytime'**
+  /// **'Approx. \$2.99 USD · Cancel anytime'**
   String get premiumPriceNote;
 
   /// No description provided for @cancelPremiumTitle.
@@ -3343,6 +3343,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cloud'**
   String get pillCloud;
+
+  /// No description provided for @studentDiscountBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Student? Get 50% off Premium'**
+  String get studentDiscountBanner;
+
+  /// No description provided for @studentDiscountPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'kr 10/month instead of kr 20'**
+  String get studentDiscountPrice;
+
+  /// No description provided for @verifiedStudentBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified Student - 50% Discount Applied'**
+  String get verifiedStudentBadge;
+
+  /// No description provided for @billingPeriodMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get billingPeriodMonthly;
+
+  /// No description provided for @billingPeriodYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get billingPeriodYearly;
+
+  /// No description provided for @annualSavingsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Save kr 40 with annual plan'**
+  String get annualSavingsMessage;
+
+  /// No description provided for @studentVerificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Student Status'**
+  String get studentVerificationTitle;
+
+  /// No description provided for @studentVerificationSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock 50% off Premium with your university email'**
+  String get studentVerificationSubtitle;
+
+  /// No description provided for @studentEmailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'University Email'**
+  String get studentEmailLabel;
+
+  /// No description provided for @studentEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'your.name@university.edu'**
+  String get studentEmailHint;
+
+  /// No description provided for @invalidStudentEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid student email domain'**
+  String get invalidStudentEmail;
+
+  /// No description provided for @studentEmailDomainNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted: .edu, .ac.dk, .ku.dk, .dtu.dk, .cbs.dk, .ruc.dk, .au.dk, .sdu.dk, .aau.dk'**
+  String get studentEmailDomainNote;
+
+  /// No description provided for @verifyStudentButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Student Status'**
+  String get verifyStudentButton;
+
+  /// No description provided for @studentVerificationSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'✅ Student status verified! You can now get 50% off Premium.'**
+  String get studentVerificationSuccess;
+
+  /// No description provided for @studentVerificationPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying...'**
+  String get studentVerificationPending;
+
+  /// No description provided for @studentVerificationBenefitsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Student Benefits:'**
+  String get studentVerificationBenefitsTitle;
+
+  /// No description provided for @studentBenefit1.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium for kr 10/month (50% off)'**
+  String get studentBenefit1;
+
+  /// No description provided for @studentBenefit2.
+  ///
+  /// In en, this message translates to:
+  /// **'All Premium features included'**
+  String get studentBenefit2;
+
+  /// No description provided for @studentBenefit3.
+  ///
+  /// In en, this message translates to:
+  /// **'Valid for 1 year - easy renewal'**
+  String get studentBenefit3;
+
+  /// No description provided for @studentBenefit4.
+  ///
+  /// In en, this message translates to:
+  /// **'Support student cycling community'**
+  String get studentBenefit4;
 
   /// No description provided for @subNavAndMap.
   ///

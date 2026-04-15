@@ -10,6 +10,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../services/location_service.dart';
 import '../../auth/providers/auth_providers.dart';
+import '../../bike_share/domain/bike_share_station.dart';
 import '../data/route_suggestion_provider.dart';
 import '../domain/route_suggestion.dart';
 
@@ -197,10 +198,19 @@ class _HeaderCard extends StatelessWidget {
   }
 }
 
-class _SuggestionCard extends StatelessWidget {
+class _SuggestionCard extends StatefulWidget {
   const _SuggestionCard({required this.suggestion});
 
   final RouteSuggestion suggestion;
+
+  @override
+  State<_SuggestionCard> createState() => _SuggestionCardState();
+}
+
+class _SuggestionCardState extends State<_SuggestionCard> {
+  bool _showBikeShareDetails = false;
+
+  RouteSuggestion get suggestion => widget.suggestion;
 
   @override
   Widget build(BuildContext context) {
@@ -227,7 +237,7 @@ class _SuggestionCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _scoreColor(context, suggestion.score).withValues(alpha: 0.1),
+                      color: _scoreColor(context, widget.suggestion.score).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -236,13 +246,13 @@ class _SuggestionCard extends StatelessWidget {
                         Icon(
                           Icons.star,
                           size: 14,
-                          color: _scoreColor(context, suggestion.score),
+                          color: _scoreColor(context, widget.suggestion.score),
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${suggestion.score.toInt()}%',
+                          '${widget.suggestion.score.toInt()}%',
                           style: AppTextStyles.labelSmall.copyWith(
-                            color: _scoreColor(context, suggestion.score),
+                            color: _scoreColor(context, widget.suggestion.score),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -252,7 +262,7 @@ class _SuggestionCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      suggestion.name,
+                      widget.suggestion.name,
                       style: AppTextStyles.bodyMedium.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -260,9 +270,285 @@ class _SuggestionCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  // Phase 4: Family-friendly badge
+                  if (suggestion.isFamilyFriendly)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.family_restroom,
+                            size: 12,
+                            color: Colors.green.shade700,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Family Safe',
+                            style: AppTextStyles.caption.copyWith(
+                              color: Colors.green.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  // Phase 5: Tourist-friendly badge
+                  if (suggestion.isTouristFriendly)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.camera_alt,
+                            size: 12,
+                            color: Colors.blue.shade700,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Tourist Friendly',
+                            style: AppTextStyles.caption.copyWith(
+                              color: Colors.blue.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: 12),
+
+              // Phase 5: Tourist indicators (scenic, cultural, POIs, waterfront)
+              if (suggestion.scenicScore != null ||
+                  suggestion.culturalScore != null ||
+                  suggestion.pointsOfInterest.isNotEmpty ||
+                  suggestion.waterfrontPercentage != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      if (suggestion.scenicScore != null)
+                        _SafetyChip(
+                          icon: Icons.landscape_outlined,
+                          label: 'Scenic: ${suggestion.scenicScore}/5',
+                          color: Colors.green,
+                        ),
+                      if (suggestion.culturalScore != null)
+                        _SafetyChip(
+                          icon: Icons.museum_outlined,
+                          label: 'Cultural: ${suggestion.culturalScore}/5',
+                          color: Colors.purple,
+                        ),
+                      if (suggestion.pointsOfInterest.isNotEmpty)
+                        _SafetyChip(
+                          icon: Icons.location_on,
+                          label: '${suggestion.pointsOfInterest.length} POIs',
+                          color: Colors.orange,
+                        ),
+                      if (suggestion.waterfrontPercentage != null)
+                        _SafetyChip(
+                          icon: Icons.water_outlined,
+                          label: '${suggestion.waterfrontPercentage!.toInt()}% waterfront',
+                          color: Colors.cyan,
+                        ),
+                    ],
+                  ),
+                ),
+
+              // Phase 4: Safety indicators (if available)
+              if (suggestion.trafficFreePercentage != null ||
+                  suggestion.safetyScore != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      if (suggestion.trafficFreePercentage != null)
+                        _SafetyChip(
+                          icon: Icons.park_outlined,
+                          label: '${suggestion.trafficFreePercentage!.toInt()}% traffic-free',
+                          color: Colors.blue,
+                        ),
+                      if (suggestion.safetyScore != null)
+                        _SafetyChip(
+                          icon: Icons.shield_outlined,
+                          label: 'Safety: ${suggestion.safetyScore}/5',
+                          color: _getSafetyColor(suggestion.safetyScore!),
+                        ),
+                    ],
+                  ),
+                ),
+
+              // Phase 6: Bike share stations (if available)
+              if (suggestion.hasBikeShareStations)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      _SafetyChip(
+                        icon: Icons.pedal_bike,
+                        label: '${suggestion.availableBikeShareCount} stations available',
+                        color: Colors.indigo,
+                      ),
+                      if (suggestion.hasBikeShareAtStart)
+                        const _SafetyChip(
+                          icon: Icons.location_on,
+                          label: 'Station at start',
+                          color: Colors.green,
+                        ),
+                      if (suggestion.hasBikeShareAtEnd)
+                        const _SafetyChip(
+                          icon: Icons.flag_outlined,
+                          label: 'Station at end',
+                          color: Colors.green,
+                        ),
+                      // View details button
+                      InkWell(
+                        onTap: () {
+                          setState(() {
+                            _showBikeShareDetails = !_showBikeShareDetails;
+                          });
+                        },
+                        child: _SafetyChip(
+                          icon: _showBikeShareDetails 
+                              ? Icons.expand_less 
+                              : Icons.expand_more,
+                          label: _showBikeShareDetails ? 'Hide details' : 'View details',
+                          color: Colors.indigo,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // Phase 6: Bike share station details (expandable)
+              if (suggestion.hasBikeShareStations && _showBikeShareDetails)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12, bottom: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Nearby Bike Share Stations',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...suggestion.nearbyStations.take(5).map((station) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.background,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: Color(int.parse(
+                                        station.availabilityColor.substring(1), 
+                                        radix: 16
+                                      ) + 0xFF000000),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      station.name,
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    station.provider.displayName,
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  if (station.availableBikes != null && station.availableBikes! > 0)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 12),
+                                      child: Text(
+                                        '🚲 ${station.availableBikes}',
+                                        style: AppTextStyles.caption,
+                                      ),
+                                    ),
+                                  if (station.availableEBikes != null && station.availableEBikes! > 0)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 12),
+                                      child: Text(
+                                        '⚡ ${station.availableEBikes}',
+                                        style: AppTextStyles.caption,
+                                      ),
+                                    ),
+                                  if (station.availableScooters != null && station.availableScooters! > 0)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 12),
+                                      child: Text(
+                                        '🛴 ${station.availableScooters}',
+                                        style: AppTextStyles.caption,
+                                      ),
+                                    ),
+                                  const Spacer(),
+                                  if (station.distance != null)
+                                    Text(
+                                      '${(station.distance! * 1000).toInt()}m',
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                      if (suggestion.nearbyStations.length > 5)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            '+${suggestion.nearbyStations.length - 5} more stations',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
 
               // Stats
               Row(
@@ -314,6 +600,13 @@ class _SuggestionCard extends StatelessWidget {
     if (score >= 40) return baseColor.withValues(alpha: 0.6);
     return AppColors.textSecondary;
   }
+
+  // Phase 4: Safety score color
+  Color _getSafetyColor(int score) {
+    if (score >= 4) return Colors.green;
+    if (score >= 3) return Colors.orange;
+    return Colors.red;
+  }
 }
 
 class _StatChip extends StatelessWidget {
@@ -336,6 +629,45 @@ class _StatChip extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// Phase 4: Safety indicator chip
+class _SafetyChip extends StatelessWidget {
+  const _SafetyChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -737,6 +1069,82 @@ class _RouteSettingsSheet extends ConsumerWidget {
                 value: settings.timeBasedSuggestions,
                 onChanged: (value) => _updateSettings(ref, settings.copyWith(timeBasedSuggestions: value)),
               ),
+
+              const Divider(height: 32),
+
+              // Phase 6: Bike share settings
+              Text(
+                'Bike Share Options',
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              SwitchListTile(
+                title: const Text('🚲 Bike Share Mode'),
+                subtitle: const Text('Prioritize routes with bike share stations'),
+                value: settings.bikeShareMode,
+                onChanged: (value) => _updateSettings(ref, settings.copyWith(bikeShareMode: value)),
+              ),
+
+              if (settings.bikeShareMode) ...[
+                Padding(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: Column(
+                    children: [
+                      SwitchListTile(
+                        title: const Text('Station at Start'),
+                        subtitle: const Text('Only show routes with station near start'),
+                        value: settings.requireStationAtStart,
+                        onChanged: (value) => _updateSettings(ref, settings.copyWith(requireStationAtStart: value)),
+                      ),
+                      SwitchListTile(
+                        title: const Text('Station at End'),
+                        subtitle: const Text('Only show routes with station near end'),
+                        value: settings.requireStationAtEnd,
+                        onChanged: (value) => _updateSettings(ref, settings.copyWith(requireStationAtEnd: value)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Preferred Providers',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: BikeShareProvider.values.map((provider) {
+                          final isSelected = settings.preferredProviders.contains(provider);
+                          return FilterChip(
+                            label: Text('${provider.icon} ${provider.displayName}'),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              final newProviders = List<BikeShareProvider>.from(settings.preferredProviders);
+                              if (selected) {
+                                newProviders.add(provider);
+                              } else {
+                                newProviders.remove(provider);
+                              }
+                              _updateSettings(ref, settings.copyWith(preferredProviders: newProviders));
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         );

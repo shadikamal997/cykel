@@ -192,117 +192,220 @@ final _showCykelChargingProvider = StateProvider<bool>((ref) => false);
 final _showCykelServiceProvider = StateProvider<bool>((ref) => false);
 final _showCykelRentalProvider = StateProvider<bool>((ref) => false);
 
+// ─── CYKEL Provider Filters ──────────────────────────────────────────────────
+
+/// Filter: Only show providers currently open based on opening hours
+final _filterOpenNowProvider = StateProvider<bool>((ref) => false);
+
+/// Filter: Minimum rating (0.0 = show all)
+final _filterMinRatingProvider = StateProvider<double>((ref) => 0.0);
+
+// ─── Search This Area ─────────────────────────────────────────────────────────
+
+/// Whether to show "Search this area" button (true when user pans away from location)
+final _showSearchAreaButtonProvider = StateProvider<bool>((ref) => false);
+
+/// Center point for area searches (set when user clicks "Search this area")
+final _searchAreaCenterProvider = StateProvider<LatLng?>((ref) => null);
+
+/// Effective center for provider searches (search area if set, otherwise user location)
+final _providerSearchCenterProvider = Provider<LatLng?>((ref) {
+  final searchCenter = ref.watch(_searchAreaCenterProvider);
+  if (searchCenter != null) return searchCenter;
+  return ref.watch(_userLocationProvider);
+});
+
 /// Currently selected CYKEL provider (shown via _CykelProviderDetailSheet).
 final _selectedCykelProviderProvider = StateProvider<CykelProvider?>((ref) => null);
 
-final _cykelRepairMarkersProvider = FutureProvider<Set<Marker>>((ref) async {
-  if (!ref.watch(_showCykelRepairProvider)) return {};
-  final center = ref.watch(_userLocationProvider);
-  if (center == null) return {};
+/// Helper: Apply active filters to a provider
+bool _applyFilters(CykelProvider p, bool filterOpenNow, double filterMinRating) {
+  if (filterOpenNow && !p.isOpenNow) return false;
+  if (p.rating < filterMinRating) return false;
+  return true;
+}
+
+final _cykelRepairMarkersProvider = StreamProvider<Set<Marker>>((ref) {
+  if (!ref.watch(_showCykelRepairProvider)) return Stream.value({});
+  final center = ref.watch(_providerSearchCenterProvider);
+  if (center == null) return Stream.value({});
+  final filterOpenNow = ref.watch(_filterOpenNowProvider);
+  final filterMinRating = ref.watch(_filterMinRatingProvider);
   final svc = ref.read(providerServiceProvider);
-  final providers = await svc.getNearby(
-    lat: center.latitude,
-    lng: center.longitude,
-  );
-  return providers
-      .where((p) => p.isRepairShop && p.latitude != 0 && p.longitude != 0)
-      .map(
-        (p) => Marker(
-          markerId: MarkerId('cykel_repair_${p.id}'),
-          position: LatLng(p.latitude, p.longitude),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-          onTap: () => ref.read(_selectedCykelProviderProvider.notifier).state = p,
-        ),
+  return svc
+      .streamNearby(
+        lat: center.latitude,
+        lng: center.longitude,
       )
-      .toSet();
+      .map((providers) => providers
+          .where((p) => 
+            p.isRepairShop && 
+            p.latitude != 0 && 
+            p.longitude != 0 &&
+            _applyFilters(p, filterOpenNow, filterMinRating))
+          .map(
+            (p) => Marker(
+              markerId: MarkerId('cykel_repair_${p.id}'),
+              position: LatLng(p.latitude, p.longitude),
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+              onTap: () => ref.read(_selectedCykelProviderProvider.notifier).state = p,
+            ),
+          )
+          .toSet());
 });
 
-final _cykelShopMarkersProvider = FutureProvider<Set<Marker>>((ref) async {
-  if (!ref.watch(_showCykelShopProvider)) return {};
-  final center = ref.watch(_userLocationProvider);
-  if (center == null) return {};
+final _cykelShopMarkersProvider = StreamProvider<Set<Marker>>((ref) {
+  if (!ref.watch(_showCykelShopProvider)) return Stream.value({});
+  final center = ref.watch(_providerSearchCenterProvider);
+  if (center == null) return Stream.value({});
+  final filterOpenNow = ref.watch(_filterOpenNowProvider);
+  final filterMinRating = ref.watch(_filterMinRatingProvider);
   final svc = ref.read(providerServiceProvider);
-  final providers = await svc.getNearby(
-    lat: center.latitude,
-    lng: center.longitude,
-  );
-  return providers
-      .where((p) => p.isBikeShop && p.latitude != 0 && p.longitude != 0)
-      .map(
-        (p) => Marker(
-          markerId: MarkerId('cykel_shop_${p.id}'),
-          position: LatLng(p.latitude, p.longitude),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
-          onTap: () => ref.read(_selectedCykelProviderProvider.notifier).state = p,
-        ),
+  return svc
+      .streamNearby(
+        lat: center.latitude,
+        lng: center.longitude,
       )
-      .toSet();
+      .map((providers) => providers
+          .where((p) => 
+            p.isBikeShop && 
+            p.latitude != 0 && 
+            p.longitude != 0 &&
+            _applyFilters(p, filterOpenNow, filterMinRating))
+          .map(
+            (p) => Marker(
+              markerId: MarkerId('cykel_shop_${p.id}'),
+              position: LatLng(p.latitude, p.longitude),
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
+              onTap: () => ref.read(_selectedCykelProviderProvider.notifier).state = p,
+            ),
+          )
+          .toSet());
 });
 
-final _cykelChargingMarkersProvider = FutureProvider<Set<Marker>>((ref) async {
-  if (!ref.watch(_showCykelChargingProvider)) return {};
-  final center = ref.watch(_userLocationProvider);
-  if (center == null) return {};
+final _cykelChargingMarkersProvider = StreamProvider<Set<Marker>>((ref) {
+  if (!ref.watch(_showCykelChargingProvider)) return Stream.value({});
+  final center = ref.watch(_providerSearchCenterProvider);
+  if (center == null) return Stream.value({});
+  final filterOpenNow = ref.watch(_filterOpenNowProvider);
+  final filterMinRating = ref.watch(_filterMinRatingProvider);
   final svc = ref.read(providerServiceProvider);
-  final providers = await svc.getNearby(
-    lat: center.latitude,
-    lng: center.longitude,
-  );
-  return providers
-      .where((p) => p.isChargingLocation && p.latitude != 0 && p.longitude != 0)
-      .map(
-        (p) => Marker(
-          markerId: MarkerId('cykel_charging_${p.id}'),
-          position: LatLng(p.latitude, p.longitude),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-          onTap: () => ref.read(_selectedCykelProviderProvider.notifier).state = p,
-        ),
+  return svc
+      .streamNearby(
+        lat: center.latitude,
+        lng: center.longitude,
       )
-      .toSet();
+      .map((providers) => providers
+          .where((p) => 
+            p.isChargingLocation && 
+            p.latitude != 0 && 
+            p.longitude != 0 &&
+            _applyFilters(p, filterOpenNow, filterMinRating))
+          .map(
+            (p) => Marker(
+              markerId: MarkerId('cykel_charging_${p.id}'),
+              position: LatLng(p.latitude, p.longitude),
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+              onTap: () => ref.read(_selectedCykelProviderProvider.notifier).state = p,
+            ),
+          )
+          .toSet());
 });
 
-final _cykelServiceMarkersProvider = FutureProvider<Set<Marker>>((ref) async {
-  if (!ref.watch(_showCykelServiceProvider)) return {};
-  final center = ref.watch(_userLocationProvider);
-  if (center == null) return {};
+final _cykelServiceMarkersProvider = StreamProvider<Set<Marker>>((ref) {
+  if (!ref.watch(_showCykelServiceProvider)) return Stream.value({});
+  final center = ref.watch(_providerSearchCenterProvider);
+  if (center == null) return Stream.value({});
+  final filterOpenNow = ref.watch(_filterOpenNowProvider);
+  final filterMinRating = ref.watch(_filterMinRatingProvider);
   final svc = ref.read(providerServiceProvider);
-  final providers = await svc.getNearby(
-    lat: center.latitude,
-    lng: center.longitude,
-  );
-  return providers
-      .where((p) => p.isServicePoint && p.latitude != 0 && p.longitude != 0)
-      .map(
-        (p) => Marker(
-          markerId: MarkerId('cykel_service_${p.id}'),
-          position: LatLng(p.latitude, p.longitude),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-          onTap: () => ref.read(_selectedCykelProviderProvider.notifier).state = p,
-        ),
+  return svc
+      .streamNearby(
+        lat: center.latitude,
+        lng: center.longitude,
       )
-      .toSet();
+      .map((providers) => providers
+          .where((p) => 
+            p.isServicePoint && 
+            p.latitude != 0 && 
+            p.longitude != 0 &&
+            _applyFilters(p, filterOpenNow, filterMinRating))
+          .map(
+            (p) => Marker(
+              markerId: MarkerId('cykel_service_${p.id}'),
+              position: LatLng(p.latitude, p.longitude),
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+              onTap: () => ref.read(_selectedCykelProviderProvider.notifier).state = p,
+            ),
+          )
+          .toSet());
 });
 
-final _cykelRentalMarkersProvider = FutureProvider<Set<Marker>>((ref) async {
-  if (!ref.watch(_showCykelRentalProvider)) return {};
-  final center = ref.watch(_userLocationProvider);
-  if (center == null) return {};
+final _cykelRentalMarkersProvider = StreamProvider<Set<Marker>>((ref) {
+  if (!ref.watch(_showCykelRentalProvider)) return Stream.value({});
+  final center = ref.watch(_providerSearchCenterProvider);
+  if (center == null) return Stream.value({});
+  final filterOpenNow = ref.watch(_filterOpenNowProvider);
+  final filterMinRating = ref.watch(_filterMinRatingProvider);
   final svc = ref.read(providerServiceProvider);
-  final providers = await svc.getNearby(
-    lat: center.latitude,
-    lng: center.longitude,
-  );
-  return providers
-      .where((p) => p.isRental && p.latitude != 0 && p.longitude != 0)
-      .map(
-        (p) => Marker(
-          markerId: MarkerId('cykel_rental_${p.id}'),
-          position: LatLng(p.latitude, p.longitude),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose),
-          onTap: () => ref.read(_selectedCykelProviderProvider.notifier).state = p,
-        ),
+  return svc
+      .streamNearby(
+        lat: center.latitude,
+        lng: center.longitude,
       )
-      .toSet();
+      .map((providers) => providers
+          .where((p) => 
+            p.isRental && 
+            p.latitude != 0 && 
+            p.longitude != 0 &&
+            _applyFilters(p, filterOpenNow, filterMinRating))
+          .map(
+            (p) => Marker(
+              markerId: MarkerId('cykel_rental_${p.id}'),
+              position: LatLng(p.latitude, p.longitude),
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose),
+              onTap: () => ref.read(_selectedCykelProviderProvider.notifier).state = p,
+            ),
+          )
+          .toSet());
+});
+
+// ─── Provider Counts ─────────────────────────────────────────────────────────
+
+/// Count providers visible in each layer (for UI display like "Repair (5)")
+final _cykelRepairCountProvider = Provider<int>((ref) {
+  return ref.watch(_cykelRepairMarkersProvider).maybeWhen(
+    data: (markers) => markers.length,
+    orElse: () => 0,
+  );
+});
+
+final _cykelShopCountProvider = Provider<int>((ref) {
+  return ref.watch(_cykelShopMarkersProvider).maybeWhen(
+    data: (markers) => markers.length,
+    orElse: () => 0,
+  );
+});
+
+final _cykelChargingCountProvider = Provider<int>((ref) {
+  return ref.watch(_cykelChargingMarkersProvider).maybeWhen(
+    data: (markers) => markers.length,
+    orElse: () => 0,
+  );
+});
+
+final _cykelServiceCountProvider = Provider<int>((ref) {
+  return ref.watch(_cykelServiceMarkersProvider).maybeWhen(
+    data: (markers) => markers.length,
+    orElse: () => 0,
+  );
+});
+
+final _cykelRentalCountProvider = Provider<int>((ref) {
+  return ref.watch(_cykelRentalMarkersProvider).maybeWhen(
+    data: (markers) => markers.length,
+    orElse: () => 0,
+  );
 });
 
 // Wind data for the current route — fetched at the midpoint from Open-Meteo
@@ -544,6 +647,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   bool _ttsLangFallbackNotified = false;
   // Location permission denied
   bool _permissionDenied = false;
+  // POI layers enabled without location permission
+  bool _showPoiLocationHint = false;
   // Set-on-map pin picker: which field is being set (none = inactive)
   _SetOnMapTarget _setOnMapTarget = _SetOnMapTarget.none;
   // Current centre of the map viewport (updated via onCameraMove)
@@ -751,6 +856,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       final loc = await ref.read(locationServiceProvider).getCurrentLocation();
       if (mounted) setState(() => _permissionDenied = false);
       ref.read(_userLocationProvider.notifier).state = loc;
+      // Reset search area to use user location
+      ref.read(_searchAreaCenterProvider.notifier).state = null;
+      ref.read(_showSearchAreaButtonProvider.notifier).state = false;
       _mapController?.animateCamera(CameraUpdate.newLatLngZoom(loc, 15));
       // Reverse-geocode to populate FROM field with street address.
       final lang = ref.read(localeProvider).languageCode;
@@ -775,6 +883,20 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       }
     }
   }
+
+  /// Calculate distance between two coordinates in kilometers (Haversine formula)
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const earthRadiusKm = 6371.0;
+    final dLat = _degToRad(lat2 - lat1);
+    final dLon = _degToRad(lon2 - lon1);
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_degToRad(lat1)) * math.cos(_degToRad(lat2)) *
+        math.sin(dLon / 2) * math.sin(dLon / 2);
+    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    return earthRadiusKm * c;
+  }
+
+  double _degToRad(double deg) => deg * (math.pi / 180);
 
   Future<void> _calculateRoute(
     PlaceResult dest, {
@@ -898,11 +1020,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   void _recenterOnUser() {
     if (!mounted) return;
     setState(() => _followUser = true);
+    // Reset search area to use user location
+    ref.read(_searchAreaCenterProvider.notifier).state = null;
+    ref.read(_showSearchAreaButtonProvider.notifier).state = false;
     final pos = ref.read(_userLocationProvider);
     final bearing = ref.read(_bearingProvider);
-    if (pos != null && _mapController != null) {
+    if (pos != null) {
       _lastCameraMs = DateTime.now().millisecondsSinceEpoch;
-      _mapController!.animateCamera(
+      _mapController?.animateCamera(
         CameraUpdate.newCameraPosition(
           CameraPosition(target: pos, zoom: 17, bearing: bearing, tilt: 45),
         ),
@@ -1617,6 +1742,33 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final savedRoutes = ref.watch(quickRoutesProvider);
     final topPad = MediaQuery.of(context).padding.top;
 
+    // Check if any POI layers are enabled without location permission
+    final showCharging = ref.watch(_showChargingProvider);
+    final showService = ref.watch(_showServiceProvider);
+    final showShops = ref.watch(_showShopsProvider);
+    final showRental = ref.watch(_showRentalProvider);
+    final showCykelRepair = ref.watch(_showCykelRepairProvider);
+    final showCykelShop = ref.watch(_showCykelShopProvider);
+    final showCykelCharging = ref.watch(_showCykelChargingProvider);
+    final showCykelService = ref.watch(_showCykelServiceProvider);
+    final showCykelRental = ref.watch(_showCykelRentalProvider);
+    final anyPoiLayerEnabled = showCharging || showService || showShops || 
+        showRental || showCykelRepair || showCykelShop || showCykelCharging || 
+        showCykelService || showCykelRental;
+    
+    // Update POI location hint visibility
+    if (anyPoiLayerEnabled && userLoc == null && !_permissionDenied) {
+      if (!_showPoiLocationHint) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _showPoiLocationHint = true);
+        });
+      }
+    } else if (_showPoiLocationHint) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _showPoiLocationHint = false);
+      });
+    }
+
     // Sync TTS language with the app locale chosen by the user.
     ref.listen<Locale>(localeProvider, (_, locale) {
       ref.read(ttsServiceProvider).setLanguage(locale.languageCode);
@@ -1694,6 +1846,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         ),
         builder: (_) => _CykelProviderDetailSheet(
           provider: provider,
+          userLocation: ref.read(_userLocationProvider),
           onGetDirections: () {
             Navigator.of(context).pop();
             ref.read(_selectedCykelProviderProvider.notifier).state = null;
@@ -1991,8 +2144,28 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               });
             },
             // Track current map centre for Set-on-map pin picker.
+            // Also show "Search this area" button if user pans away from location.
             onCameraMove: (pos) {
               _mapCenter = pos.target;
+              
+              // Don't show search button during navigation
+              if (ref.read(_isNavigatingProvider)) return;
+              
+              // Check if map has moved significantly from user location
+              final userLoc = ref.read(_userLocationProvider);
+              if (userLoc != null) {
+                final distance = _calculateDistance(
+                  userLoc.latitude,
+                  userLoc.longitude,
+                  pos.target.latitude,
+                  pos.target.longitude,
+                );
+                // Show button if moved more than 500 meters from user location
+                final shouldShow = distance > 0.5; // km
+                if (shouldShow != ref.read(_showSearchAreaButtonProvider)) {
+                  ref.read(_showSearchAreaButtonProvider.notifier).state = shouldShow;
+                }
+              }
             },
             // Detect user-initiated pan/zoom during navigation and disable
             // camera tracking so the map stops fighting the finger gesture.
@@ -2130,6 +2303,46 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               );
             }),
           ],
+          // "Search this area" button — shown when user pans away from their location
+          if (ref.watch(_showSearchAreaButtonProvider))
+            Positioned(
+              top: topPad + 80,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(24),
+                  color: AppColors.surface,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(24),
+                    onTap: () {
+                      // Set search center to current map center
+                      ref.read(_searchAreaCenterProvider.notifier).state = _mapCenter;
+                      // Hide the button
+                      ref.read(_showSearchAreaButtonProvider.notifier).state = false;
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.refresh_rounded, color: _kPrimaryColor, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Search this area',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: _kPrimaryColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           // Recenter FAB — shown during navigation when user has manually panned
           // the map away from their position. Tapping it re-locks the camera.
           if (isNavigating && !_followUser)
@@ -2425,6 +2638,57 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                           context.l10n.openSettings,
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          // POI layers enabled without location — informational banner.
+          if (_showPoiLocationHint && !_permissionDenied)
+            Positioned(
+              top: topPad + 8,
+              left: 16,
+              right: 16,
+              child: Material(
+                elevation: 4,
+                borderRadius: BorderRadius.circular(12),
+                color: AppColors.warning,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.info_outline_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Enable location to see nearby bike facilities',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          if (mounted) {
+                            setState(() => _showPoiLocationHint = false);
+                          }
+                        },
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: Colors.white70,
+                          size: 18,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
                       ),
                     ],
                   ),
@@ -3196,13 +3460,13 @@ class _RouteSearchPanelState extends ConsumerState<_RouteSearchPanel> {
 
   @override
   void dispose() {
+    _debounce?.cancel(); // Cancel timer FIRST to prevent post-dispose callbacks
     _fromFocus.removeListener(_onFocusChange);
     _toFocus.removeListener(_onFocusChange);
     _fromCtrl.dispose();
     _toCtrl.dispose();
     _fromFocus.dispose();
     _toFocus.dispose();
-    _debounce?.cancel();
     super.dispose();
   }
 
@@ -4445,19 +4709,19 @@ class _RouteSummaryCard extends ConsumerWidget {
         savedId.isNotEmpty && savedRoutes.any((r) => r.id == savedId);
 
     return Positioned(
-      bottom: bottomPad + 16,
-      left: 16,
-      right: 16,
+      bottom: bottomPad + 12,
+      left: 12,
+      right: 12,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -4465,452 +4729,349 @@ class _RouteSummaryCard extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ────────────────────────────────────────────────────
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── Origin ─────────────────────────────────────────
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.trip_origin,
-                      size: 16,
-                      color: AppColors.success,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        origin?.text ?? context.l10n.myLocation,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                // ── Destination ────────────────────────────────────
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on,
-                      size: 16,
-                      color: AppColors.error,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        dest?.text ?? context.l10n.destination,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const Divider(height: 1),
-            const SizedBox(height: 16),
-            // ── Route mode toggle (Fastest / Safest / Effort) ──────────
-            Text(
-              context.l10n.routingPreference,
-              style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: SegmentedButton<RouteMode>(
-                segments: [
-                  ButtonSegment(
-                    value: RouteMode.fastest,
-                    icon: const Icon(Icons.bolt_rounded, size: 15),
-                    label: Text(context.l10n.routeFastest),
-                  ),
-                  ButtonSegment(
-                    value: RouteMode.safest,
-                    icon: const Icon(Icons.shield_rounded, size: 15),
-                    label: Text(context.l10n.routeSafest),
-                  ),
-                  ButtonSegment(
-                    value: RouteMode.effortOptimized,
-                    icon: const Icon(Icons.air_rounded, size: 15),
-                    label: Text(context.l10n.routeEffort),
-                  ),
-                ],
-                selected: {routeMode},
-                onSelectionChanged: (s) {
-                  ref.read(_routeModeProvider.notifier).state = s.first;
-                  onRecalculate();
-                },
-                style: ButtonStyle(
-                  visualDensity:
-                      const VisualDensity(horizontal: -2, vertical: -1),
-                  textStyle: WidgetStateProperty.all(
-                      const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            // ── Bike profile chips ────────────────────────────────────────
-            Text(
-              context.l10n.bikeType,
-              style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
+            // ── Compact Header with Origin & Destination ──────────────────
             Row(
-              children: BikeProfile.values.map((p) {
-                final sel = p == profile;
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () =>
-                        ref.read(bikeProfileProvider.notifier).setProfile(p),
-                    child: Container(
-                      margin: EdgeInsets.only(
-                        right: p != BikeProfile.values.last ? 4 : 0,
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 2,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: sel
-                            ? _kPrimaryColor.withValues(alpha: 0.12)
-                            : AppColors.surfaceVariant.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: sel ? _kPrimaryColor : Colors.transparent,
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
+              children: [
+                // Origin & Destination stacked
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Icon(
-                            p.icon,
-                            size: 16,
-                            color: sel
-                                ? _kPrimaryColor
-                                : AppColors.textSecondary,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _profileLabel(context, p),
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: sel
-                                  ? _kPrimaryColor
-                                  : AppColors.textSecondary,
-                              fontSize: 10,
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: AppColors.success,
+                              shape: BoxShape.circle,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              origin?.text ?? context.l10n.myLocation,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.textSecondary,
+                                fontSize: 11,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 12),
-            // ── Alt route tabs ────────────────────────────────────────────
-            if (altRoutes.length > 1) ...[
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.l10n.selectRoute,
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: List.generate(altRoutes.length, (i) {
-                      final r = altRoutes[i];
-                      final sel = i == selIdx;
-                      return Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            ref.read(_selectedRouteIndexProvider.notifier).state =
-                                i;
-                            ref.read(_routeResultProvider.notifier).state = r;
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            margin: EdgeInsets.only(
-                              right: i < altRoutes.length - 1 ? 8 : 0,
-                            ),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: sel
-                                  ? _kPrimaryColor
-                                  : AppColors.surfaceVariant.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: sel ? _kPrimaryColor : AppColors.surfaceVariant,
-                                width: sel ? 2 : 1,
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on, size: 12, color: AppColors.error),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              dest?.text ?? context.l10n.destination,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
                               ),
-                              boxShadow: sel ? [
-                                BoxShadow(
-                                  color: _kPrimaryColor.withValues(alpha: 0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ] : null,
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    if (sel) ...[
-                                      const Icon(
-                                        Icons.check_circle_rounded,
-                                        color: Colors.white,
-                                        size: 16,
-                                      ),
-                                      const SizedBox(width: 4),
-                                    ],
-                                    Text(
-                                      context.l10n.routeOption(i + 1),
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        color: sel
-                                            ? Colors.white
-                                            : AppColors.textSecondary,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Icon(
-                                  Icons.route_rounded,
-                                  size: 20,
-                                  color: sel
-                                      ? Colors.white.withValues(alpha: 0.9)
-                                      : AppColors.textSecondary,
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  r.distanceLabel,
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: sel
-                                        ? Colors.white
-                                        : AppColors.textPrimary,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  r.durationLabel,
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: sel
-                                        ? Colors.white.withValues(alpha: 0.85)
-                                        : AppColors.textSecondary,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        ),
-                      );
-                    }),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-            ],
-            // ── Distance · Adjusted time · Bookmark ──────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: _StatChip(
-                    icon: Icons.straighten_rounded,
-                    label: route.distanceLabel,
-                    color: _kPrimaryColor,
+                        ],
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: _StatChip(
-                    icon: Icons.access_time_rounded,
-                    label: adjustedLabel,
-                    color: AppColors.info,
+                // Distance & Time badges inline
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _kPrimaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.straighten_rounded, size: 12, color: _kPrimaryColor),
+                      const SizedBox(width: 3),
+                      Text(
+                        route.distanceLabel,
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _kPrimaryColor),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 4),
-                IconButton(
-                  icon: Icon(
-                    isSaved
-                        ? Icons.bookmark_rounded
-                        : Icons.bookmark_border_rounded,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.info.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
                   ),
-                  color: isSaved ? _kPrimaryColor : AppColors.textSecondary,
-                  tooltip: isSaved
-                      ? context.l10n.routeUnsaved
-                      : context.l10n.saveRoute,
-                  visualDensity: VisualDensity.compact,
-                  onPressed: () => _toggleSaveRoute(
-                    ref: ref,
-                    context: context,
-                    route: route,
-                    dest: dest,
-                    destLatLng: destLatLng,
-                    origin: origin,
-                    userLoc: userLoc,
-                    isSaved: isSaved,
-                    savedId: savedId,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.access_time_rounded, size: 12, color: AppColors.info),
+                      const SizedBox(width: 3),
+                      Text(
+                        adjustedLabel,
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.info),
+                      ),
+                    ],
+                  ),
+                ),
+                // Bookmark button
+                SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    icon: Icon(
+                      isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                      size: 20,
+                    ),
+                    color: isSaved ? _kPrimaryColor : AppColors.textSecondary,
+                    onPressed: () => _toggleSaveRoute(
+                      ref: ref,
+                      context: context,
+                      route: route,
+                      dest: dest,
+                      destLatLng: destLatLng,
+                      origin: origin,
+                      userLoc: userLoc,
+                      isSaved: isSaved,
+                      savedId: savedId,
+                    ),
                   ),
                 ),
               ],
             ),
-            // ── Wind badge ────────────────────────────────────────────────
+            const SizedBox(height: 10),
+            // ── Combined Route Mode + Bike Profile Row ────────────────────
+            Row(
+              children: [
+                // Route Mode (compact chips)
+                Expanded(
+                  flex: 3,
+                  child: Row(
+                    children: [
+                      _CompactModeChip(
+                        icon: Icons.bolt_rounded,
+                        label: context.l10n.routeFastest,
+                        selected: routeMode == RouteMode.fastest,
+                        onTap: () {
+                          ref.read(_routeModeProvider.notifier).state = RouteMode.fastest;
+                          onRecalculate();
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                      _CompactModeChip(
+                        icon: Icons.shield_rounded,
+                        label: context.l10n.routeSafest,
+                        selected: routeMode == RouteMode.safest,
+                        onTap: () {
+                          ref.read(_routeModeProvider.notifier).state = RouteMode.safest;
+                          onRecalculate();
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                      _CompactModeChip(
+                        icon: Icons.air_rounded,
+                        label: context.l10n.routeEffort,
+                        selected: routeMode == RouteMode.effortOptimized,
+                        onTap: () {
+                          ref.read(_routeModeProvider.notifier).state = RouteMode.effortOptimized;
+                          onRecalculate();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Bike Profile (icon-only chips)
+                Expanded(
+                  flex: 2,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: BikeProfile.values.map((p) {
+                      final sel = p == profile;
+                      return GestureDetector(
+                        onTap: () => ref.read(bikeProfileProvider.notifier).setProfile(p),
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          margin: EdgeInsets.only(left: p != BikeProfile.values.first ? 3 : 0),
+                          decoration: BoxDecoration(
+                            color: sel
+                                ? _kPrimaryColor.withValues(alpha: 0.15)
+                                : AppColors.surfaceVariant.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(6),
+                            border: sel ? Border.all(color: _kPrimaryColor, width: 1.5) : null,
+                          ),
+                          child: Icon(
+                            p.icon,
+                            size: 14,
+                            color: sel ? _kPrimaryColor : AppColors.textSecondary,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+            // ── Alt route tabs (compact) ──────────────────────────────────
+            if (altRoutes.length > 1) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 52,
+                child: Row(
+                  children: List.generate(altRoutes.length, (i) {
+                    final r = altRoutes[i];
+                    final sel = i == selIdx;
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          ref.read(_selectedRouteIndexProvider.notifier).state = i;
+                          ref.read(_routeResultProvider.notifier).state = r;
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          margin: EdgeInsets.only(right: i < altRoutes.length - 1 ? 6 : 0),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: sel ? _kPrimaryColor : AppColors.surfaceVariant.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: sel ? _kPrimaryColor : AppColors.surfaceVariant,
+                              width: sel ? 1.5 : 1,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (sel)
+                                    const Icon(Icons.check_circle_rounded, color: Colors.white, size: 12),
+                                  if (sel) const SizedBox(width: 3),
+                                  Text(
+                                    '${r.distanceLabel}',
+                                    style: TextStyle(
+                                      color: sel ? Colors.white : AppColors.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                r.durationLabel,
+                                style: TextStyle(
+                                  color: sel ? Colors.white.withValues(alpha: 0.85) : AppColors.textSecondary,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ],
+            // ── Wind badge (compact) ──────────────────────────────────────
             if (windData != null &&
                 windCondition != null &&
                 windCondition != WindCondition.calm) ...[
               const SizedBox(height: 8),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 7,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: _windColor(windCondition).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
+                  color: _windColor(windCondition).withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      _windIcon(windCondition),
-                      size: 14,
-                      color: _windColor(windCondition),
-                    ),
-                    const SizedBox(width: 8),
+                    Icon(_windIcon(windCondition), size: 12, color: _windColor(windCondition)),
+                    const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         _windLabel(context, windData, windCondition),
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: _windColor(windCondition),
-                        ),
+                        style: TextStyle(fontSize: 11, color: _windColor(windCondition)),
                       ),
                     ),
                   ],
                 ),
               ),
             ],
-            const SizedBox(height: 14),
-            // ── Action buttons ────────────────────────────────────────────
-            // Start Navigation (primary action)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: onStart,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _kPrimaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 2,
-                  shadowColor: _kPrimaryColor.withValues(alpha: 0.4),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.navigation_rounded, size: 22),
-                    const SizedBox(width: 10),
-                    Text(
-                      context.l10n.startNavigation,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
             const SizedBox(height: 10),
-            // Secondary actions
+            // ── Action buttons (compact) ──────────────────────────────────
             Row(
               children: [
-                // Share route as GPX
+                // Start Navigation (primary)
                 Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _shareRouteGpx(context, route),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: _kPrimaryColor,
-                      side: const BorderSide(color: _kPrimaryColor),
+                  flex: 3,
+                  child: ElevatedButton(
+                    onPressed: onStart,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _kPrimaryColor,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 1,
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.share_rounded, size: 18),
+                        const Icon(Icons.navigation_rounded, size: 18),
                         const SizedBox(width: 6),
                         Text(
-                          context.l10n.shareRoute,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          context.l10n.startNavigation,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                // Offline save tiles
-                Expanded(
+                const SizedBox(width: 6),
+                // Share (icon button)
+                SizedBox(
+                  width: 42,
+                  height: 42,
+                  child: OutlinedButton(
+                    onPressed: () => _shareRouteGpx(context, route),
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      foregroundColor: _kPrimaryColor,
+                      side: BorderSide(color: _kPrimaryColor.withValues(alpha: 0.5)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Icon(Icons.share_rounded, size: 18),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                // Download (icon button)
+                SizedBox(
+                  width: 42,
+                  height: 42,
                   child: OutlinedButton(
                     onPressed: mapController != null
                         ? () => _prefetchTiles(context, ref, route, mapController!)
                         : null,
                     style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.zero,
                       foregroundColor: AppColors.success,
-                      side: const BorderSide(color: AppColors.success),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      side: BorderSide(color: AppColors.success.withValues(alpha: 0.5)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.download_rounded, size: 18),
-                        const SizedBox(width: 6),
-                        Text(
-                          context.l10n.downloadMap,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: const Icon(Icons.download_rounded, size: 18),
                   ),
                 ),
               ],
@@ -4958,6 +5119,63 @@ class _StatChip extends StatelessWidget {
   }
 }
 
+/// Compact route mode chip for the summary card
+class _CompactModeChip extends StatelessWidget {
+  const _CompactModeChip({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          decoration: BoxDecoration(
+            color: selected
+                ? _kPrimaryColor.withValues(alpha: 0.15)
+                : AppColors.surfaceVariant.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(6),
+            border: selected ? Border.all(color: _kPrimaryColor, width: 1.5) : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 12,
+                color: selected ? _kPrimaryColor : AppColors.textSecondary,
+              ),
+              const SizedBox(width: 3),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    color: selected ? _kPrimaryColor : AppColors.textSecondary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ─── Layers Sheet ─────────────────────────────────────────────────────────────
 
 class _LayersSheet extends ConsumerWidget {
@@ -4976,6 +5194,11 @@ class _LayersSheet extends ConsumerWidget {
     final showCykelCharging = ref.watch(_showCykelChargingProvider);
     final showCykelService = ref.watch(_showCykelServiceProvider);
     final showCykelRental = ref.watch(_showCykelRentalProvider);
+    final cykelRepairCount = ref.watch(_cykelRepairCountProvider);
+    final cykelShopCount = ref.watch(_cykelShopCountProvider);
+    final cykelChargingCount = ref.watch(_cykelChargingCountProvider);
+    final cykelServiceCount = ref.watch(_cykelServiceCountProvider);
+    final cykelRentalCount = ref.watch(_cykelRentalCountProvider);
     final mapType = ref.watch(_mapTypeProvider);
 
     return Padding(
@@ -5090,12 +5313,116 @@ class _LayersSheet extends ConsumerWidget {
                   ref.read(_showWindOverlayProvider.notifier).state = v,
             ),
             const Divider(height: 20),
-            Text(context.l10n.cykelVerifiedSection, style: AppTextStyles.headline3),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(context.l10n.cykelVerifiedSection, style: AppTextStyles.headline3),
+                ),
+                TextButton(
+                  onPressed: () {
+                    ref.read(_showCykelRepairProvider.notifier).state = true;
+                    ref.read(_showCykelShopProvider.notifier).state = true;
+                    ref.read(_showCykelChargingProvider.notifier).state = true;
+                    ref.read(_showCykelServiceProvider.notifier).state = true;
+                    ref.read(_showCykelRentalProvider.notifier).state = true;
+                  },
+                  child: Text('Show All', style: TextStyle(color: _kPrimaryColor)),
+                ),
+                TextButton(
+                  onPressed: () {
+                    ref.read(_showCykelRepairProvider.notifier).state = false;
+                    ref.read(_showCykelShopProvider.notifier).state = false;
+                    ref.read(_showCykelChargingProvider.notifier).state = false;
+                    ref.read(_showCykelServiceProvider.notifier).state = false;
+                    ref.read(_showCykelRentalProvider.notifier).state = false;
+                  },
+                  child: Text('Clear All', style: TextStyle(color: AppColors.error)),
+                ),
+              ],
+            ),
             const SizedBox(height: 8),
+            // Filters section
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.filter_list_rounded, size: 16, color: AppColors.textSecondary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Filters',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Open Now filter
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    secondary: const Icon(Icons.access_time_rounded, size: 20, color: AppColors.textSecondary),
+                    title: Text('Open now only', style: AppTextStyles.bodySmall),
+                    value: ref.watch(_filterOpenNowProvider),
+                    activeTrackColor: _kPrimaryColor,
+                    onChanged: (v) => ref.read(_filterOpenNowProvider.notifier).state = v,
+                  ),
+                  // Minimum rating filter
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.star_rounded, size: 20, color: Colors.amber),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Minimum rating: ${ref.watch(_filterMinRatingProvider).toStringAsFixed(1)}★',
+                              style: AppTextStyles.bodySmall,
+                            ),
+                            if (ref.watch(_filterMinRatingProvider) > 0) ...[
+                              const Spacer(),
+                              TextButton(
+                                onPressed: () => ref.read(_filterMinRatingProvider.notifier).state = 0.0,
+                                style: TextButton.styleFrom(
+                                  minimumSize: Size.zero,
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text('Clear', style: TextStyle(fontSize: 12, color: _kPrimaryColor)),
+                              ),
+                            ],
+                          ],
+                        ),
+                        Slider(
+                          value: ref.watch(_filterMinRatingProvider),
+                          min: 0,
+                          max: 5,
+                          divisions: 10,
+                          activeColor: _kPrimaryColor,
+                          label: ref.watch(_filterMinRatingProvider).toStringAsFixed(1),
+                          onChanged: (v) => ref.read(_filterMinRatingProvider.notifier).state = v,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
             _LayerTile(
               icon: Icons.build_circle_rounded,
               label: context.l10n.layerCykelRepair,
               value: showCykelRepair,
+              count: cykelRepairCount,
               onChanged: (v) =>
                   ref.read(_showCykelRepairProvider.notifier).state = v,
             ),
@@ -5103,6 +5430,7 @@ class _LayersSheet extends ConsumerWidget {
               icon: Icons.store_rounded,
               label: context.l10n.layerCykelShop,
               value: showCykelShop,
+              count: cykelShopCount,
               onChanged: (v) =>
                   ref.read(_showCykelShopProvider.notifier).state = v,
             ),
@@ -5110,6 +5438,7 @@ class _LayersSheet extends ConsumerWidget {
               icon: Icons.ev_station_rounded,
               label: context.l10n.layerCykelCharging,
               value: showCykelCharging,
+              count: cykelChargingCount,
               onChanged: (v) =>
                   ref.read(_showCykelChargingProvider.notifier).state = v,
             ),
@@ -5117,6 +5446,7 @@ class _LayersSheet extends ConsumerWidget {
               icon: Icons.handyman_rounded,
               label: context.l10n.layerCykelService,
               value: showCykelService,
+              count: cykelServiceCount,
               onChanged: (v) =>
                   ref.read(_showCykelServiceProvider.notifier).state = v,
             ),
@@ -5124,6 +5454,7 @@ class _LayersSheet extends ConsumerWidget {
               icon: Icons.pedal_bike_rounded,
               label: context.l10n.layerCykelRental,
               value: showCykelRental,
+              count: cykelRentalCount,
               onChanged: (v) =>
                   ref.read(_showCykelRentalProvider.notifier).state = v,
             ),
@@ -5140,18 +5471,23 @@ class _LayerTile extends StatelessWidget {
     required this.label,
     required this.value,
     required this.onChanged,
+    this.count,
   });
   final IconData icon;
   final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
+  final int? count;
 
   @override
   Widget build(BuildContext context) {
+    final displayLabel = count != null && count! > 0
+        ? '$label ($count)'
+        : label;
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
       secondary: Icon(icon, color: _kPrimaryColor),
-      title: Text(label, style: AppTextStyles.bodyMedium),
+      title: Text(displayLabel, style: AppTextStyles.bodyMedium),
       value: value,
       activeTrackColor: _kPrimaryColor,
       onChanged: onChanged,
@@ -5300,9 +5636,11 @@ class _PoiDetailSheet extends StatelessWidget {
 class _CykelProviderDetailSheet extends StatelessWidget {
   const _CykelProviderDetailSheet({
     required this.provider,
+    required this.userLocation,
     required this.onGetDirections,
   });
   final CykelProvider provider;
+  final LatLng? userLocation;
   final VoidCallback onGetDirections;
 
   IconData _iconForType() {
@@ -5332,6 +5670,34 @@ class _CykelProviderDetailSheet extends StatelessWidget {
         return AppColors.layerService;
       case ProviderType.rental:
         return AppColors.layerShop;
+    }
+  }
+
+  /// Calculate distance from user location to provider (in km)
+  double? _calculateDistance() {
+    if (userLocation == null) return null;
+    const earthRadiusKm = 6371.0;
+    final lat1 = userLocation!.latitude;
+    final lon1 = userLocation!.longitude;
+    final lat2 = provider.latitude;
+    final lon2 = provider.longitude;
+    
+    final dLat = _degToRad(lat2 - lat1);
+    final dLon = _degToRad(lon2 - lon1);
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_degToRad(lat1)) * math.cos(_degToRad(lat2)) *
+        math.sin(dLon / 2) * math.sin(dLon / 2);
+    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    return earthRadiusKm * c;
+  }
+
+  double _degToRad(double deg) => deg * (math.pi / 180);
+
+  String _formatDistance(double km) {
+    if (km < 1) {
+      return '${(km * 1000).round()} m';
+    } else {
+      return '${km.toStringAsFixed(1)} km';
     }
   }
 
@@ -5390,6 +5756,49 @@ class _CykelProviderDetailSheet extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
+                        // Rating
+                        if (provider.rating > 0) ...[
+                          const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
+                          const SizedBox(width: 2),
+                          Text(
+                            provider.rating.toStringAsFixed(1),
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (provider.reviewCount > 0) ...[
+                            Text(
+                              ' (${provider.reviewCount})',
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 1,
+                            height: 12,
+                            color: AppColors.surfaceVariant,
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        // Distance
+                        if (_calculateDistance() != null) ...[
+                          const Icon(Icons.directions_walk_rounded, size: 14, color: AppColors.textSecondary),
+                          const SizedBox(width: 2),
+                          Text(
+                            _formatDistance(_calculateDistance()!),
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
                         // Verified badge
                         if (provider.isVerified) ...[
                           Icon(Icons.verified_rounded, size: 14, color: color),
@@ -5400,22 +5809,22 @@ class _CykelProviderDetailSheet extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                         ],
-                        // Open/Closed status
+                        // Open Now status (using new isOpenNow getter)
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: provider.isOpen
+                            color: provider.isOpenNow
                                 ? AppColors.success.withValues(alpha: 0.12)
                                 : AppColors.error.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            provider.isOpen
-                                ? l10n.providerDetailOpen
+                            provider.isOpenNow
+                                ? 'Open now'
                                 : l10n.providerDetailClosed,
                             style: AppTextStyles.labelSmall.copyWith(
-                              color: provider.isOpen
+                              color: provider.isOpenNow
                                   ? AppColors.success
                                   : AppColors.error,
                               fontSize: 10,

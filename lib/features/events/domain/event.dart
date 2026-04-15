@@ -54,7 +54,9 @@ enum EventType {
   beginner,      // Beginner friendly
   family,        // Family ride
   night,         // Night ride
-  gravel;        // Gravel/MTB
+  gravel,        // Gravel/MTB
+  expat,         // Expat community ride (Phase 1)
+  languageExchange; // Language exchange ride (Phase 1)
 
   String get label {
     switch (this) {
@@ -67,6 +69,8 @@ enum EventType {
       case EventType.family: return 'Familiecykling';
       case EventType.night: return 'Nattur';
       case EventType.gravel: return 'Gravel/MTB';
+      case EventType.expat: return 'Expat-gruppe';
+      case EventType.languageExchange: return 'Sprogudveksling';
     }
   }
 
@@ -82,6 +86,8 @@ enum EventType {
       case EventType.family: return l10n.eventTypeFamily;
       case EventType.night: return l10n.eventTypeNight;
       case EventType.gravel: return l10n.eventTypeGravel;
+      case EventType.expat: return 'Expat Community'; // TODO: Add to l10n
+      case EventType.languageExchange: return 'Language Exchange'; // TODO: Add to l10n
     }
   }
 
@@ -96,6 +102,8 @@ enum EventType {
       case EventType.family: return '👨‍👩‍👧';
       case EventType.night: return '🌙';
       case EventType.gravel: return '🏔️';
+      case EventType.expat: return '🌍';
+      case EventType.languageExchange: return '🗣️';
     }
   }
 }
@@ -317,6 +325,10 @@ class RideEvent {
     this.tags = const [],
     this.isNoDrop = false,
     this.requiresLights = false,
+    // Phase 1: Age and language filtering
+    this.minAge,
+    this.maxAge,
+    this.languages = const [],
   });
 
   final String id;
@@ -344,6 +356,18 @@ class RideEvent {
   final bool requiresLights;
   final DateTime createdAt;
 
+  // ── Phase 1: Segmentation fields ────────────────────────────────────────
+
+  /// Minimum age to join this event (null = no minimum).
+  final int? minAge;
+
+  /// Maximum age to join this event (null = no maximum).
+  final int? maxAge;
+
+  /// Languages spoken at this event (ISO 639-1 codes: 'en', 'da', etc.).
+  /// Empty list = all languages welcome.
+  final List<String> languages;
+
   bool get isFull => maxParticipants != null && currentParticipants >= maxParticipants!;
   bool get isUpcoming => status == EventStatus.upcoming && dateTime.isAfter(DateTime.now());
   bool get isToday {
@@ -368,6 +392,28 @@ class RideEvent {
       return '$currentParticipants/$maxParticipants';
     }
     return '$currentParticipants';
+  }
+
+  // ── Phase 1: Age range helper ───────────────────────────────────────────
+
+  /// Get formatted age range string for display.
+  String? get ageRangeText {
+    if (minAge == null && maxAge == null) return null;
+    if (minAge != null && maxAge != null) return '$minAge-$maxAge';
+    if (minAge != null) return '$minAge+';
+    if (maxAge != null) return 'Under $maxAge';
+    return null;
+  }
+
+  /// Whether this event has age restrictions.
+  bool get hasAgeRestriction => minAge != null || maxAge != null;
+
+  /// Whether a given age is allowed for this event.
+  bool isAgeAllowed(int? userAge) {
+    if (userAge == null) return true; // Can't filter if age unknown
+    if (minAge != null && userAge < minAge!) return false;
+    if (maxAge != null && userAge > maxAge!) return false;
+    return true;
   }
 
   factory RideEvent.fromFirestore(DocumentSnapshot doc) {
@@ -413,6 +459,10 @@ class RideEvent {
       isNoDrop: data['isNoDrop'] as bool? ?? false,
       requiresLights: data['requiresLights'] as bool? ?? false,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      // Phase 1 fields
+      minAge: data['minAge'] as int?,
+      maxAge: data['maxAge'] as int?,
+      languages: List<String>.from(data['languages'] ?? []),
     );
   }
 
@@ -436,6 +486,10 @@ class RideEvent {
     'currentParticipants': currentParticipants,
     'recurring': recurring?.toMap(),
     'imageUrl': imageUrl,
+    // Phase 1 fields
+    if (minAge != null) 'minAge': minAge,
+    if (maxAge != null) 'maxAge': maxAge,
+    if (languages.isNotEmpty) 'languages': languages,
     'tags': tags,
     'isNoDrop': isNoDrop,
     'requiresLights': requiresLights,
@@ -467,6 +521,9 @@ class RideEvent {
     bool? isNoDrop,
     bool? requiresLights,
     DateTime? createdAt,
+    int? minAge,
+    int? maxAge,
+    List<String>? languages,
   }) {
     return RideEvent(
       id: id ?? this.id,
@@ -493,6 +550,9 @@ class RideEvent {
       isNoDrop: isNoDrop ?? this.isNoDrop,
       requiresLights: requiresLights ?? this.requiresLights,
       createdAt: createdAt ?? this.createdAt,
+      minAge: minAge ?? this.minAge,
+      maxAge: maxAge ?? this.maxAge,
+      languages: languages ?? this.languages,
     );
   }
 }

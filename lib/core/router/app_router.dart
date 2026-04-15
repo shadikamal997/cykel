@@ -38,6 +38,7 @@ import '../../features/profile/presentation/dashboard_settings_screen.dart';
 import '../../features/profile/presentation/help_support_screen.dart';
 import '../../features/profile/presentation/privacy_screen.dart';
 import '../../features/profile/presentation/subscription_screen.dart';
+import '../../features/profile/presentation/student_verification_screen.dart';
 import '../../features/profile/presentation/commuter_tax_settings_screen.dart';
 import '../../features/profile/data/gdpr_provider.dart';
 import '../../features/profile/domain/bike.dart';
@@ -67,6 +68,17 @@ import '../../features/provider/presentation/provider_list_screen.dart';
 import '../../features/provider/presentation/provider_detail_screen.dart';
 import '../../features/provider/domain/provider_location.dart';
 import '../../features/provider/domain/provider_model.dart';
+
+// New feature imports
+import '../../features/bike_share/presentation/bike_share_map_screen.dart';
+import '../../features/bike_share/presentation/nearby_stations_screen.dart';
+import '../../features/chat/presentation/conversations_list_screen.dart';
+import '../../features/chat/presentation/chat_screen.dart' as chat;
+import '../../features/family_pricing/presentation/family_management_screen.dart';
+import '../../features/family_pricing/presentation/subscription_plans_screen.dart';
+import '../../features/buddy_matching/presentation/buddy_discovery_screen.dart';
+import '../../features/expat_hub/presentation/expat_hub_screen.dart';
+import '../../features/expat_hub/presentation/guides_screen.dart';
 
 // ─── Route Name Constants ────────────────────────────────────────────────────
 
@@ -102,6 +114,7 @@ class AppRoutes {
   static const String profileHelp = '/profile/help';
   static const String profilePrivacy = '/profile/privacy';
   static const String profileSubscription = '/profile/subscription';
+  static const String profileStudentVerification = '/profile/student-verification';
 
   // Gamification
   static const String challenges = '/challenges';
@@ -145,6 +158,24 @@ class AppRoutes {
   static const String providerLocationAdd = '/provider/locations/add';
   static const String providerLocationEdit = '/provider/locations/edit';
   static const String providerListings = '/provider/listings';
+
+  // Bike Share
+  static const String bikeShare = '/bike-share';
+  static const String bikeShareNearby = '/bike-share/nearby';
+
+  // Chat / Messages
+  static const String messages = '/messages';
+
+  // Family Pricing
+  static const String familyGroups = '/family';
+  static const String familySubscription = '/family/subscription';
+
+  // Buddy Matching
+  static const String buddyMatching = '/buddy-matching';
+
+  // Expat Hub
+  static const String expatHub = '/expat-hub';
+  static const String expatGuides = '/expat-hub/guides';
 }
 
 // ─── Router Notifier ─────────────────────────────────────────────────────────
@@ -384,6 +415,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'profile-subscription',
         builder: (context, state) => const SubscriptionScreen(),
       ),
+      GoRoute(
+        path: AppRoutes.profileStudentVerification,
+        name: 'profile-student-verification',
+        builder: (context, state) => const StudentVerificationScreen(),
+      ),
 
       // ── Gamification ────────────────────────────────────────────────────
       GoRoute(
@@ -539,6 +575,64 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.providerListings,
         name: 'provider-listings',
         builder: (context, state) => const ProviderListingsScreen(),
+      ),
+
+      // ── Bike Share ──────────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.bikeShare,
+        name: 'bike-share',
+        builder: (context, state) => const BikeShareMapScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.bikeShareNearby,
+        name: 'bike-share-nearby',
+        builder: (context, state) => const NearbyStationsScreen(),
+      ),
+
+      // ── Chat / Messages ─────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.messages,
+        name: 'messages',
+        builder: (context, state) => const ConversationsListScreen(),
+      ),
+      GoRoute(
+        path: '${AppRoutes.messages}/:conversationId',
+        name: 'chat-detail',
+        builder: (context, state) {
+          final conversationId = state.pathParameters['conversationId']!;
+          return chat.ChatScreen(conversationId: conversationId);
+        },
+      ),
+
+      // ── Family Pricing ──────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.familyGroups,
+        name: 'family-groups',
+        builder: (context, state) => const FamilyManagementScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.familySubscription,
+        name: 'family-subscription',
+        builder: (context, state) => const SubscriptionPlansScreen(),
+      ),
+
+      // ── Buddy Matching ──────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.buddyMatching,
+        name: 'buddy-matching',
+        builder: (context, state) => const BuddyDiscoveryScreen(),
+      ),
+
+      // ── Expat Hub ───────────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.expatHub,
+        name: 'expat-hub',
+        builder: (context, state) => const ExpatHubScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.expatGuides,
+        name: 'expat-guides',
+        builder: (context, state) => const GuidesScreen(),
       ),
 
       // ── Rider shell — 5-tab StatefulShellRoute ──────────────────────────

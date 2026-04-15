@@ -77,4 +77,40 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
     );
     await _save();
   }
+
+  // Phase 3: Update age preferences
+  Future<void> updateAgePreferences({
+    DateTime? birthDate,
+    AgeRangePreference? ageRangePreference,
+  }) async {
+    state = state.copyWith(
+      birthDate: birthDate,
+      ageRangePreference: ageRangePreference,
+    );
+    await _save();
+  }
+
+  // Phase 4: Update profile type
+  Future<void> updateProfileType({
+    required ProfileType profileType,
+  }) async {
+    state = state.copyWith(profileType: profileType);
+    await _save();
+  }
+
+  // Phase 4: Update bike equipment
+  Future<void> updateBikeEquipment({
+    required bool hasChildSeat,
+    required int childSeatCapacity,
+    required bool hasCargoBike,
+    required bool hasBikeTrailer,
+  }) async {
+    state = state.copyWith(
+      hasChildSeat: hasChildSeat,
+      childSeatCapacity: childSeatCapacity,
+      hasCargoBike: hasCargoBike,
+      hasBikeTrailer: hasBikeTrailer,
+    );
+    await _save();
+  }
 }

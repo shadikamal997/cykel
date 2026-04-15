@@ -22,6 +22,16 @@ class AppConfig {
     defaultValue: '',
   );
 
+  /// OpenWeatherMap API key for weather data.
+  ///
+  /// Required for:
+  /// - Weather forecasts
+  /// - Weather-adaptive routing
+  static const String openWeatherMapApiKey = String.fromEnvironment(
+    'OPENWEATHERMAP_API_KEY',
+    defaultValue: '',
+  );
+
   /// Validates that all required configuration values are present.
   ///
   /// Call this in main() before runApp() to fail fast if config is missing.
@@ -32,8 +42,15 @@ class AppConfig {
         'Please provide it via --dart-define during build/run.',
       );
     }
+    if (openWeatherMapApiKey.isEmpty) {
+      throw Exception(
+        'OPENWEATHERMAP_API_KEY is not configured. '
+        'Please provide it via --dart-define during build/run.',
+      );
+    }
   }
 
   /// Returns true if all configuration is present and valid.
-  static bool get isValid => googleMapsApiKey.isNotEmpty;
+  static bool get isValid => 
+      googleMapsApiKey.isNotEmpty && openWeatherMapApiKey.isNotEmpty;
 }

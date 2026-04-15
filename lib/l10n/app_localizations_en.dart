@@ -1760,6 +1760,69 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pillCloud => 'Cloud';
 
   @override
+  String get studentDiscountBanner => 'Student? Get 50% off Premium';
+
+  @override
+  String get studentDiscountPrice => 'kr 10/month instead of kr 20';
+
+  @override
+  String get verifiedStudentBadge => 'Verified Student - 50% Discount Applied';
+
+  @override
+  String get billingPeriodMonthly => 'Monthly';
+
+  @override
+  String get billingPeriodYearly => 'Yearly';
+
+  @override
+  String get annualSavingsMessage => 'Save kr 40 with annual plan';
+
+  @override
+  String get studentVerificationTitle => 'Verify Student Status';
+
+  @override
+  String get studentVerificationSubtitle =>
+      'Unlock 50% off Premium with your university email';
+
+  @override
+  String get studentEmailLabel => 'University Email';
+
+  @override
+  String get studentEmailHint => 'your.name@university.edu';
+
+  @override
+  String get invalidStudentEmail => 'Invalid student email domain';
+
+  @override
+  String get studentEmailDomainNote =>
+      'Accepted: .edu, .ac.dk, .ku.dk, .dtu.dk, .cbs.dk, .ruc.dk, .au.dk, .sdu.dk, .aau.dk';
+
+  @override
+  String get verifyStudentButton => 'Verify Student Status';
+
+  @override
+  String get studentVerificationSuccess =>
+      '✅ Student status verified! You can now get 50% off Premium.';
+
+  @override
+  String get studentVerificationPending => 'Verifying...';
+
+  @override
+  String get studentVerificationBenefitsTitle => 'Student Benefits:';
+
+  @override
+  String get studentBenefit1 => 'Premium for kr 10/month (50% off)';
+
+  @override
+  String get studentBenefit2 => 'All Premium features included';
+
+  @override
+  String get studentBenefit3 => 'Valid for 1 year - easy renewal';
+
+  @override
+  String get studentBenefit4 => 'Support student cycling community';
+
+  @override
   String get subNavAndMap => 'Navigation & Map';
 
   @override

@@ -496,6 +496,97 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   ),
                   const SizedBox(height: 24),
 
+                  // ── CYKEL Features ───────────────────────────────────────
+                  const _SectionHeader(title: 'CYKEL Features'),
+                  const SizedBox(height: 12),
+                  Row(children: [
+                    Expanded(
+                      child: _FeatureCard(
+                        icon: Icons.pedal_bike_rounded,
+                        label: 'Bike Share',
+                        color: const Color(0xFF4A7C59),
+                        onTap: () => context.push(AppRoutes.bikeShare),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _FeatureCard(
+                        icon: Icons.chat_bubble_rounded,
+                        label: 'Messages',
+                        color: const Color(0xFF5B8DEE),
+                        onTap: () => context.push(AppRoutes.messages),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _FeatureCard(
+                        icon: Icons.family_restroom_rounded,
+                        label: 'Family',
+                        color: const Color(0xFFE67E22),
+                        onTap: () => context.push(AppRoutes.familyGroups),
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 12),
+                  Row(children: [
+                    Expanded(
+                      child: _FeatureCard(
+                        icon: Icons.people_rounded,
+                        label: 'Buddy Match',
+                        color: const Color(0xFF9B59B6),
+                        onTap: () => context.push(AppRoutes.buddyMatching),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _FeatureCard(
+                        icon: Icons.public_rounded,
+                        label: 'Expat Hub',
+                        color: const Color(0xFF1ABC9C),
+                        onTap: () => context.push(AppRoutes.expatHub),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _FeatureCard(
+                        icon: Icons.event_rounded,
+                        label: 'Events',
+                        color: const Color(0xFFE74C3C),
+                        onTap: () => context.push(AppRoutes.events),
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 12),
+                  Row(children: [
+                    Expanded(
+                      child: _FeatureCard(
+                        icon: Icons.emoji_events_rounded,
+                        label: 'Challenges',
+                        color: const Color(0xFFF39C12),
+                        onTap: () => context.push(AppRoutes.challenges),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _FeatureCard(
+                        icon: Icons.group_rounded,
+                        label: 'Social',
+                        color: const Color(0xFF3498DB),
+                        onTap: () => context.push(AppRoutes.social),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _FeatureCard(
+                        icon: Icons.download_rounded,
+                        label: 'Offline Maps',
+                        color: const Color(0xFF2C3E50),
+                        onTap: () => context.push(AppRoutes.offlineMaps),
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 24),
+
                   // ── Nearby ───────────────────────────────────────────────
                   _SectionHeader(
                     title: l10n.sectionNearby,
@@ -686,6 +777,58 @@ class _CategoryCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Feature Card ─────────────────────────────────────────────────────────────
+
+class _FeatureCard extends StatelessWidget {
+  const _FeatureCard({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 72,
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: color.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w600,
+                fontSize: 10,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );

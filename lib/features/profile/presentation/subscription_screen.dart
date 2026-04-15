@@ -8,10 +8,25 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/l10n/l10n.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../services/subscription_providers.dart';
+
+// ─── Firestore User Data Provider ────────────────────────────────────────────
+/// Phase 2: Stream provider for student verification status from Firestore.
+final firestoreUserDataProvider = StreamProvider.autoDispose<Map<String, dynamic>?>((ref) {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return Stream.value(null);
+
+  return FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .snapshots()
+      .map((snapshot) => snapshot.data());
+});
 
 // ─── Data helpers ─────────────────────────────────────────────────────────────
 
@@ -241,7 +256,7 @@ class SubscriptionScreen extends ConsumerWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-              child: _PriceCard(isPremium: isPremium, widgetRef: ref),
+              child: _PriceCard(isPremium: isPremium),
             ),
           ),
 
@@ -388,15 +403,56 @@ class _Tick extends StatelessWidget {
       );
 }
 
-class _PriceCard extends ConsumerWidget {
-  const _PriceCard({required this.isPremium, required this.widgetRef});
-  final bool      isPremium;
-  final WidgetRef widgetRef;
+class _PriceCard extends ConsumerStatefulWidget {
+  const _PriceCard({required this.isPremium});
+  final bool isPremium;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_PriceCard> createState() => _PriceCardState();
+}
+
+class _PriceCardState extends ConsumerState<_PriceCard> {
+  /// Phase 2: Billing period toggle (monthly = true, yearly = false).
+  bool _isMonthly = true;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final storePrice = ref.watch(premiumPriceProvider);
+    final userData = ref.watch(firestoreUserDataProvider).valueOrNull;
+    
+    // Parse student verification status
+    final isStudent = userData?['isStudent'] as bool? ?? false;
+    final isStudentVerified = userData?['isStudentVerified'] as bool? ?? false;
+    final studentVerifiedUntilStr = userData?['studentVerifiedUntil'] as String?;
+    
+    DateTime? studentVerifiedUntil;
+    if (studentVerifiedUntilStr != null) {
+      try {
+        studentVerifiedUntil = DateTime.parse(studentVerifiedUntilStr);
+      } catch (_) {}
+    }
+    
+    // Check if student verification is valid
+    final hasValidStudentStatus = isStudentVerified && 
+        studentVerifiedUntil != null && 
+        studentVerifiedUntil.isAfter(DateTime.now());
+    
+    // Show student banner if user is a student but not verified or verification expired
+    final showStudentBanner = isStudent && !hasValidStudentStatus && !widget.isPremium;
+
+    // Get prices from providers
+    final monthlyPrice = ref.watch(premiumPriceProvider);
+    final studentPrice = ref.watch(studentPriceProvider);
+    final annualPrice = ref.watch(annualPriceProvider);
+
+    // Determine which price to display
+    String? displayPrice;
+    if (_isMonthly) {
+      displayPrice = hasValidStudentStatus ? (studentPrice ?? 'kr 10') : (monthlyPrice ?? 'kr 20');
+    } else {
+      displayPrice = annualPrice ?? 'kr 200';
+    }
+
     return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -411,7 +467,110 @@ class _PriceCard extends ConsumerWidget {
         ),
         child: Column(
           children: [
-            if (!isPremium) ...[
+            if (!widget.isPremium) ...[
+              // Student discount banner
+              if (showStudentBanner) ...[
+                GestureDetector(
+                  onTap: () => context.push(AppRoutes.profileStudentVerification),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.blue.shade50, Colors.purple.shade50],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('🎓', style: TextStyle(fontSize: 32)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Student? Get 50% off Premium',
+                                style: AppTextStyles.labelMedium.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.blue.shade900,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'kr 10/month instead of kr 20',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: Colors.blue.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward_ios, size: 16, color: Colors.blue.shade700),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+              
+              // Verified student badge
+              if (hasValidStudentStatus) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.green.shade300),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.verified_rounded, color: Colors.green.shade700, size: 18),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Verified Student - 50% Discount Applied',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Colors.green.shade900,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // Billing period toggle
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _BillingPeriodButton(
+                        label: 'Monthly',
+                        isSelected: _isMonthly,
+                        onTap: () => setState(() => _isMonthly = true),
+                      ),
+                    ),
+                    Expanded(
+                      child: _BillingPeriodButton(
+                        label: 'Yearly',
+                        isSelected: !_isMonthly,
+                        onTap: () => setState(() => _isMonthly = false),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -427,28 +586,37 @@ class _PriceCard extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(storePrice ?? l10n.premiumPrice,
+                Text(displayPrice,
                     style: AppTextStyles.headline1
                         .copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, fontSize: 38)),
                 const SizedBox(width: 4),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 6),
-                  child: Text(l10n.premiumPerMonth,
+                  child: Text(_isMonthly ? l10n.premiumPerMonth : '/year',
                       style: AppTextStyles.bodyMedium
                           .copyWith(color: AppColors.textSecondary)),
                 ),
               ],
             ),
             const SizedBox(height: 4),
-            Text(
-              l10n.premiumPriceNote,
-              style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.textSecondary),
-            ),
+            
+            // Savings message for annual plan
+            if (!_isMonthly && !widget.isPremium)
+              Text(
+                'Save kr 40 with annual plan',
+                style: AppTextStyles.bodySmall
+                    .copyWith(color: Colors.green.shade700, fontWeight: FontWeight.w600),
+              )
+            else
+              Text(
+                l10n.premiumPriceNote,
+                style: AppTextStyles.bodySmall
+                    .copyWith(color: AppColors.textSecondary),
+              ),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              child: isPremium
+              child: widget.isPremium
                   ? OutlinedButton(
                       onPressed: () async {
                         final ok = await showDialog<bool>(
@@ -477,7 +645,8 @@ class _PriceCard extends ConsumerWidget {
                           });
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(l10n.switchedToFree)));
+                              SnackBar(content: Text(l10n.switchedToFree)),
+                            );
                           }
                         }
                       },
@@ -493,7 +662,19 @@ class _PriceCard extends ConsumerWidget {
                   : ElevatedButton(
                       onPressed: () async {
                         final svc = ref.read(purchaseServiceProvider);
-                        final started = await svc.buyPremium();
+                        bool started;
+                        
+                        // Phase 2: Select appropriate purchase method
+                        if (_isMonthly) {
+                          if (hasValidStudentStatus) {
+                            started = await svc.buyStudentPremium();
+                          } else {
+                            started = await svc.buyPremium();
+                          }
+                        } else {
+                          started = await svc.buyAnnualPremium();
+                        }
+                        
                         if (!started && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -517,7 +698,7 @@ class _PriceCard extends ConsumerWidget {
                     ),
             ),
             const SizedBox(height: 12),
-            if (!isPremium)
+            if (!widget.isPremium)
               TextButton(
                 onPressed: () async {
                   final svc = ref.read(purchaseServiceProvider);
@@ -535,6 +716,45 @@ class _PriceCard extends ConsumerWidget {
           ],
         ),
       );
+  }
+}
+
+/// Phase 2: Billing period toggle button.
+class _BillingPeriodButton extends StatelessWidget {
+  const _BillingPeriodButton({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: AppTextStyles.labelMedium.copyWith(
+            color: isSelected
+                ? (Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white)
+                : AppColors.textSecondary,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+      ),
+    );
   }
 }
 

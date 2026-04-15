@@ -132,6 +132,39 @@ class ProviderService {
     }).toList();
   }
 
+  /// Stream approved providers near [lat],[lng] within [radiusKm].
+  ///
+  /// Real-time stream that updates when providers are added, modified, or removed.
+  /// Uses the same bounding-box + Haversine filtering as [getNearby].
+  Stream<List<CykelProvider>> streamNearby({
+    required double lat,
+    required double lng,
+    double radiusKm = 10,
+  }) {
+    // Approximate bounding box (~111 km per degree latitude).
+    final latDelta = radiusKm / 111.0;
+    final lngDelta = radiusKm / (111.0 * cos(lat * pi / 180));
+
+    return _col
+        .where('verificationStatus',
+            isEqualTo: VerificationStatus.approved.key)
+        .where('isActive', isEqualTo: true)
+        .where('latitude', isGreaterThanOrEqualTo: lat - latDelta)
+        .where('latitude', isLessThanOrEqualTo: lat + latDelta)
+        .snapshots()
+        .map((snap) {
+      final candidates = snap.docs.map(CykelProvider.fromFirestore).toList();
+
+      // Client-side Haversine filter on longitude + exact radius.
+      return candidates.where((p) {
+        if (p.longitude < lng - lngDelta || p.longitude > lng + lngDelta) {
+          return false;
+        }
+        return _haversineKm(lat, lng, p.latitude, p.longitude) <= radiusKm;
+      }).toList();
+    });
+  }
+
   // ── Update ──────────────────────────────────────────────────────────────────
 
   Future<void> updateProvider(CykelProvider provider) async {

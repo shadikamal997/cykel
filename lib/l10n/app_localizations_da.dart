@@ -1762,6 +1762,70 @@ class AppLocalizationsDa extends AppLocalizations {
   String get pillCloud => 'Cloud';
 
   @override
+  String get studentDiscountBanner => 'Studerende? Få 50% rabat på Premium';
+
+  @override
+  String get studentDiscountPrice => 'kr 10/måned i stedet for kr 20';
+
+  @override
+  String get verifiedStudentBadge =>
+      'Verificeret studerende - 50% rabat anvendt';
+
+  @override
+  String get billingPeriodMonthly => 'Månedlig';
+
+  @override
+  String get billingPeriodYearly => 'Årlig';
+
+  @override
+  String get annualSavingsMessage => 'Spar kr 40 med årlig plan';
+
+  @override
+  String get studentVerificationTitle => 'Verificer Studerende Status';
+
+  @override
+  String get studentVerificationSubtitle =>
+      'Lås 50% rabat på Premium med din universitetsmail';
+
+  @override
+  String get studentEmailLabel => 'Universitets E-mail';
+
+  @override
+  String get studentEmailHint => 'dit.navn@universitet.dk';
+
+  @override
+  String get invalidStudentEmail => 'Ugyldigt studerende e-mail-domæne';
+
+  @override
+  String get studentEmailDomainNote =>
+      'Accepteret: .edu, .ac.dk, .ku.dk, .dtu.dk, .cbs.dk, .ruc.dk, .au.dk, .sdu.dk, .aau.dk';
+
+  @override
+  String get verifyStudentButton => 'Verificer Studerende Status';
+
+  @override
+  String get studentVerificationSuccess =>
+      '✅ Studerende status verificeret! Du kan nu få 50% rabat på Premium.';
+
+  @override
+  String get studentVerificationPending => 'Verificerer...';
+
+  @override
+  String get studentVerificationBenefitsTitle => 'Studerende Fordele:';
+
+  @override
+  String get studentBenefit1 => 'Premium for kr 10/måned (50% rabat)';
+
+  @override
+  String get studentBenefit2 => 'Alle Premium-funktioner inkluderet';
+
+  @override
+  String get studentBenefit3 => 'Gyldig i 1 år - nem fornyelse';
+
+  @override
+  String get studentBenefit4 => 'Støt studerende cykelsamfundet';
+
+  @override
   String get subNavAndMap => 'Navigation & kort';
 
   @override

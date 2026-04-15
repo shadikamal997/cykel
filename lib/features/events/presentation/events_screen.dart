@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/router/app_router.dart';
+import '../../profile/data/user_profile_provider.dart';
 import '../data/events_provider.dart';
 import '../domain/event.dart';
 
@@ -32,7 +33,14 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   int _selectedTabIndex = 0;
   String _sortBy = 'date'; // 'date', 'distance', 'participants'
   String _filterDifficulty = 'all'; // 'all', 'easy', 'moderate', 'hard'
+  String _filterEventType = 'all'; // 'all', 'social', 'training', 'tour', etc.
   double _maxDistance = 50.0; // km
+  // Phase 3: Age filtering
+  String _filterAge = 'all'; // 'all', '18+', '21+', '16-25', '26-40', '41-60', '60+'
+  int? _customMinAge;
+  int? _customMaxAge;
+  // Phase 5: Language filtering
+  String _filterLanguage = 'all'; // 'all', 'da', 'en', 'de', etc.
 
   @override
   void dispose() {
@@ -521,6 +529,8 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
 
   // ─── Filter & Sort Bar ───────────────────────────────────────────────────────
   Widget _buildFilterSortBar(BuildContext context, AppLocalizations l10n, bool isDark) {
+    final userProfile = ref.watch(userProfileProvider);
+    
     return Container(
       height: 60,
       margin: const EdgeInsets.only(top: 16),
@@ -528,6 +538,64 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         children: [
+          // Phase 4: Family mode indicator
+          if (userProfile.isFamilyMode)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.green.withValues(alpha: 0.4),
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.family_restroom, size: 18, color: Colors.green.shade700),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Family Mode Active',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // Phase 5: Tourist mode indicator
+          if (userProfile.isTouristMode)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.blue.withValues(alpha: 0.4),
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.camera_alt_outlined, size: 18, color: Colors.blue.shade700),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Tourist Mode Active',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           // Sort button
           _buildFilterChip(
             context,
@@ -537,12 +605,21 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             onTap: () => _showSortOptions(context, isDark),
           ),
           const SizedBox(width: 8),
+          // Event type filter
+          _buildFilterChip(
+            context,
+            isDark,
+            icon: Icons.category_rounded,
+            label: _getEventTypeFilterLabel(),
+            onTap: () => _showEventTypeFilter(context, isDark),
+          ),
+          const SizedBox(width: 8),
           // Difficulty filter
           _buildFilterChip(
             context,
             isDark,
             icon: Icons.terrain_rounded,
-            label: 'Difficulty: ${_filterDifficulty == 'all' ? 'All' : _filterDifficulty}',
+            label: _filterDifficulty == 'all' ? 'All' : _filterDifficulty.substring(0, 1).toUpperCase() + _filterDifficulty.substring(1),
             onTap: () => _showDifficultyFilter(context, isDark),
           ),
           const SizedBox(width: 8),
@@ -551,8 +628,26 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             context,
             isDark,
             icon: Icons.space_dashboard_rounded,
-            label: 'Within ${_maxDistance.toInt()} km',
+            label: '${_maxDistance.toInt()}km',
             onTap: () => _showDistanceFilter(context, isDark),
+          ),
+          const SizedBox(width: 8),
+          // Phase 3: Age filter
+          _buildFilterChip(
+            context,
+            isDark,
+            icon: Icons.cake_rounded,
+            label: _getAgeFilterLabel(),
+            onTap: () => _showAgeFilter(context, isDark),
+          ),
+          const SizedBox(width: 8),
+          // Phase 5: Language filter
+          _buildFilterChip(
+            context,
+            isDark,
+            icon: Icons.language_rounded,
+            label: _getLanguageFilterLabelShort(),
+            onTap: () => _showLanguageFilter(context, isDark),
           ),
         ],
       ),
@@ -580,12 +675,17 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
           children: [
             Icon(icon, size: 18, color: isDark ? AppColors.primaryLight : _kPrimaryColor),
             const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : _kPrimaryText,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 140),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : _kPrimaryText,
+                ),
               ),
             ),
           ],
@@ -764,6 +864,322 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
         ),
       ),
     );
+  }
+
+  // Phase 3: Age filter dialog
+  void _showAgeFilter(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1A202C) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  'Age Group Filter',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : _kPrimaryText,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildAgeOption(context, isDark, 'all', 'All Ages'),
+                      _buildAgeOption(context, isDark, '18+', '18+'),
+                      _buildAgeOption(context, isDark, '21+', '21+'),
+                      _buildAgeOption(context, isDark, '16-25', '16-25'),
+                      _buildAgeOption(context, isDark, '26-40', '26-40'),
+                      _buildAgeOption(context, isDark, '41-60', '41-60'),
+                      _buildAgeOption(context, isDark, '60+', '60+'),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAgeOption(BuildContext context, bool isDark, String value, String label) {
+    final isSelected = _filterAge == value;
+    return ListTile(
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          color: isSelected ? _kPrimaryColor : (isDark ? Colors.white : _kPrimaryText),
+        ),
+      ),
+      trailing: isSelected ? const Icon(Icons.check, color: _kPrimaryColor) : null,
+      onTap: () {
+        setState(() {
+          _filterAge = value;
+          // Set custom age range based on selection
+          switch (value) {
+            case 'all':
+              _customMinAge = null;
+              _customMaxAge = null;
+              break;
+            case '18+':
+              _customMinAge = 18;
+              _customMaxAge = null;
+              break;
+            case '21+':
+              _customMinAge = 21;
+              _customMaxAge = null;
+              break;
+            case '16-25':
+              _customMinAge = 16;
+              _customMaxAge = 25;
+              break;
+            case '26-40':
+              _customMinAge = 26;
+              _customMaxAge = 40;
+              break;
+            case '41-60':
+              _customMinAge = 41;
+              _customMaxAge = 60;
+              break;
+            case '60+':
+              _customMinAge = 60;
+              _customMaxAge = null;
+              break;
+          }
+        });
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  String _getAgeFilterLabel() {
+    if (_filterAge == 'all') return 'All';
+    return _filterAge;
+  }
+
+  // Phase 5: Language filter dialog
+  void _showLanguageFilter(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1A202C) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  'Language Filter',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : _kPrimaryText,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildLanguageOption(context, isDark, 'all', 'All Languages'),
+                      _buildLanguageOption(context, isDark, 'da', 'Danish'),
+                      _buildLanguageOption(context, isDark, 'en', 'English'),
+                      _buildLanguageOption(context, isDark, 'de', 'German'),
+                      _buildLanguageOption(context, isDark, 'sv', 'Swedish'),
+                      _buildLanguageOption(context, isDark, 'no', 'Norwegian'),
+                      _buildLanguageOption(context, isDark, 'fr', 'French'),
+                      _buildLanguageOption(context, isDark, 'es', 'Spanish'),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageOption(BuildContext context, bool isDark, String value, String label) {
+    final isSelected = _filterLanguage == value;
+    return ListTile(
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          color: isSelected ? _kPrimaryColor : (isDark ? Colors.white : _kPrimaryText),
+        ),
+      ),
+      trailing: isSelected ? const Icon(Icons.check, color: _kPrimaryColor) : null,
+      onTap: () {
+        setState(() {
+          _filterLanguage = value;
+        });
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  String _getLanguageFilterLabelShort() {
+    switch (_filterLanguage) {
+      case 'all': return 'All';
+      case 'da': return 'DA';
+      case 'en': return 'EN';
+      case 'de': return 'DE';
+      case 'sv': return 'SV';
+      case 'no': return 'NO';
+      case 'fr': return 'FR';
+      case 'es': return 'ES';
+      default: return 'All';
+    }
+  }
+
+  // Event type filter methods
+  void _showEventTypeFilter(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1A202C) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  'Event Type Filter',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : _kPrimaryText,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildEventTypeOption(context, isDark, 'all', 'All Types'),
+                      _buildEventTypeOption(context, isDark, 'social', 'Social'),
+                      _buildEventTypeOption(context, isDark, 'training', 'Training'),
+                      _buildEventTypeOption(context, isDark, 'tour', 'Tour'),
+                      _buildEventTypeOption(context, isDark, 'beginner', 'Beginner'),
+                      _buildEventTypeOption(context, isDark, 'family', 'Family'),
+                      _buildEventTypeOption(context, isDark, 'night', 'Night'),
+                      _buildEventTypeOption(context, isDark, 'gravel', 'Gravel/MTB'),
+                      _buildEventTypeOption(context, isDark, 'expat', 'Expat'),
+                      _buildEventTypeOption(context, isDark, 'race', 'Race'),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEventTypeOption(BuildContext context, bool isDark, String value, String label) {
+    final isSelected = _filterEventType == value;
+    return ListTile(
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          color: isSelected ? _kPrimaryColor : (isDark ? Colors.white : _kPrimaryText),
+        ),
+      ),
+      trailing: isSelected ? const Icon(Icons.check, color: _kPrimaryColor) : null,
+      onTap: () {
+        setState(() {
+          _filterEventType = value;
+        });
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  String _getEventTypeFilterLabel() {
+    switch (_filterEventType) {
+      case 'all': return 'All';
+      case 'social': return 'Social';
+      case 'training': return 'Training';
+      case 'tour': return 'Tour';
+      case 'beginner': return 'Beginner';
+      case 'family': return 'Family';
+      case 'night': return 'Night';
+      case 'gravel': return 'Gravel';
+      case 'expat': return 'Expat';
+      case 'race': return 'Race';
+      default: return 'All';
+    }
   }
 
   // ─── Quick Stats Bar ─────────────────────────────────────────────────────────
@@ -1178,12 +1594,69 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   List<RideEvent> _applyFilters(List<RideEvent> events) {
     var filtered = events;
 
+    // Phase 4: Apply family mode filter
+    final userProfile = ref.read(userProfileProvider);
+    if (userProfile.isFamilyMode) {
+      filtered = filtered.where((e) {
+        // In family mode, show only family-friendly events
+        return e.eventType == EventType.family || 
+               e.eventType == EventType.beginner ||
+               e.eventType == EventType.social;
+      }).toList();
+    }
+
+    // Apply event type filter
+    if (_filterEventType != 'all') {
+      filtered = filtered.where((e) {
+        return e.eventType.name == _filterEventType;
+      }).toList();
+    }
+
     // Apply difficulty filter
     if (_filterDifficulty != 'all') {
       filtered = filtered.where((e) {
-        // Assuming events have a difficulty property - adjust if needed
-        // For now, we'll just pass through as difficulty might not exist
+        return e.difficulty.name == _filterDifficulty;
+      }).toList();
+    }
+
+    // Phase 3: Apply age filter
+    if (_filterAge != 'all' && (_customMinAge != null || _customMaxAge != null)) {
+      filtered = filtered.where((e) {
+        // If event has no age restriction, it's available for all
+        if (!e.hasAgeRestriction) return true;
+        
+        // Check if the selected age range overlaps with the event's age restriction
+        // Event allows users within selected age range
+        if (_customMinAge != null && e.maxAge != null && _customMinAge! > e.maxAge!) {
+          return false; // Selected min age is above event's max age
+        }
+        if (_customMaxAge != null && e.minAge != null && _customMaxAge! < e.minAge!) {
+          return false; // Selected max age is below event's min age
+        }
+        
         return true;
+      }).toList();
+    }
+
+    // Phase 5: Apply language filter
+    if (_filterLanguage != 'all') {
+      filtered = filtered.where((e) {
+        // If event has no language restriction, it's available for all
+        if (e.languages.isEmpty) return true;
+        
+        // Check if the selected language is in the event's languages
+        return e.languages.contains(_filterLanguage);
+      }).toList();
+    }
+
+    // Phase 5: Apply tourist mode filter
+    if (userProfile.isTouristMode) {
+      filtered = filtered.where((e) {
+        // In tourist mode, prioritize expat/language exchange events and social rides
+        return e.eventType == EventType.expat || 
+               e.eventType == EventType.languageExchange ||
+               e.eventType == EventType.social ||
+               e.eventType == EventType.tour;
       }).toList();
     }
 
@@ -1440,6 +1913,28 @@ class _PremiumEventCard extends ConsumerWidget {
                         ),
                       ],
                     ),
+                    // Phase 3: Age restriction display
+                    if (event.hasAgeRestriction) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.cake_rounded,
+                            size: 12,
+                            color: Colors.orange.shade700,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            'Ages: ${event.ageRangeText}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.orange.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const Spacer(),
 
                     // Participants (stacked avatars)
@@ -1650,6 +2145,28 @@ class _CompactEventCard extends StatelessWidget {
                       ),
                     ],
                   ),
+                  // Phase 3: Age restriction display
+                  if (event.hasAgeRestriction) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.cake_rounded,
+                          size: 12,
+                          color: Colors.orange.shade700,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Ages: ${event.ageRangeText}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.orange.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -189,6 +189,49 @@ class CykelProvider {
   /// Whether this provider is currently open for business (not closed/paused).
   bool get isOpen => isActive && !temporarilyClosed && isVerified;
 
+  /// Whether this provider is currently open based on opening hours and current time.
+  bool get isOpenNow {
+    if (!isOpen) return false;
+    if (openingHours.isEmpty) return true; // Assume open if no hours specified
+    
+    final now = DateTime.now();
+    final dayKey = _getDayKey(now.weekday);
+    final hours = openingHours[dayKey];
+    
+    if (hours == null || hours.closed) return false;
+    
+    // Parse open/close times (format: "HH:MM")
+    final openParts = hours.open.split(':');
+    final closeParts = hours.close.split(':');
+    
+    if (openParts.length != 2 || closeParts.length != 2) return true;
+    
+    final openHour = int.tryParse(openParts[0]) ?? 0;
+    final openMinute = int.tryParse(openParts[1]) ?? 0;
+    final closeHour = int.tryParse(closeParts[0]) ?? 23;
+    final closeMinute = int.tryParse(closeParts[1]) ?? 59;
+    
+    final currentMinutes = now.hour * 60 + now.minute;
+    final openMinutes = openHour * 60 + openMinute;
+    final closeMinutes = closeHour * 60 + closeMinute;
+    
+    return currentMinutes >= openMinutes && currentMinutes < closeMinutes;
+  }
+
+  /// Convert DateTime weekday (1=Monday, 7=Sunday) to day key (mon, tue, etc.)
+  static String _getDayKey(int weekday) {
+    switch (weekday) {
+      case 1: return 'mon';
+      case 2: return 'tue';
+      case 3: return 'wed';
+      case 4: return 'thu';
+      case 5: return 'fri';
+      case 6: return 'sat';
+      case 7: return 'sun';
+      default: return 'mon';
+    }
+  }
+
   // ── Firestore serialisation ───────────────────────────────────────────────
 
   factory CykelProvider.fromFirestore(DocumentSnapshot doc) {

@@ -37,6 +37,9 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   final _durationController = TextEditingController();
   final _paceController = TextEditingController();
   final _maxParticipantsController = TextEditingController();
+  // Phase 3: Age restriction
+  final _minAgeController = TextEditingController();
+  final _maxAgeController = TextEditingController();
 
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
   TimeOfDay _selectedTime = const TimeOfDay(hour: 10, minute: 0);
@@ -73,6 +76,8 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     _durationController.dispose();
     _paceController.dispose();
     _maxParticipantsController.dispose();
+    _minAgeController.dispose();
+    _maxAgeController.dispose();
     super.dispose();
   }
 
@@ -653,6 +658,8 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
         durationMinutes: int.tryParse(_durationController.text),
         paceKmh: double.tryParse(_paceController.text),
         maxParticipants: int.tryParse(_maxParticipantsController.text),
+        minAge: int.tryParse(_minAgeController.text),
+        maxAge: int.tryParse(_maxAgeController.text),
         isNoDrop: _isNoDrop,
         requiresLights: _requiresLights,
         imageUrl: imageUrl,
