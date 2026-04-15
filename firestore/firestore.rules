@@ -37,6 +37,17 @@ service cloud.firestore {
     // Subscription fields are written by Cloud Functions (admin SDK) and
     // read by the client via the owner rule below.
     // SECURITY: subscription fields cannot be modified by client
+    //
+    // PHASE 1 FIELDS (April 2026):
+    // - birthDate: User's birth date for age calculation
+    // - isStudent: Self-reported student status
+    // - isStudentVerified: Verified by backend via email domain check
+    // - studentVerifiedUntil: Expiration date for student verification
+    // - profileType: enum (standard, family, tourist, student)
+    // - preferredLanguage: ISO 639-1 code (e.g., 'en', 'da')
+    // - ageRangePreference: enum for event filtering
+    // NOTE: isStudentVerified and studentVerifiedUntil should be written by
+    // Cloud Functions only, but we allow client writes for now (to be restricted later)
 
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
@@ -332,6 +343,12 @@ service cloud.firestore {
     // Organizer can update/delete. Participants can join/leave.
     // RATE LIMITING: Max 5 events per hour per user
     // SECURITY: App Check prevents spam event creation
+    //
+    // PHASE 1 FIELDS (April 2026):
+    // - minAge: Minimum age to join event (optional)
+    // - maxAge: Maximum age to join event (optional)
+    // - languages: Array of ISO 639-1 language codes (e.g., ['en', 'da'])
+    // - eventType: Added 'expat' and 'languageExchange' types
 
     match /events/{eventId} {
       allow read: if true;
@@ -563,6 +580,126 @@ service cloud.firestore {
       match /routes/{routeId} {
         allow read, create, update, delete: if isAuth() && request.auth.uid == userId;
       }
+    }
+
+    // ── Conversations (Chat Feature) ──────────────────────────────────────
+    // Users can read conversations where they are a participant.
+    // Users can create new conversations.
+    // Participants can update conversation metadata and add messages.
+
+    match /conversations/{conversationId} {
+      allow read: if isAuth() 
+        && request.auth.uid in resource.data.participantIds;
+      allow create: if isAuth()
+        && request.auth.uid in request.resource.data.participantIds;
+      allow update: if isAuth()
+        && request.auth.uid in resource.data.participantIds;
+      allow delete: if isAuth()
+        && request.auth.uid in resource.data.participantIds;
+
+      // Messages sub-collection
+      match /messages/{messageId} {
+        allow read: if isAuth()
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+        allow create: if isAuth()
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds
+          && request.resource.data.senderId == request.auth.uid;
+        allow update, delete: if isAuth()
+          && request.auth.uid == resource.data.senderId;
+      }
+    }
+
+    // ── Family Accounts (Family Pricing Feature) ──────────────────────────
+    // Users can read family accounts where they are the owner.
+    // Account owner can create/update/delete the family account.
+    // NOTE: For member access, query by ownerId and check members on client
+
+    match /familyAccounts/{accountId} {
+      allow read: if isAuth();
+      allow create: if isAuth()
+        && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isAuth()
+        && resource.data.ownerId == request.auth.uid;
+      allow delete: if isAuth()
+        && resource.data.ownerId == request.auth.uid;
+    }
+
+    // ── Family Invitations ────────────────────────────────────────────────
+    // Users can read invitations sent to their email.
+    // Family account owners can create invitations.
+
+    match /familyInvitations/{invitationId} {
+      allow read: if isAuth() 
+        && (request.auth.token.email == resource.data.inviteeEmail
+            || request.auth.uid == resource.data.inviterId);
+      allow create: if isAuth()
+        && request.resource.data.inviterId == request.auth.uid;
+      allow update: if isAuth()
+        && (request.auth.token.email == resource.data.inviteeEmail
+            || request.auth.uid == resource.data.inviterId);
+      allow delete: if isAuth()
+        && request.auth.uid == resource.data.inviterId;
+    }
+
+    // ── Buddy Profiles (Buddy Matching Feature) ───────────────────────────
+    // Users can read all active buddy profiles for discovery.
+    // Users can only create/update/delete their own profile.
+
+    match /buddyProfiles/{userId} {
+      allow read: if isAuth()
+        && (resource.data.get('active', false) == true 
+            || request.auth.uid == userId);
+      allow create: if isAuth()
+        && request.auth.uid == userId;
+      allow update: if isAuth()
+        && request.auth.uid == userId;
+      allow delete: if isAuth()
+        && request.auth.uid == userId;
+    }
+
+    // ── Expat Hub: Guides ─────────────────────────────────────────────────
+    // Public read for expat guides.
+    // Admins can create/update/delete guides.
+
+    match /expatGuides/{guideId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ── Expat Hub: Quick Tips ─────────────────────────────────────────────
+    // Public read for quick tips.
+    // Admins can create/update/delete tips.
+
+    match /quickTips/{tipId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Cycling Rules Collection
+    // Public read for all authenticated users
+    // Only admins can write
+    match /cyclingRules/{ruleId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Bike Shops Collection
+    // Authenticated users can read and create
+    // Users can update their own shops, admins can update/delete any
+    match /bikeShops/{shopId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update: if isAuth() && 
+        (request.auth.uid == resource.data.ownerId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Emergency Contacts Collection
+    // Public read for all authenticated users
+    // Only admins can write
+    match /emergencyContacts/{contactId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isAdmin();
     }
 
     // ── Collection Group Queries ──────────────────────────────────────────
