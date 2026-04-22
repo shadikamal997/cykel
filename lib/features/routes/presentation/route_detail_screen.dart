@@ -4,9 +4,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../../../core/l10n/l10n.dart';
 import '../domain/advanced_route.dart';
 import '../application/advanced_route_providers.dart';
+import 'route_creator_screen.dart';
 
 class RouteDetailScreen extends ConsumerStatefulWidget {
   const RouteDetailScreen({
@@ -45,7 +48,7 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen>
     return Scaffold(
       appBar: AppBar(
         title: routeAsync.when(
-          data: (route) => Text(route?.name ?? 'Route Details'),
+          data: (route) => route != null ? Text(route.name) : Text(context.l10n.routesRouteNotFound),
           loading: () => const Text('Loading...'),
           error: (_, _) => const Text('Error'),
         ),
@@ -53,7 +56,13 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen>
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: () {
-              // TODO: Share route
+              final route = ref.read(routeProvider(widget.routeId)).valueOrNull;
+              if (route == null) return;
+              SharePlus.instance.share(ShareParams(
+                text: 'Check out my route "${route.name}" on CYKEL! '
+                    '${route.totalDistanceKm.toStringAsFixed(1)} km, '
+                    '${route.estimatedDurationMinutes} min.',
+              ));
             },
           ),
           PopupMenuButton<String>(
@@ -61,17 +70,20 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen>
               if (value == 'delete') {
                 _confirmDelete();
               } else if (value == 'edit') {
-                // TODO: Navigate to edit screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RouteCreatorScreen()),
+                );
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'edit',
-                child: Text('Edit Route'),
+                child: Text(context.l10n.routesEditRoute),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'delete',
-                child: Text('Delete Route'),
+                child: Text(context.l10n.routesDeleteRoute),
               ),
             ],
           ),
@@ -88,7 +100,7 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen>
       body: routeAsync.when(
         data: (route) {
           if (route == null) {
-            return const Center(child: Text('Route not found'));
+            return Center(child: Text(context.l10n.routesRouteNotFound));
           }
 
           return TabBarView(
@@ -107,7 +119,7 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen>
             children: [
               const Icon(Icons.error_outline, size: 48),
               const SizedBox(height: 16),
-              Text('Error loading route: $error'),
+              Text(context.l10n.routesErrorLoadingRoutes(error.toString())),
             ],
           ),
         ),
@@ -119,7 +131,7 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Route'),
+        title: Text(context.l10n.routesDeleteRoute),
         content: const Text('Are you sure you want to delete this route?'),
         actions: [
           TextButton(

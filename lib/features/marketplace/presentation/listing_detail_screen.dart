@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -11,6 +10,8 @@ import '../../../core/l10n/l10n.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/cached_image.dart';
+import '../../../core/widgets/app_image.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../data/chat_service.dart';
 import '../data/marketplace_service.dart';
@@ -327,11 +328,9 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                         itemCount: listing.imageUrls.length,
                         onPageChanged: (i) =>
                             setState(() => _imageIndex = i),
-                        itemBuilder: (_, i) => Image.network(
-                            listing.imageUrls[i],
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stack) =>
-                                _CategoryHero(listing.category)),
+                        itemBuilder: (_, i) => CachedImage(
+                            imageUrl: listing.imageUrls[i],
+                            fit: BoxFit.cover),
                       ),
                       if (listing.imageUrls.length > 1)
                         Positioned(
@@ -461,21 +460,13 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                         color: _kSoftElements, width: 1),
                   ),
                   child: Row(children: [
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundColor: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15),
-                      backgroundImage: listing.sellerPhotoUrl != null
-                          ? NetworkImage(listing.sellerPhotoUrl!)
-                          : null,
-                      child: listing.sellerPhotoUrl == null
-                          ? Text(
-                              listing.sellerName.isNotEmpty
-                                  ? listing.sellerName[0].toUpperCase()
-                                  : '?',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                  color: isDark ? Colors.black : Colors.white,
-                                  fontWeight: FontWeight.w700))
-                          : null,
+                    AppAvatar(
+                      url: listing.sellerPhotoUrl,
+                      thumbnailUrl: listing.sellerPhotoThumbnail,
+                      size: 44,
+                      fallbackText: listing.sellerName.isNotEmpty
+                          ? listing.sellerName[0].toUpperCase()
+                          : '?',
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -702,15 +693,11 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                       Navigator.of(ctx).pop();
                       final messenger = ScaffoldMessenger.of(context);
                       try {
-                        await FirebaseFirestore.instance
-                            .collection('reports')
-                            .add({
-                          'type': 'listing',
-                          'targetId': listingId,
-                          'reason': reason,
-                          'reportedBy': ref.read(currentUserProvider)?.uid,
-                          'createdAt': FieldValue.serverTimestamp(),
-                        });
+                        await ref.read(marketplaceServiceProvider).reportListing(
+                          listingId: listingId,
+                          reporterId: ref.read(currentUserProvider)?.uid ?? '',
+                          reason: reason!,
+                        );
                         messenger.showSnackBar(
                           SnackBar(
                               content: Text(l10n.reportSubmitted)),

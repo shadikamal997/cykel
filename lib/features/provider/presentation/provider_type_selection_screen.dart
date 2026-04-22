@@ -28,9 +28,9 @@ class _ProviderTypeSelectionScreenState
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         title: Text(l10n.providerOnboardingTitle,
             style: AppTextStyles.headline3),
         leading: IconButton(
@@ -52,7 +52,7 @@ class _ProviderTypeSelectionScreenState
                   const SizedBox(height: 8),
                   Text(l10n.providerSelectTypeSubtitle,
                       style: AppTextStyles.bodyMedium
-                          .copyWith(color: AppColors.textSecondary)),
+                          .copyWith(color: context.colors.textSecondary)),
                   const SizedBox(height: 28),
                   _TypeCard(
                     type: ProviderType.repairShop,
@@ -200,19 +200,19 @@ class _TypeCard extends StatelessWidget {
                 children: [
                   Text(title,
                       style: AppTextStyles.labelLarge
-                          .copyWith(color: AppColors.textPrimary)),
+                          .copyWith(color: context.colors.textPrimary)),
                   const SizedBox(height: 4),
                   Text(description,
                       style: AppTextStyles.bodySmall
-                          .copyWith(color: AppColors.textSecondary)),
+                          .copyWith(color: context.colors.textSecondary)),
                 ],
               ),
             ),
             if (isSelected)
               Icon(Icons.check_circle_rounded, color: color, size: 24)
             else
-              const Icon(Icons.radio_button_off_rounded,
-                  color: AppColors.border, size: 24),
+              Icon(Icons.radio_button_off_rounded,
+                  color: context.colors.border, size: 24),
           ],
         ),
       ),

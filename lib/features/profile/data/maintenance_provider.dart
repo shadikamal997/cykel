@@ -22,6 +22,7 @@ class MaintenanceService {
   Stream<List<MaintenanceRecord>> streamRecords(String uid, String bikeId) {
     return _maintenanceCol(uid, bikeId)
         .orderBy('date', descending: true)
+        .limit(100)  // Limit maintenance records
         .snapshots()
         .map((snap) => snap.docs.map(MaintenanceRecord.fromFirestore).toList());
   }
@@ -31,6 +32,7 @@ class MaintenanceService {
     try {
       final snap = await _maintenanceCol(uid, bikeId)
           .orderBy('date', descending: true)
+          .limit(100)  // Limit maintenance records
           .get();
       return snap.docs.map(MaintenanceRecord.fromFirestore).toList();
     } catch (e) {

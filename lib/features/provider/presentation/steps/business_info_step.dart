@@ -85,7 +85,7 @@ class BusinessInfoStep extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          const Divider(color: AppColors.border),
+          Divider(color: context.colors.border),
           const SizedBox(height: 16),
 
           // Contact person *

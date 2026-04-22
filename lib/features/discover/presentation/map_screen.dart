@@ -2327,7 +2327,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.refresh_rounded, color: _kPrimaryColor, size: 20),
+                          const Icon(Icons.refresh_rounded, color: _kPrimaryColor, size: 20),
                           const SizedBox(width: 8),
                           Text(
                             'Search this area',
@@ -2667,10 +2667,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         size: 18,
                       ),
                       const SizedBox(width: 10),
-                      Expanded(
+                      const Expanded(
                         child: Text(
                           'Enable location to see nearby bike facilities',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
                             fontSize: 12,
                           ),
@@ -4793,11 +4793,11 @@ class _RouteSummaryCard extends ConsumerWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.straighten_rounded, size: 12, color: _kPrimaryColor),
+                      const Icon(Icons.straighten_rounded, size: 12, color: _kPrimaryColor),
                       const SizedBox(width: 3),
                       Text(
                         route.distanceLabel,
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _kPrimaryColor),
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _kPrimaryColor),
                       ),
                     ],
                   ),
@@ -4812,11 +4812,11 @@ class _RouteSummaryCard extends ConsumerWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.access_time_rounded, size: 12, color: AppColors.info),
+                      const Icon(Icons.access_time_rounded, size: 12, color: AppColors.info),
                       const SizedBox(width: 3),
                       Text(
                         adjustedLabel,
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.info),
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.info),
                       ),
                     ],
                   ),
@@ -4959,7 +4959,7 @@ class _RouteSummaryCard extends ConsumerWidget {
                                     const Icon(Icons.check_circle_rounded, color: Colors.white, size: 12),
                                   if (sel) const SizedBox(width: 3),
                                   Text(
-                                    '${r.distanceLabel}',
+                                    r.distanceLabel,
                                     style: TextStyle(
                                       color: sel ? Colors.white : AppColors.textPrimary,
                                       fontWeight: FontWeight.w600,
@@ -5326,7 +5326,7 @@ class _LayersSheet extends ConsumerWidget {
                     ref.read(_showCykelServiceProvider.notifier).state = true;
                     ref.read(_showCykelRentalProvider.notifier).state = true;
                   },
-                  child: Text('Show All', style: TextStyle(color: _kPrimaryColor)),
+                  child: const Text('Show All', style: TextStyle(color: _kPrimaryColor)),
                 ),
                 TextButton(
                   onPressed: () {
@@ -5336,7 +5336,7 @@ class _LayersSheet extends ConsumerWidget {
                     ref.read(_showCykelServiceProvider.notifier).state = false;
                     ref.read(_showCykelRentalProvider.notifier).state = false;
                   },
-                  child: Text('Clear All', style: TextStyle(color: AppColors.error)),
+                  child: const Text('Clear All', style: TextStyle(color: AppColors.error)),
                 ),
               ],
             ),
@@ -5369,7 +5369,7 @@ class _LayersSheet extends ConsumerWidget {
                     contentPadding: EdgeInsets.zero,
                     dense: true,
                     secondary: const Icon(Icons.access_time_rounded, size: 20, color: AppColors.textSecondary),
-                    title: Text('Open now only', style: AppTextStyles.bodySmall),
+                    title: const Text('Open now only', style: AppTextStyles.bodySmall),
                     value: ref.watch(_filterOpenNowProvider),
                     activeTrackColor: _kPrimaryColor,
                     onChanged: (v) => ref.read(_filterOpenNowProvider.notifier).state = v,
@@ -5397,7 +5397,7 @@ class _LayersSheet extends ConsumerWidget {
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 ),
-                                child: Text('Clear', style: TextStyle(fontSize: 12, color: _kPrimaryColor)),
+                                child: const Text('Clear', style: TextStyle(fontSize: 12, color: _kPrimaryColor)),
                               ),
                             ],
                           ],

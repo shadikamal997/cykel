@@ -83,6 +83,7 @@ class SocialService {
         .where('toUid', isEqualTo: uid)
         .where('status', isEqualTo: FriendRequestStatus.pending.name)
         .orderBy('sentAt', descending: true)
+        .limit(20)  // Reduced for faster initial load
         .snapshots()
         .map((snapshot) => snapshot.docs.map(FriendRequest.fromFirestore).toList());
   }
@@ -94,6 +95,7 @@ class SocialService {
         .where('fromUid', isEqualTo: uid)
         .where('status', isEqualTo: FriendRequestStatus.pending.name)
         .orderBy('sentAt', descending: true)
+        .limit(20)  // Reduced for faster initial load
         .snapshots()
         .map((snapshot) => snapshot.docs.map(FriendRequest.fromFirestore).toList());
   }

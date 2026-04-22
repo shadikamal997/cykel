@@ -42,10 +42,22 @@ final subscriptionStatusProvider =
 
 // ─── Convenience: isPremium ──────────────────────────────────────────────────
 
-/// Simple boolean derived provider – true when user has an active premium sub.
+/// Simple boolean derived provider – true when user has active premium access (paid or trial).
 final isPremiumProvider = Provider<bool>((ref) {
   final status = ref.watch(subscriptionStatusProvider).valueOrNull;
-  return status?.isPremium ?? false;
+  return status?.hasPremiumAccess ?? false;
+});
+
+/// Check if user is on a trial subscription
+final isTrialProvider = Provider<bool>((ref) {
+  final status = ref.watch(subscriptionStatusProvider).valueOrNull;
+  return status?.isTrialActive ?? false;
+});
+
+/// Get remaining trial days (null if not on trial)
+final trialDaysRemainingProvider = Provider<int?>((ref) {
+  final status = ref.watch(subscriptionStatusProvider).valueOrNull;
+  return status?.trialDaysRemaining;
 });
 
 // ─── Product details ─────────────────────────────────────────────────────────

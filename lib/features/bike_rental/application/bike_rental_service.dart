@@ -3,21 +3,27 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'dart:math' as math;
 
 import '../domain/bike_listing.dart';
 import '../domain/rental_agreement.dart';
+import '../../../core/utils/upload_retry_helper.dart';
 
 class BikeRentalService {
   BikeRentalService({
     required FirebaseFirestore firestore,
     required FirebaseAuth auth,
+    required FirebaseStorage storage,
   })  : _firestore = firestore,
-        _auth = auth;
+        _auth = auth,
+        _storage = storage;
 
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
+  final FirebaseStorage _storage;
 
   String? get _currentUserId => _auth.currentUser?.uid;
 
@@ -606,5 +612,21 @@ class BikeRentalService {
     final c = 2 * math.asin(math.sqrt(a));
 
     return earthRadiusKm * c;
+  }
+
+  // ─── Image Upload ───────────────────────────────────────────────────────────
+
+  /// Upload bike listing images to Firebase Storage with retry logic
+  Future<List<String>> uploadBikeImages(String userId, List<XFile> files) async {
+    return UploadRetryHelper.uploadMultipleXFilesWithRetry(
+      files: files,
+      pathBuilder: (index, fileName) => 
+          'bike_rentals/$userId/${DateTime.now().millisecondsSinceEpoch}_$fileName',
+      storageRoot: _storage.ref(),
+      metadata: SettableMetadata(
+        contentType: 'image/jpeg',
+        cacheControl: 'public, max-age=31536000',
+      ),
+    );
   }
 }

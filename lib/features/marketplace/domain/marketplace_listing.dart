@@ -50,6 +50,7 @@ class MarketplaceListing {
     required this.sellerId,
     required this.sellerName,
     this.sellerPhotoUrl,
+    this.sellerPhotoThumbnailUrl,
     required this.isShop,
     required this.title,
     required this.description,
@@ -57,6 +58,7 @@ class MarketplaceListing {
     required this.category,
     required this.condition,
     required this.imageUrls,
+    this.thumbnailUrls = const [],
     required this.city,
     this.lat,
     this.lng,
@@ -77,6 +79,7 @@ class MarketplaceListing {
   final String sellerId;
   final String sellerName;
   final String? sellerPhotoUrl;
+  final String? sellerPhotoThumbnailUrl;
   final bool isShop;
   final String title;
   final String description;
@@ -84,6 +87,7 @@ class MarketplaceListing {
   final ListingCategory category;
   final ListingCondition condition;
   final List<String> imageUrls;
+  final List<String> thumbnailUrls;
   final String city;
   final double? lat;
   final double? lng;
@@ -101,6 +105,35 @@ class MarketplaceListing {
 
   String get priceLabel => '${price.toStringAsFixed(0)} DKK';
 
+  /// Calculate thumbnail URL from image URL
+  /// Cloud Function creates thumbnails in: thumbnails/{original_path}
+  static String? getThumbnailUrl(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) return null;
+    
+    // Firebase Storage URL pattern: .../o/path%2Fto%2Fimage.jpg?alt=...
+    // Extract path and prepend "thumbnails/"
+    final uri = Uri.parse(imageUrl);
+    final encodedPath = uri.pathSegments.lastWhere(
+      (segment) => segment.contains('%2F'),
+      orElse: () => '',
+    );
+    
+    if (encodedPath.isEmpty) return imageUrl;
+    
+    final decodedPath = Uri.decodeComponent(encodedPath);
+    final thumbnailPath = 'thumbnails/$decodedPath';
+    final encodedThumbnailPath = Uri.encodeComponent(thumbnailPath);
+    
+    return imageUrl.replaceFirst(encodedPath, encodedThumbnailPath);
+  }
+
+  /// Get thumbnail URL for seller photo
+  String? get sellerPhotoThumbnail => getThumbnailUrl(sellerPhotoUrl);
+
+  /// Get thumbnail URLs for all listing images  
+  List<String> get imageThumbnails => 
+      imageUrls.map((url) => getThumbnailUrl(url) ?? url).toList();
+
   factory MarketplaceListing.fromFirestore(DocumentSnapshot doc) {
     final m = doc.data() as Map<String, dynamic>;
     return MarketplaceListing(
@@ -108,6 +141,7 @@ class MarketplaceListing {
       sellerId: m['sellerId'] as String? ?? '',
       sellerName: m['sellerName'] as String? ?? 'Unknown',
       sellerPhotoUrl: m['sellerPhotoUrl'] as String?,
+      sellerPhotoThumbnailUrl: m['sellerPhotoThumbnailUrl'] as String?,
       isShop: m['isShop'] as bool? ?? false,
       title: m['title'] as String? ?? '',
       description: m['description'] as String? ?? '',
@@ -117,6 +151,7 @@ class MarketplaceListing {
       condition:
           ListingConditionX.fromKey(m['condition'] as String? ?? 'good'),
       imageUrls: List<String>.from(m['imageUrls'] as List? ?? []),
+      thumbnailUrls: List<String>.from(m['thumbnailUrls'] as List? ?? []),
       city: m['city'] as String? ?? '',
       lat: (m['lat'] as num?)?.toDouble(),
       lng: (m['lng'] as num?)?.toDouble(),
@@ -140,6 +175,7 @@ class MarketplaceListing {
         'sellerId': sellerId,
         'sellerName': sellerName,
         if (sellerPhotoUrl != null) 'sellerPhotoUrl': sellerPhotoUrl,
+        if (sellerPhotoThumbnailUrl != null) 'sellerPhotoThumbnailUrl': sellerPhotoThumbnailUrl,
         'isShop': isShop,
         'title': title,
         'description': description,
@@ -147,6 +183,7 @@ class MarketplaceListing {
         'category': category.key,
         'condition': condition.key,
         'imageUrls': imageUrls,
+        'thumbnailUrls': thumbnailUrls,
         'city': city,
         if (lat != null) 'lat': lat,
         if (lng != null) 'lng': lng,
@@ -168,6 +205,7 @@ class MarketplaceListing {
     String? sellerId,
     String? sellerName,
     String? sellerPhotoUrl,
+    String? sellerPhotoThumbnailUrl,
     bool? isShop,
     String? title,
     String? description,
@@ -175,6 +213,7 @@ class MarketplaceListing {
     ListingCategory? category,
     ListingCondition? condition,
     List<String>? imageUrls,
+    List<String>? thumbnailUrls,
     String? city,
     double? lat,
     double? lng,
@@ -195,6 +234,7 @@ class MarketplaceListing {
         sellerId: sellerId ?? this.sellerId,
         sellerName: sellerName ?? this.sellerName,
         sellerPhotoUrl: sellerPhotoUrl ?? this.sellerPhotoUrl,
+        sellerPhotoThumbnailUrl: sellerPhotoThumbnailUrl ?? this.sellerPhotoThumbnailUrl,
         isShop: isShop ?? this.isShop,
         title: title ?? this.title,
         description: description ?? this.description,
@@ -202,6 +242,7 @@ class MarketplaceListing {
         category: category ?? this.category,
         condition: condition ?? this.condition,
         imageUrls: imageUrls ?? this.imageUrls,
+        thumbnailUrls: thumbnailUrls ?? this.thumbnailUrls,
         city: city ?? this.city,
         lat: lat ?? this.lat,
         lng: lng ?? this.lng,

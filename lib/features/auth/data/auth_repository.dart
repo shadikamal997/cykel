@@ -117,9 +117,13 @@ class AuthRepository {
   static const _webClientId =
       '875600194960-hq3vhlr27r3kn33g7rkgi9b01ke92tu8.apps.googleusercontent.com';
 
+  // Singleton GoogleSignIn instance for performance (avoid recreating on each sign-in)
+  late final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: _webClientId,
+  );
+
   Future<AppUser> signInWithGoogle() async {
-    final googleUser =
-        await GoogleSignIn(serverClientId: _webClientId).signIn();
+    final googleUser = await _googleSignIn.signIn();
     if (googleUser == null) throw const AuthCancelledException();
 
     final googleAuth = await googleUser.authentication;
@@ -177,7 +181,7 @@ class AuthRepository {
   // ─── Sign Out ──────────────────────────────────────────────────────────────
 
   Future<void> signOut() async {
-    await GoogleSignIn().signOut();
+    await _googleSignIn.signOut();
     await _auth.signOut();
   }
 
@@ -214,6 +218,7 @@ class AuthRepository {
     required String uid,
     String? displayName,
     String? phone,
+    String? photoUrl,
   }) async {
     final update = <String, dynamic>{};
     if (displayName != null && displayName.trim().isNotEmpty) {
@@ -221,6 +226,11 @@ class AuthRepository {
       update['displayNameLower'] = displayName.trim().toLowerCase();
     }
     if (phone != null) update['phone'] = phone.trim();
+    if (photoUrl != null) {
+      update['photoUrl'] = photoUrl;
+      // Generate thumbnail URL (assuming Cloud Function creates it)
+      update['photoThumbnail'] = photoUrl.replaceAll('/profile_photos/', '/profile_photos/thumb_');
+    }
     if (update.isEmpty) return;
     await _firestore
         .collection(AppConstants.colUsers)
@@ -230,6 +240,9 @@ class AuthRepository {
         displayName.trim().isNotEmpty &&
         _auth.currentUser != null) {
       await _auth.currentUser!.updateDisplayName(displayName.trim());
+    }
+    if (photoUrl != null && _auth.currentUser != null) {
+      await _auth.currentUser!.updatePhotoURL(photoUrl);
     }
   }
 

@@ -2,11 +2,15 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/upload_retry_helper.dart';
+import '../../../core/widgets/app_image.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../data/user_profile_provider.dart';
 import '../domain/user_profile.dart';
@@ -171,6 +175,66 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
   }
 
+  Future<void> _uploadProfilePhoto() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (image == null) return;
+
+      final user = ref.read(currentUserProvider);
+      if (user == null) return;
+
+      setState(() => _saving = true);
+
+      // Upload to Firebase Storage with retry logic
+      final fileName = 'profile_photos/${user.uid}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final storageRef = FirebaseStorage.instance.ref().child(fileName);
+      
+      final downloadUrl = await UploadRetryHelper.uploadXFileWithRetry(
+        storageRef: storageRef,
+        xFile: image,
+        metadata: SettableMetadata(
+          contentType: 'image/jpeg',
+          cacheControl: 'public, max-age=31536000',
+        ),
+      );
+
+      // Update user profile in Firebase Auth
+      await ref.read(authNotifierProvider.notifier).updateProfile(
+        uid: user.uid,
+        displayName: _nameCtrl.text.trim(),
+        photoUrl: downloadUrl,
+        phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.changesSaved),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload photo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -194,7 +258,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   )
                 : Text(l10n.saveChanges,
                     style: AppTextStyles.labelLarge
-                        .copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)),
+                        .copyWith(color: context.colors.textPrimary)),
           ),
         ],
       ),
@@ -204,32 +268,40 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           children: [
             // Avatar
             Center(
-              child: Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 44,
-                    backgroundColor: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white
-                        : Colors.black,
-                    backgroundImage: user?.photoUrl != null
-                        ? NetworkImage(user!.photoUrl!)
-                        : null,
-                    child: user?.photoUrl == null
-                        ? Text(
-                            (user?.displayName.isNotEmpty == true)
-                                ? user!.displayName[0].toUpperCase()
-                                : '?',
-                            style: TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.w700,
-                              color: Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.black
-                                  : Colors.white,
-                            ),
-                          )
-                        : null,
-                  ),
-                ],
+              child: GestureDetector(
+                onTap: _uploadProfilePhoto,
+                child: Stack(
+                  children: [
+                    AppAvatar(
+                      url: user?.photoUrl,
+                      thumbnailUrl: user?.photoThumbnail,
+                      size: 88,
+                      fallbackText: (user?.displayName.isNotEmpty == true)
+                          ? user!.displayName[0].toUpperCase()
+                          : '?',
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.camera_alt_rounded,
+                          size: 16,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.black
+                              : Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -288,7 +360,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     Icon(
                       Icons.cake_outlined,
                       size: 20,
-                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                      color: context.colors.textPrimary,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -405,7 +477,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   Icon(
                     _getProfileTypeIcon(_selectedProfileType),
                     size: 20,
-                    color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                    color: context.colors.textPrimary,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -483,7 +555,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     Icon(
                       Icons.child_care,
                       size: 20,
-                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                      color: context.colors.textPrimary,
                     ),
                     const SizedBox(width: 12),
                     const Expanded(
@@ -556,7 +628,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     Icon(
                       Icons.delivery_dining,
                       size: 20,
-                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                      color: context.colors.textPrimary,
                     ),
                     const SizedBox(width: 12),
                     const Expanded(
@@ -587,7 +659,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     Icon(
                       Icons.follow_the_signs,
                       size: 20,
-                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                      color: context.colors.textPrimary,
                     ),
                     const SizedBox(width: 12),
                     const Expanded(
@@ -667,7 +739,7 @@ class _Field extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: Icon(icon, size: 20, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+        prefixIcon: Icon(icon, size: 20, color: context.colors.textPrimary),
         filled: true,
         fillColor: context.colors.surface,
         border: OutlineInputBorder(
@@ -681,7 +753,7 @@ class _Field extends StatelessWidget {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide:
-              BorderSide(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, width: 1.5),
+              BorderSide(color: context.colors.textPrimary, width: 1.5),
         ),
       ),
     );

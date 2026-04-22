@@ -273,9 +273,9 @@ class _BiometricLockSectionState extends State<_BiometricLockSection> {
     if (_isLoading) {
       return Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border, width: 0.8),
+          border: Border.all(color: context.colors.border, width: 0.8),
         ),
         padding: const EdgeInsets.all(16),
         child: const Center(
@@ -292,17 +292,17 @@ class _BiometricLockSectionState extends State<_BiometricLockSection> {
       // Show message that biometrics are not available
       return Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border, width: 0.8),
+          border: Border.all(color: context.colors.border, width: 0.8),
         ),
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.fingerprint_rounded,
               size: 20,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -317,7 +317,7 @@ class _BiometricLockSectionState extends State<_BiometricLockSection> {
                   Text(
                     context.l10n.noBiometricsAvailable,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ],
@@ -330,9 +330,9 @@ class _BiometricLockSectionState extends State<_BiometricLockSection> {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border, width: 0.8),
+        border: Border.all(color: context.colors.border, width: 0.8),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
@@ -356,7 +356,7 @@ class _BiometricLockSectionState extends State<_BiometricLockSection> {
                 Text(
                   context.l10n.biometricLockDesc,
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ],

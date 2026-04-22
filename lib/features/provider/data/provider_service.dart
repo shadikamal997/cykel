@@ -79,6 +79,7 @@ class ProviderService {
   Stream<List<CykelProvider>> streamMyProviders(String uid) => _col
       .where('userId', isEqualTo: uid)
       .orderBy('createdAt', descending: true)
+      .limit(50)  // Limit providers per user
       .snapshots()
       .map((s) => s.docs.map(CykelProvider.fromFirestore).toList());
 
@@ -88,6 +89,7 @@ class ProviderService {
       .where('verificationStatus', isEqualTo: VerificationStatus.approved.key)
       .where('isActive', isEqualTo: true)
       .orderBy('createdAt', descending: true)
+      .limit(200)  // Limit providers of specific type
       .snapshots()
       .map((s) => s.docs.map(CykelProvider.fromFirestore).toList());
 
@@ -96,6 +98,7 @@ class ProviderService {
       .where('verificationStatus', isEqualTo: VerificationStatus.approved.key)
       .where('isActive', isEqualTo: true)
       .orderBy('createdAt', descending: true)
+      .limit(200)  // Limit all providers - consider geographic filtering
       .snapshots()
       .map((s) => s.docs.map(CykelProvider.fromFirestore).toList());
 
@@ -108,6 +111,7 @@ class ProviderService {
     required double lat,
     required double lng,
     double radiusKm = 10,
+    int limit = 200,
   }) async {
     // Approximate bounding box (~111 km per degree latitude).
     final latDelta = radiusKm / 111.0;
@@ -119,6 +123,7 @@ class ProviderService {
         .where('isActive', isEqualTo: true)
         .where('latitude', isGreaterThanOrEqualTo: lat - latDelta)
         .where('latitude', isLessThanOrEqualTo: lat + latDelta)
+        .limit(limit)
         .get();
 
     final candidates = snap.docs.map(CykelProvider.fromFirestore).toList();

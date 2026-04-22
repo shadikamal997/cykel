@@ -32,7 +32,7 @@ class _GdprConsentScreenState extends ConsumerState<GdprConsentScreen> {
     final topPad = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(24, topPad + 8, 24, 32),
@@ -48,7 +48,7 @@ class _GdprConsentScreenState extends ConsumerState<GdprConsentScreen> {
               Text(
                 l10n.gdprSubtitle,
                 style: AppTextStyles.bodyMedium
-                    .copyWith(color: AppColors.textSecondary),
+                    .copyWith(color: context.colors.textSecondary),
               ),
               const SizedBox(height: 28),
 
@@ -100,13 +100,13 @@ class _GdprConsentScreenState extends ConsumerState<GdprConsentScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
+                  color: context.colors.surfaceVariant,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   l10n.gdprPrivacyNotice,
                   style: AppTextStyles.bodySmall
-                      .copyWith(color: AppColors.textSecondary),
+                      .copyWith(color: context.colors.textSecondary),
                 ),
               ),
               const SizedBox(height: 24),
@@ -117,8 +117,8 @@ class _GdprConsentScreenState extends ConsumerState<GdprConsentScreen> {
                 child: ElevatedButton(
                   onPressed: _submitting ? null : _accept,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                    foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -178,9 +178,9 @@ class _DataCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border, width: 0.8),
+        border: Border.all(color: context.colors.border, width: 0.8),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,13 +202,13 @@ class _DataCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+                          color: (context.colors.textPrimary).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           context.l10n.requiredBadge,
                           style: AppTextStyles.labelSmall.copyWith(
-                            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                            color: context.colors.textPrimary,
                             fontSize: 10,
                           ),
                         ),
@@ -218,7 +218,7 @@ class _DataCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(body,
                     style: AppTextStyles.bodySmall
-                        .copyWith(color: AppColors.textSecondary)),
+                        .copyWith(color: context.colors.textSecondary)),
               ],
             ),
           ),
@@ -247,7 +247,7 @@ class _ConsentToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark ? Colors.white : Colors.black;
+    final baseColor = context.colors.textPrimary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(

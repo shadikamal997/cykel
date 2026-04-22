@@ -227,7 +227,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                 height: 150,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: context.colors.border),
                 ),
                 clipBehavior: Clip.hardEdge,
                 child: GoogleMap(
@@ -575,22 +575,37 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   }
 
   Future<void> _createEvent() async {
+    // Prevent double-tap by setting loading state immediately
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+
     // Check email verification first
     try {
       await checkEmailVerification(context, ref);
     } catch (e) {
       // User's email is not verified, dialog already shown
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
       return;
     }
 
-    if (!mounted) return;
-    if (!_formKey.currentState!.validate()) return;
+    if (!mounted) {
+      setState(() => _isLoading = false);
+      return;
+    }
+    
+    if (!_formKey.currentState!.validate()) {
+      setState(() => _isLoading = false);
+      return;
+    }
 
     if (_selectedLocation == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.searchAddressFirst)),
       );
+      setState(() => _isLoading = false);
       return;
     }
 
@@ -600,6 +615,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.mustBeLoggedIn)),
       );
+      setState(() => _isLoading = false);
       return;
     }
     
@@ -617,18 +633,14 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.eventDateTimePast)),
       );
+      setState(() => _isLoading = false);
       return;
     }
 
-    setState(() => _isLoading = true);
-
     try {
-      // Upload image first if selected
-      String? imageUrl;
-      if (_selectedImage != null) {
-        imageUrl = await _uploadImage();
-      }
-
+      // Create the event document immediately (no image yet) so the user
+      // doesn't wait for the upload. The image is uploaded in the background
+      // and the event document is updated automatically when ready.
       final event = RideEvent(
         id: '',
         title: _titleController.text.trim(),
@@ -662,27 +674,41 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
         maxAge: int.tryParse(_maxAgeController.text),
         isNoDrop: _isNoDrop,
         requiresLights: _requiresLights,
-        imageUrl: imageUrl,
+        imageUrl: null,
         createdAt: DateTime.now(),
       );
 
-      final eventId = await ref.read(eventsServiceProvider).createEvent(event);
+      final eventsService = ref.read(eventsServiceProvider);
+      final eventId = await eventsService.createEvent(event);
 
+      // Upload the image in the background
+      if (_selectedImage != null) {
+        unawaited(_uploadAndAttachImage(eventsService, eventId));
+      }
+
+      // Navigate after successful creation
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.groupRideCreated)),
-        );
-        context.go('/events/$eventId');
+        setState(() => _isLoading = false);
+        
+        // Pop current screen first, then navigate to event detail
+        context.pop();
+        
+        // Small delay to ensure navigation stack is clean
+        await Future.delayed(const Duration(milliseconds: 100));
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.groupRideCreated)),
+          );
+          context.push('/events/$eventId');
+        }
       }
     } catch (e) {
       if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${context.l10n.error}: $e')),
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
       }
     }
   }
@@ -706,9 +732,9 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
             height: 200,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.colors.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: context.colors.border),
               image: _selectedImage != null
                   ? DecorationImage(
                       image: FileImage(_selectedImage!),
@@ -720,16 +746,16 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.add_photo_alternate,
                         size: 48,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Tap to add event image',
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                       ),
                     ],
@@ -783,25 +809,27 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     }
   }
 
-  Future<String?> _uploadImage() async {
-    if (_selectedImage == null) return null;
-
+  /// Uploads the selected image and updates the event document with the URL.
+  /// Called after navigation so the user never waits for the upload.
+  Future<void> _uploadAndAttachImage(EventsService eventsService, String eventId) async {
     try {
       final user = ref.read(currentUserProvider);
-      if (user == null) return null;
+      if (user == null || _selectedImage == null) return;
 
       final fileName = 'events/${user.uid}/${DateTime.now().millisecondsSinceEpoch}.jpg';
       final storageRef = FirebaseStorage.instance.ref().child(fileName);
 
-      await storageRef.putFile(_selectedImage!);
-      return await storageRef.getDownloadURL();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to upload image: $e')),
-        );
-      }
-      return null;
+      await storageRef.putFile(
+        _selectedImage!,
+        SettableMetadata(
+          contentType: 'image/jpeg',
+          cacheControl: 'public, max-age=31536000',
+        ),
+      );
+      final imageUrl = await storageRef.getDownloadURL();
+      await eventsService.updateEventImageUrl(eventId, imageUrl);
+    } catch (_) {
+      // Non-critical: event already exists; image upload failure is silent
     }
   }
 }

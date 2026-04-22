@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../application/family_pricing_providers.dart';
 import '../domain/subscription.dart';
@@ -33,7 +34,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Checkout'),
+        title: Text(context.l10n.familyCheckout),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -84,7 +85,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     TextButton.icon(
                       onPressed: () => _showAddPaymentDialog(context),
                       icon: const Icon(Icons.add),
-                      label: const Text('Add Payment Method'),
+                      label: Text(context.l10n.familyAddPayment),
                     ),
                   ],
                 );
@@ -240,7 +241,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   : 'Welcome to ${widget.pricing.plan.displayName}! Your subscription is now active.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
             ),
             const SizedBox(height: 24),
@@ -260,7 +261,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('Get Started'),
+                child: Text(context.l10n.familyGetStarted),
               ),
             ),
           ],
@@ -321,7 +322,7 @@ class _OrderSummaryCard extends StatelessWidget {
               Text(
                 'Billing: ${billingPeriod.displayName}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
               ),
               if (billingPeriod != BillingPeriod.monthly)
@@ -402,7 +403,7 @@ class _TrialToggle extends StatelessWidget {
                       ? 'Try all features free for 14 days'
                       : 'Start your subscription immediately',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                 ),
               ],
@@ -523,7 +524,7 @@ class _AddPaymentMethodCard extends StatelessWidget {
             Text(
               'Add Payment Method',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
             ),

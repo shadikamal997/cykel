@@ -213,6 +213,9 @@ class AppLocalizationsDa extends AppLocalizations {
   String get sectionNearby => 'I nærheden';
 
   @override
+  String get cykelFeatures => 'CYKEL Funktioner';
+
+  @override
   String conditionScore(String score) {
     return '$score/10';
   }
@@ -376,7 +379,7 @@ class AppLocalizationsDa extends AppLocalizations {
   String get layerRental => 'Udlejning';
 
   @override
-  String get layerRepair => 'Repair Shops';
+  String get layerRepair => 'Værksteder';
 
   @override
   String get allDay => 'Åbent 24/7';
@@ -490,6 +493,24 @@ class AppLocalizationsDa extends AppLocalizations {
 
   @override
   String get noRidesSubtitle => 'Tryk Start tur for at optage din første tur';
+
+  @override
+  String get noRidesToday => 'Ingen ture i dag endnu';
+
+  @override
+  String get noRidesTodaySubtitle => 'Start din første tur';
+
+  @override
+  String get noQuickRoutesYet => 'Ingen hurtige ruter endnu';
+
+  @override
+  String get noQuickRoutesSubtitle => 'Indstil dine hjemme- og arbejdsadresser';
+
+  @override
+  String get startTrackingRides => 'Begynd at spore dine ture';
+
+  @override
+  String get startTrackingRidesSubtitle => 'Dine cykelstatistikker vises her';
 
   @override
   String get avgSpeed => 'Gns. hastighed';
@@ -664,19 +685,19 @@ class AppLocalizationsDa extends AppLocalizations {
   String get bikeProfileFamily => 'Familiecykel';
 
   @override
-  String get bikeTypeCity => 'City';
+  String get bikeTypeCity => 'By';
 
   @override
-  String get bikeTypeRoad => 'Road';
+  String get bikeTypeRoad => 'Race';
 
   @override
   String get bikeTypeEbike => 'El-cykel';
 
   @override
-  String get bikeTypeCargo => 'Cargo';
+  String get bikeTypeCargo => 'Lad';
 
   @override
-  String get bikeTypeMountain => 'Mountain';
+  String get bikeTypeMountain => 'MTB';
 
   @override
   String windHeadwind(String speed) {
@@ -1056,7 +1077,7 @@ class AppLocalizationsDa extends AppLocalizations {
   String get listingPublished => 'Annonce publiceret!';
 
   @override
-  String get listingDeleted => 'Annonce slettet';
+  String get listingDeleted => 'Udlejning slettet';
 
   @override
   String get listingMarkedSold => 'Markeret som solgt';
@@ -1458,6 +1479,46 @@ class AppLocalizationsDa extends AppLocalizations {
 
   @override
   String get weatherAlerts => 'Vejrvarsler';
+
+  @override
+  String get lowSeverity => 'Lav';
+
+  @override
+  String get mediumSeverity => 'Mellem';
+
+  @override
+  String get highSeverity => 'Høj';
+
+  @override
+  String get notifications => 'Notifikationer';
+
+  @override
+  String get noNotifications => 'Ingen notifikationer';
+
+  @override
+  String get noNotificationsDesc =>
+      'Du er opdateret! Notifikationer vises her.';
+
+  @override
+  String get markAllRead => 'Markér alle som læst';
+
+  @override
+  String get justNow => 'Lige nu';
+
+  @override
+  String minutesAgo(int count) {
+    return '$count minutter siden';
+  }
+
+  @override
+  String hoursAgo(int count) {
+    return '$count timer siden';
+  }
+
+  @override
+  String daysAgo(int count) {
+    return '$count dage siden';
+  }
 
   @override
   String get weatherUnavailable => 'Vejr ikke tilgængeligt';
@@ -2735,10 +2796,10 @@ class AppLocalizationsDa extends AppLocalizations {
   String get providerTypeChargingLocation => 'E-cykel opladning';
 
   @override
-  String get providerTypeServicePoint => 'Service Point';
+  String get providerTypeServicePoint => 'Servicepunkt';
 
   @override
-  String get providerTypeRental => 'Bike Rental';
+  String get providerTypeRental => 'Cykeludlejning';
 
   @override
   String get providerTypeRepairShopDesc =>
@@ -2754,11 +2815,10 @@ class AppLocalizationsDa extends AppLocalizations {
 
   @override
   String get providerTypeServicePointDesc =>
-      'Mobile or fixed service stations for quick repairs and maintenance.';
+      'Mobile eller faste servicestationer til hurtige reparationer og vedligeholdelse.';
 
   @override
-  String get providerTypeRentalDesc =>
-      'Rent out bicycles and e-bikes to riders.';
+  String get providerTypeRentalDesc => 'Udlej cykler og el-cykler til ryttere.';
 
   @override
   String get repairFlatTire => 'Punktering';
@@ -3464,7 +3524,8 @@ class AppLocalizationsDa extends AppLocalizations {
   String get noProvidersNearby => 'Ingen CYKEL-udbydere i nærheden endnu.';
 
   @override
-  String get noChargingStationsNearby => 'No charging stations nearby yet.';
+  String get noChargingStationsNearby =>
+      'Ingen ladestationer i nærheden endnu.';
 
   @override
   String get viewAllProviders => 'I nærheden';
@@ -3620,6 +3681,42 @@ class AppLocalizationsDa extends AppLocalizations {
   String estimatedDeduction(String amount) {
     return 'Anslået fradrag: $amount DKK';
   }
+
+  @override
+  String estimatedTaxSavings(String amount) {
+    return 'Anslået skattebesparelse: ~$amount DKK';
+  }
+
+  @override
+  String get taxDeductionInfo => 'Information om befordringsfradrag';
+
+  @override
+  String get yearToDate => 'År til dato';
+
+  @override
+  String get howItWorks => 'Sådan fungerer det';
+
+  @override
+  String get rateBreakdown => 'Takstfordeling';
+
+  @override
+  String get exportForTaxFiling => 'Eksporter til selvangivelse';
+
+  @override
+  String get learnMore => 'Læs mere';
+
+  @override
+  String get noCommuteTripsYet => 'Ingen pendlerture endnu';
+
+  @override
+  String get setHomeWorkAddresses =>
+      'Indstil dine hjem- og arbejdsadresser for at begynde at spore pendlerfradrag';
+
+  @override
+  String get configure => 'Konfigurer';
+
+  @override
+  String get failedToLoad => 'Kunne ikke indlæse';
 
   @override
   String get hazardThunderstorm => 'Tordenvejr';
@@ -4432,6 +4529,463 @@ class AppLocalizationsDa extends AppLocalizations {
   String get periodAllTime => 'Al tid';
 
   @override
+  String get buddyFindRidingBuddies => 'Find cykelvenner';
+
+  @override
+  String get buddyTabForYou => 'Til dig';
+
+  @override
+  String get buddyTabRequests => 'Anmodninger';
+
+  @override
+  String get buddyTabMatches => 'Match';
+
+  @override
+  String get buddyFilters => 'Filtre';
+
+  @override
+  String get buddyRidingLevel => 'Cykelniveau';
+
+  @override
+  String get buddyAllLevels => 'Alle niveauer';
+
+  @override
+  String get buddyInterests => 'Interesser';
+
+  @override
+  String get buddyCreateProfile => 'Opret din cykelvenneprofil';
+
+  @override
+  String get buddyCreateProfileDesc =>
+      'Opsæt din cykelprofil for at finde kompatible cykelpartnere';
+
+  @override
+  String get buddyCreateProfileButton => 'Opret profil';
+
+  @override
+  String get buddyNoMatchesFound => 'Ingen match fundet';
+
+  @override
+  String get buddyNoMatchesFoundDesc =>
+      'Prøv at justere dine præferencer eller tjek igen senere';
+
+  @override
+  String get buddyNoPendingRequests => 'Ingen ventende anmodninger';
+
+  @override
+  String get buddyNoPendingRequestsDesc => 'Matchanmodninger vises her';
+
+  @override
+  String get buddyNoMatchesYet => 'Ingen match endnu';
+
+  @override
+  String get buddyConnectInForYou =>
+      'Begynd at forbinde med ryttere i \"Til dig\" fanen';
+
+  @override
+  String get buddyAbout => 'Om';
+
+  @override
+  String get buddyStats => 'Statistik';
+
+  @override
+  String get buddyAvailability => 'Tilgængelighed';
+
+  @override
+  String get buddyLanguages => 'Sprog';
+
+  @override
+  String get buddyClose => 'Luk';
+
+  @override
+  String get buddySendRequest => 'Send anmodning';
+
+  @override
+  String buddyMatchRequestSent(String name) {
+    return 'Matchanmodning sendt til $name!';
+  }
+
+  @override
+  String get buddyDecline => 'Afvis';
+
+  @override
+  String get buddyAccept => 'Accepter';
+
+  @override
+  String get buddyMatchAccepted => 'Match accepteret!';
+
+  @override
+  String get buddyRequestDeclined => 'Anmodning afvist';
+
+  @override
+  String get buddyChatComingSoon => 'Chat kommer snart';
+
+  @override
+  String get rentalSectionBasicInfo => 'Grundlæggende information';
+
+  @override
+  String get rentalSectionDetails => 'Detaljer (valgfrit)';
+
+  @override
+  String get rentalSectionPricing => 'Priser';
+
+  @override
+  String get rentalSectionFeatures => 'Funktioner';
+
+  @override
+  String get rentalSectionLocation => 'Placering';
+
+  @override
+  String get rentalSectionAvailability => 'Tilgængelighed';
+
+  @override
+  String get rentalSectionAdditionalInfo => 'Yderligere information';
+
+  @override
+  String get rentalSectionPhotos => 'Billeder';
+
+  @override
+  String get rentalAddPhotos => 'Tilføj billeder';
+
+  @override
+  String get rentalNoPhotos => 'Ingen billeder tilføjet endnu';
+
+  @override
+  String get rentalAvailableFrom => 'Tilgængelig fra';
+
+  @override
+  String get rentalAvailableTo => 'Tilgængelig til';
+
+  @override
+  String get rentalNoStartDate => 'Ingen startdato (tilgængelig med det samme)';
+
+  @override
+  String get rentalNoEndDate => 'Ingen slutdato (tilgængelig på ubestemt tid)';
+
+  @override
+  String get rentalSelectDates => 'Vælg venligst start- og slutdato/tid';
+
+  @override
+  String get rentalLocationSet =>
+      'Placering indstillet til København (vælger afventer)';
+
+  @override
+  String get rentalSelectLocation => 'Vælg venligst en afhentningsplacering';
+
+  @override
+  String rentalErrorSaving(String error) {
+    return 'Fejl ved gemning af annonce: $error';
+  }
+
+  @override
+  String get rentalDescription => 'Beskrivelse';
+
+  @override
+  String get rentalDetails => 'Detaljer';
+
+  @override
+  String get rentalTerms => 'Lejevilkår';
+
+  @override
+  String rentalReviews(int count) {
+    return 'Anmeldelser ($count)';
+  }
+
+  @override
+  String get rentalConfirmRequest => 'Bekræft lejeanmodning';
+
+  @override
+  String rentalBikeLabel(String title) {
+    return 'Cykel: $title';
+  }
+
+  @override
+  String get rentalRequestSent =>
+      'Lejeanmodning sendt! Ejeren bliver underrettet.';
+
+  @override
+  String get rentalListingNotFound => 'Annonce ikke fundet';
+
+  @override
+  String get rentalRequestButton => 'Anmod om leje';
+
+  @override
+  String get rentalRentABike => 'Lej en cykel';
+
+  @override
+  String get rentalListYourBike => 'Opret annonce for din cykel';
+
+  @override
+  String get rentalClear => 'Ryd';
+
+  @override
+  String get rentalApplyFilters => 'Anvend filtre';
+
+  @override
+  String get rentalFilterBikeType => 'Cykeltype';
+
+  @override
+  String get rentalFilterSize => 'Størrelse';
+
+  @override
+  String get rentalFilterMaxPrice => 'Maksimal pris';
+
+  @override
+  String get rentalFilterFeatures => 'Funktioner';
+
+  @override
+  String get rentalFilterHelmet => 'Hjelm inkluderet';
+
+  @override
+  String get rentalFilterLock => 'Lås inkluderet';
+
+  @override
+  String get rentalFilterFrom => 'Fra';
+
+  @override
+  String get rentalEndAfterStart =>
+      'Sluttidspunkt skal være efter starttidspunkt';
+
+  @override
+  String get eventsApplyFilter => 'Anvend filter';
+
+  @override
+  String get eventsError => 'Fejl ved indlæsning af begivenheder';
+
+  @override
+  String get chatDeleteConversation => 'Slet samtale';
+
+  @override
+  String get chatMessages => 'Beskeder';
+
+  @override
+  String get chatErrorLoading => 'Fejl ved indlæsning af samtaler';
+
+  @override
+  String chatErrorLoadingMessages(String error) {
+    return 'Fejl ved indlæsning af beskeder: $error';
+  }
+
+  @override
+  String get chatSendPhoto => 'Send billede';
+
+  @override
+  String get chatShareLocation => 'Del placering';
+
+  @override
+  String get chatDeleteConversationTitle => 'Slet samtale';
+
+  @override
+  String get chatLoading => 'Indlæser...';
+
+  @override
+  String get routesCreateRoute => 'Opret rute';
+
+  @override
+  String get routesCreate => 'Opret';
+
+  @override
+  String get routesOptimizeRoute => 'Optimer rute';
+
+  @override
+  String get routesMinTwoWaypoints => 'Ruten skal have mindst 2 waypoints';
+
+  @override
+  String get routesEnterName => 'Indtast venligst et rutenavn';
+
+  @override
+  String get routesCreatedSuccess => 'Rute oprettet succesfuldt!';
+
+  @override
+  String routesErrorCreating(String error) {
+    return 'Fejl ved oprettelse af rute: $error';
+  }
+
+  @override
+  String get routesRoundTrip => 'Rundtur';
+
+  @override
+  String get routesRoundTripDesc => 'Ruten vender tilbage til start';
+
+  @override
+  String get routesCalculateElevation => 'Beregn højde';
+
+  @override
+  String get routesCalculateElevationDesc => 'Inkluder højdeprofil';
+
+  @override
+  String get routesFetchWeather => 'Hent vejr';
+
+  @override
+  String get routesFetchWeatherDesc => 'Få aktuelle vejrdata';
+
+  @override
+  String get routesAddTag => 'Tilføj tag';
+
+  @override
+  String get routesEditWaypoint => 'Rediger waypoint';
+
+  @override
+  String get routesMyRoutes => 'Mine ruter';
+
+  @override
+  String routesErrorLoadingRoutes(String error) {
+    return 'Fejl ved indlæsning af ruter: $error';
+  }
+
+  @override
+  String get routesRetry => 'Prøv igen';
+
+  @override
+  String get routesFilterByTag => 'Filtrer efter tag';
+
+  @override
+  String get routesAllRoutes => 'Alle ruter';
+
+  @override
+  String get routesDeleteRoute => 'Slet rute';
+
+  @override
+  String get routesDeleteConfirm =>
+      'Er du sikker på, at du vil slette denne rute?';
+
+  @override
+  String get routesEditRoute => 'Rediger rute';
+
+  @override
+  String get routesRouteNotFound => 'Rute ikke fundet';
+
+  @override
+  String get routesNoElevationData => 'Ingen højdedata tilgængelige';
+
+  @override
+  String get routesNoWeatherData => 'Ingen vejrdata tilgængelige';
+
+  @override
+  String get routesFailedLoadWeather => 'Kunne ikke indlæse vejr';
+
+  @override
+  String get routesNoRecommendations => 'Ingen anbefalinger tilgængelige';
+
+  @override
+  String get routesFailedLoadRecommendations =>
+      'Kunne ikke indlæse anbefalinger';
+
+  @override
+  String get familyMap => 'Familiemkort';
+
+  @override
+  String get familyNoAccount => 'Ingen familiekonto fundet';
+
+  @override
+  String get familySendSOSAlert => 'Send SOS-alarm?';
+
+  @override
+  String get familySendSOS => 'Send SOS';
+
+  @override
+  String get familySOSSent => 'SOS-alarm sendt til din familie!';
+
+  @override
+  String familySOSFailed(String error) {
+    return 'Kunne ikke sende SOS: $error';
+  }
+
+  @override
+  String get familyCheckout => 'Betaling';
+
+  @override
+  String get familyAddPayment => 'Tilføj betalingsmetode';
+
+  @override
+  String get familyPaymentError => 'Kunne ikke indlæse betalingsmetoder';
+
+  @override
+  String get familyGetStarted => 'Kom i gang';
+
+  @override
+  String get familyNoRidesYet => 'Ingen ture endnu';
+
+  @override
+  String get familyNoRecentAlerts => 'Ingen seneste alarmer';
+
+  @override
+  String get familyAchievements => 'Præstationer';
+
+  @override
+  String get familyCreateChallenge => 'Opret ny udfordring';
+
+  @override
+  String get familyChallengeCreated => 'Udfordring oprettet!';
+
+  @override
+  String get expatSafetyEquipment => 'Sikkerhedsudstyr';
+
+  @override
+  String expatNoGuideAvailable(String type) {
+    return 'Ingen $type guide tilgængelig';
+  }
+
+  @override
+  String expatErrorLoading(String error) {
+    return 'Fejl ved indlæsning af guide: $error';
+  }
+
+  @override
+  String get expatCyclingLaws => 'Cykellove';
+
+  @override
+  String get expatCultureEtiquette => 'Kultur & etikette';
+
+  @override
+  String get expatCommute => 'Pendling';
+
+  @override
+  String get expatNoRoutesAvailable => 'Ingen ruter tilgængelige';
+
+  @override
+  String get expatBikeShops => 'Cykelbutikker';
+
+  @override
+  String get expatAllShops => 'Alle butikker';
+
+  @override
+  String get expatExpatFriendly => 'Kun udlændingevenlige';
+
+  @override
+  String get expatRepairServices => 'Reparationstjenester';
+
+  @override
+  String get expatSales => 'Salg';
+
+  @override
+  String get expatNoShopsFound => 'Ingen butikker fundet';
+
+  @override
+  String get expatCall => 'Ring';
+
+  @override
+  String get expatWebsite => 'Hjemmeside';
+
+  @override
+  String get commonShowAll => 'Vis alle';
+
+  @override
+  String get commonClearAll => 'Ryd alle';
+
+  @override
+  String get commonOpenNowOnly => 'Kun åbne nu';
+
+  @override
+  String get commonStartHere => 'Start her';
+
+  @override
+  String get commonGoHere => 'Gå her';
+
+  @override
+  String get commonHoldSOS => 'Hold SOS-knappen i 2 sekunder';
+
+  @override
   String get bikeMaintenanceTitle => 'Vedligeholdelse';
 
   @override
@@ -5195,4 +5749,98 @@ class AppLocalizationsDa extends AppLocalizations {
 
   @override
   String get viewOnMap => 'Se på kort';
+
+  @override
+  String get myRentals => 'Mine udlejninger';
+
+  @override
+  String get renting => 'Lejer';
+
+  @override
+  String get listings => 'Udlejninger';
+
+  @override
+  String get noListingsYet => 'Ingen udlejninger endnu';
+
+  @override
+  String get listBikeToEarn => 'Opret udlejning for at tjene penge!';
+
+  @override
+  String get createListing => 'Opret udlejning';
+
+  @override
+  String get listingNotFound => 'Udlejning ikke fundet';
+
+  @override
+  String get errorLoadingListing => 'Fejl ved indlæsning';
+
+  @override
+  String get declineRequest => 'Afvis anmodning';
+
+  @override
+  String get declineRequestConfirm =>
+      'Er du sikker på, at du vil afvise denne anmodning?';
+
+  @override
+  String get approveRequest => 'Godkend anmodning';
+
+  @override
+  String get requestApproved => 'Anmodning godkendt! Lejer er underrettet.';
+
+  @override
+  String get requestDeclined => 'Anmodning afvist';
+
+  @override
+  String get deleteListing => 'Slet udlejning';
+
+  @override
+  String get deleteListingQuestion =>
+      'Er du sikker på, at du vil slette denne udlejning?';
+
+  @override
+  String errorOccurred(String error) {
+    return 'Fejl: $error';
+  }
+
+  @override
+  String get safeZones => 'Sikre zoner';
+
+  @override
+  String get noFamilyAccount => 'Ingen familiekonto fundet';
+
+  @override
+  String get addZone => 'Tilføj zone';
+
+  @override
+  String get deleteSafeZone => 'Slet sikker zone?';
+
+  @override
+  String get deleteSafeZoneConfirm =>
+      'Dette vil permanent fjerne denne sikre zone.';
+
+  @override
+  String zoneDeleted(String zoneName) {
+    return 'Slettede \"$zoneName\"';
+  }
+
+  @override
+  String get aboutSafeZones => 'Om sikre zoner';
+
+  @override
+  String get gotIt => 'Forstået';
+
+  @override
+  String get addFirstZone => 'Tilføj din første zone';
+
+  @override
+  String get approve => 'Godkend';
+
+  @override
+  String get createNewListing => 'Opret ny udlejning';
+
+  @override
+  String get loading => 'Indlæser...';
+
+  @override
+  String get remove => 'Fjern';
 }

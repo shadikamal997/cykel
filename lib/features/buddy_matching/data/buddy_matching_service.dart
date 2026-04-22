@@ -24,7 +24,7 @@ class BuddyMatchingService {
           .collection('buddyProfiles')
           .where('isActive', isEqualTo: true)
           .where(FieldPath.documentId, isNotEqualTo: currentUserId)
-          .limit(100) // Get more for filtering
+          .limit(20) // Reduced for faster initial load
           .get();
 
       final candidates = querySnapshot.docs
@@ -293,6 +293,7 @@ class BuddyMatchingService {
           .where('userId2', isEqualTo: userId)
           .where('status', isEqualTo: BuddyMatchStatus.pending.name)
           .orderBy('createdAt', descending: true)
+          .limit(100)  // Limit pending match requests
           .get();
 
       return querySnapshot.docs
@@ -311,6 +312,7 @@ class BuddyMatchingService {
           .where('userId1', isEqualTo: userId)
           .where('status', isEqualTo: BuddyMatchStatus.pending.name)
           .orderBy('createdAt', descending: true)
+          .limit(100)  // Limit sent match requests
           .get();
 
       return querySnapshot.docs

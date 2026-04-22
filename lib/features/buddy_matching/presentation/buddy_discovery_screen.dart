@@ -1,9 +1,13 @@
+import 'package:go_router/go_router.dart';
+import '../../../core/router/app_router.dart';
+import '../../../core/widgets/app_image.dart';
 /// CYKEL — Buddy Discovery Screen
 /// Find and connect with compatible riding partners
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../auth/providers/auth_providers.dart';
@@ -41,10 +45,10 @@ class _BuddyDiscoveryScreenState extends ConsumerState<BuddyDiscoveryScreen> wit
     final currentBuddyProfileAsync = ref.watch(currentBuddyProfileProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        title: const Text('Find Riding Buddies'),
-        backgroundColor: AppColors.surface,
+        title: Text(context.l10n.buddyFindRidingBuddies),
+        backgroundColor: context.colors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         actions: [
@@ -66,10 +70,10 @@ class _BuddyDiscoveryScreenState extends ConsumerState<BuddyDiscoveryScreen> wit
           labelColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
           unselectedLabelColor: AppColors.textSecondary,
           indicatorColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-          tabs: const [
-            Tab(text: 'For You'),
-            Tab(text: 'Requests'),
-            Tab(text: 'Matches'),
+          tabs: [
+            Tab(text: context.l10n.buddyTabForYou),
+            Tab(text: context.l10n.buddyTabRequests),
+            Tab(text: context.l10n.buddyTabMatches),
           ],
         ),
       ),
@@ -79,32 +83,32 @@ class _BuddyDiscoveryScreenState extends ConsumerState<BuddyDiscoveryScreen> wit
           if (_showFilters)
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: AppColors.surface,
+              decoration: BoxDecoration(
+                color: context.colors.surface,
                 border: Border(
-                  bottom: BorderSide(color: AppColors.border),
+                  bottom: BorderSide(color: context.colors.border),
                 ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Filters',
+                    context.l10n.buddyFilters,
                     style: AppTextStyles.labelMedium.copyWith(
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 12),
                   
                   // Level filter
-                  const Text('Riding Level ', style: AppTextStyles.bodySmall),
+                  Text(context.l10n.buddyRidingLevel, style: AppTextStyles.bodySmall),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
                       FilterChip(
-                        label: const Text('All Levels'),
+                        label: Text(context.l10n.buddyAllLevels),
                         selected: _filterLevel == null,
                         onSelected: (selected) {
                           setState(() {
@@ -128,7 +132,7 @@ class _BuddyDiscoveryScreenState extends ConsumerState<BuddyDiscoveryScreen> wit
                   const SizedBox(height: 16),
                   
                   // Interest filter
-                  const Text('Interests', style: AppTextStyles.bodySmall),
+                  Text(context.l10n.buddyInterests, style: AppTextStyles.bodySmall),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -158,7 +162,7 @@ class _BuddyDiscoveryScreenState extends ConsumerState<BuddyDiscoveryScreen> wit
           Expanded(
             child: currentBuddyProfileAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              error: (e, _) => Center(child: Text(context.l10n.errorPrefix(e.toString()))),
               data: (buddyProfile) {
                 if (buddyProfile == null) {
                   return _buildCreateProfilePrompt();
@@ -189,23 +193,23 @@ class _BuddyDiscoveryScreenState extends ConsumerState<BuddyDiscoveryScreen> wit
           children: [
             const Text('👥', style: TextStyle(fontSize: 64)),
             const SizedBox(height: 16),
-            const Text(
-              'Create Your Buddy Profile',
+            Text(
+              context.l10n.buddyCreateProfile,
               style: AppTextStyles.headline3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Set up your riding profile to find compatible cycling partners',
+              context.l10n.buddyCreateProfileDesc,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => _navigateToProfile(context),
-              child: const Text('Create Profile'),
+              child: Text(context.l10n.buddyCreateProfileButton),
             ),
           ],
         ),
@@ -229,7 +233,7 @@ class _BuddyDiscoveryScreenState extends ConsumerState<BuddyDiscoveryScreen> wit
               Text(
                 'Unable to load suggestions',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -247,16 +251,16 @@ class _BuddyDiscoveryScreenState extends ConsumerState<BuddyDiscoveryScreen> wit
                 children: [
                   const Text('🔍', style: TextStyle(fontSize: 64)),
                   const SizedBox(height: 16),
-                  const Text(
-                    'No Matches Found',
+                  Text(
+                    context.l10n.buddyNoMatchesFound,
                     style: AppTextStyles.headline3,
                     textAlign:TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Try adjusting your preferences or check back later',
+                    context.l10n.buddyNoMatchesFoundDesc,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -274,9 +278,11 @@ class _BuddyDiscoveryScreenState extends ConsumerState<BuddyDiscoveryScreen> wit
             padding: const EdgeInsets.all(16),
             itemCount: buddies.length,
             itemBuilder: (context, index) {
-              return _BuddyCard(
-                buddy: buddies[index],
-                onTap: () => _showBuddyDetail(context, buddies[index]),
+              return RepaintBoundary(
+                child: _BuddyCard(
+                  buddy: buddies[index],
+                  onTap: () => _showBuddyDetail(context, buddies[index]),
+                ),
               );
             },
           ),
@@ -301,16 +307,16 @@ class _BuddyDiscoveryScreenState extends ConsumerState<BuddyDiscoveryScreen> wit
                 children: [
                   const Text('📭', style: TextStyle(fontSize: 64)),
                   const SizedBox(height: 16),
-                  const Text(
-                    'No Pending Requests',
+                  Text(
+                    context.l10n.buddyNoPendingRequests,
                     style: AppTextStyles.headline3,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Match requests will appear here',
+                    context.l10n.buddyNoPendingRequestsDesc,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -328,7 +334,9 @@ class _BuddyDiscoveryScreenState extends ConsumerState<BuddyDiscoveryScreen> wit
             padding: const EdgeInsets.all(16),
             itemCount: requests.length,
             itemBuilder: (context, index) {
-              return _MatchRequestCard(match: requests[index]);
+              return RepaintBoundary(
+                child: _MatchRequestCard(match: requests[index]),
+              );
             },
           ),
         );
@@ -352,16 +360,16 @@ class _BuddyDiscoveryScreenState extends ConsumerState<BuddyDiscoveryScreen> wit
                 children: [
                   const Text('🤝', style: TextStyle(fontSize: 64)),
                   const SizedBox(height: 16),
-                  const Text(
-                    'No Matches Yet',
+                  Text(
+                    context.l10n.buddyNoMatchesYet,
                     style: AppTextStyles.headline3,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Start connecting with riders in the "For You" tab',
+                    context.l10n.buddyConnectInForYou,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -379,7 +387,9 @@ class _BuddyDiscoveryScreenState extends ConsumerState<BuddyDiscoveryScreen> wit
             padding: const EdgeInsets.all(16),
             itemCount: matches.length,
             itemBuilder: (context, index) {
-              return _MatchCard(match: matches[index]);
+              return RepaintBoundary(
+                child: _MatchCard(match: matches[index]),
+              );
             },
           ),
         );
@@ -429,9 +439,9 @@ class _BuddyCard extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: InkWell(
         onTap: onTap,
@@ -444,17 +454,11 @@ class _BuddyCard extends ConsumerWidget {
               Row(
                 children: [
                   // Avatar
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundImage: buddy.photoUrl != null
-                        ? NetworkImage(buddy.photoUrl!)
-                        : null,
-                    child: buddy.photoUrl == null
-                        ? Text(
-                            buddy.displayName[0].toUpperCase(),
-                            style: AppTextStyles.headline3,
-                          )
-                        : null,
+                  AppAvatar(
+                    url: buddy.photoUrl,
+                    thumbnailUrl: buddy.photoThumbnail,
+                    size: 60,
+                    fallbackText: buddy.displayName[0].toUpperCase(),
                   ),
                   const SizedBox(width: 16),
                   
@@ -481,14 +485,14 @@ class _BuddyCard extends ConsumerWidget {
                         Text(
                           '${buddy.ridingLevel.icon} ${buddy.ridingLevel.displayName}',
                           style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                         ),
                         if (buddy.hometown != null)
                           Text(
                             '📍 ${buddy.hometown}',
                             style: AppTextStyles.caption.copyWith(
-                              color: AppColors.textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                           ),
                       ],
@@ -592,12 +596,12 @@ class _StatBadge extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: AppColors.textSecondary),
+        Icon(icon, size: 14, color: context.colors.textSecondary),
         const SizedBox(width: 4),
         Text(
           label,
           style: AppTextStyles.caption.copyWith(
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
       ],
@@ -623,9 +627,9 @@ class _BuddyDetailSheet extends ConsumerWidget {
       maxChildSize: 0.95,
       builder: (context, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            color: context.colors.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
             children: [
@@ -635,7 +639,7 @@ class _BuddyDetailSheet extends ConsumerWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.textSecondary.withValues(alpha: 0.3),
+                  color: context.colors.textSecondary.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -649,17 +653,11 @@ class _BuddyDetailSheet extends ConsumerWidget {
                     Center(
                       child: Column(
                         children: [
-                          CircleAvatar(
-                            radius: 50,
-                            backgroundImage: buddy.photoUrl != null
-                                ? NetworkImage(buddy.photoUrl!)
-                                : null,
-                            child: buddy.photoUrl == null
-                                ? Text(
-                                    buddy.displayName[0].toUpperCase(),
-                                    style: const TextStyle(fontSize: 32),
-                                  )
-                                : null,
+                          AppAvatar(
+                            url: buddy.photoUrl,
+                            thumbnailUrl: buddy.photoThumbnail,
+                            size: 100,
+                            fallbackText: buddy.displayName[0].toUpperCase(),
                           ),
                           const SizedBox(height: 16),
                           Row(
@@ -701,14 +699,14 @@ class _BuddyDetailSheet extends ConsumerWidget {
                     
                     // Bio
                     if (buddy.bio != null) ...[
-                      const Text('About', style: AppTextStyles.labelMedium),
+                      Text(context.l10n.buddyAbout, style: AppTextStyles.labelMedium),
                       const SizedBox(height: 8),
                       Text(buddy.bio!, style: AppTextStyles.bodyMedium),
                       const SizedBox(height: 24),
                     ],
                     
                     // Stats
-                    const Text('Stats', style: AppTextStyles.labelMedium),
+                    Text(context.l10n.buddyStats, style: AppTextStyles.labelMedium),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 12,
@@ -738,7 +736,7 @@ class _BuddyDetailSheet extends ConsumerWidget {
                     const SizedBox(height: 24),
                     
                     // Interests
-                    const Text('Interests', style: AppTextStyles.labelMedium),
+                    Text(context.l10n.buddyInterests, style: AppTextStyles.labelMedium),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
@@ -762,7 +760,7 @@ class _BuddyDetailSheet extends ConsumerWidget {
                     
                     // Availability
                     if (buddy.availability.isNotEmpty) ...[
-                      const Text('Availability', style: AppTextStyles.labelMedium),
+                      Text(context.l10n.buddyAvailability, style: AppTextStyles.labelMedium),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 8,
@@ -786,7 +784,7 @@ class _BuddyDetailSheet extends ConsumerWidget {
                     
                     // Languages
                     if (buddy.spokenLanguages.isNotEmpty) ...[
-                      const Text('Languages', style: AppTextStyles.labelMedium),
+                      Text(context.l10n.buddyLanguages, style: AppTextStyles.labelMedium),
                       const SizedBox(height: 8),
                       Text(
                         buddy.spokenLanguages.join(', ').toUpperCase(),
@@ -806,14 +804,14 @@ class _BuddyDetailSheet extends ConsumerWidget {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('Close'),
+                        child: Text(context.l10n.buddyClose),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () => _sendMatchRequest(context, ref),
-                        child: const Text('Send Request'),
+                        child: Text(context.l10n.buddySendRequest),
                       ),
                     ),
                   ],
@@ -845,7 +843,7 @@ class _BuddyDetailSheet extends ConsumerWidget {
       if (context.mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Match request sent to ${buddy.displayName}!')),
+          SnackBar(content: Text(context.l10n.buddyMatchRequestSent(buddy.displayName))),
         );
       }
     } catch (e) {
@@ -884,7 +882,7 @@ class _InfoChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: AppColors.textSecondary),
+          Icon(icon, size: 16, color: context.colors.textSecondary),
           const SizedBox(width: 6),
           Text(
             label,
@@ -916,9 +914,9 @@ class _MatchRequestCard extends ConsumerWidget {
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.colors.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: context.colors.border),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -926,14 +924,11 @@ class _MatchRequestCard extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 25,
-                      backgroundImage: buddy.photoUrl != null
-                          ? NetworkImage(buddy.photoUrl!)
-                          : null,
-                      child: buddy.photoUrl == null
-                          ? Text(buddy.displayName[0].toUpperCase())
-                          : null,
+                    AppAvatar(
+                      url: buddy.photoUrl,
+                      thumbnailUrl: buddy.photoThumbnail,
+                      size: 50,
+                      fallbackText: buddy.displayName[0].toUpperCase(),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -949,7 +944,7 @@ class _MatchRequestCard extends ConsumerWidget {
                           Text(
                             '${match.compatibilityScore}% match',
                             style: AppTextStyles.caption.copyWith(
-                              color: AppColors.textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                           ),
                         ],
@@ -963,14 +958,14 @@ class _MatchRequestCard extends ConsumerWidget {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => _declineRequest(context, ref),
-                        child: const Text('Decline'),
+                        child: Text(context.l10n.buddyDecline),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () => _acceptRequest(context, ref),
-                        child: const Text('Accept'),
+                        child: Text(context.l10n.buddyAccept),
                       ),
                     ),
                   ],
@@ -993,7 +988,7 @@ class _MatchRequestCard extends ConsumerWidget {
       
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Match accepted!')),
+          SnackBar(content: Text(context.l10n.buddyMatchAccepted)),
         );
       }
     } catch (e) {
@@ -1014,7 +1009,7 @@ class _MatchRequestCard extends ConsumerWidget {
       
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Request declined')),
+          SnackBar(content: Text(context.l10n.buddyRequestDeclined)),
         );
       }
     } catch (e) {
@@ -1051,30 +1046,22 @@ class _MatchCard extends ConsumerWidget {
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.colors.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: context.colors.border),
           ),
           child: InkWell(
-            onTap: () {
-              // TODO: Navigate to chat or buddy detail
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Chat coming soon')),
-              );
-            },
+            onTap: () => context.push(AppRoutes.messages),
             borderRadius: BorderRadius.circular(12),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 25,
-                    backgroundImage: buddy.photoUrl != null
-                        ? NetworkImage(buddy.photoUrl!)
-                        : null,
-                    child: buddy.photoUrl == null
-                        ? Text(buddy.displayName[0].toUpperCase())
-                        : null,
+                  AppAvatar(
+                    url: buddy.photoUrl,
+                    thumbnailUrl: buddy.photoThumbnail,
+                    size: 50,
+                    fallbackText: buddy.displayName[0].toUpperCase(),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1091,13 +1078,13 @@ class _MatchCard extends ConsumerWidget {
                           Text(
                             '${match.totalRidesTogether} rides together',
                             style: AppTextStyles.caption.copyWith(
-                              color: AppColors.textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                           ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                  Icon(Icons.chevron_right, color: context.colors.textSecondary),
                 ],
               ),
             ),

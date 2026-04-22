@@ -21,29 +21,83 @@ class SubscriptionPlansScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Choose Your Plan'),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
+      extendBodyBehindAppBar: true,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
-            Text(
-              'Upgrade Your Cycling Experience',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+            // Hero Image with Overlay
+            Stack(
+              children: [
+                // Hero Image
+                SizedBox(
+                  height: 320,
+                  width: double.infinity,
+                  child: Image.asset(
+                    'assets/images/subscriptionhero.webp',
+                    fit: BoxFit.cover,
                   ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Choose the plan that fits your riding style',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                ),
+                // Gradient Overlay
+                Container(
+                  height: 320,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.4),
+                        Colors.black.withValues(alpha: 0.7),
+                      ],
+                    ),
                   ),
-              textAlign: TextAlign.center,
+                ),
+                // Hero Content
+                Positioned(
+                  bottom: 40,
+                  left: 20,
+                  right: 20,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.workspace_premium_rounded,
+                        size: 56,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Upgrade Your Cycling Experience',
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Choose the plan that fits your riding style',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
+
+            // Content Padding
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
 
             // Billing toggle
             _BillingPeriodSelector(
@@ -52,7 +106,16 @@ class SubscriptionPlansScreen extends ConsumerWidget {
                 ref.read(selectedBillingPeriodProvider.notifier).state = period;
               },
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
+
+            // Section Title
+            Text(
+              'Choose Your Plan',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
 
             // Plan cards
             ...plans.map((pricing) => Padding(
@@ -67,7 +130,7 @@ class SubscriptionPlansScreen extends ConsumerWidget {
                   ),
                 )),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
             // Trial info
             Container(
@@ -92,12 +155,15 @@ class SubscriptionPlansScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
             // Feature comparison
             _FeatureComparisonTable(plans: plans),
 
             const SizedBox(height: 32),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -131,8 +197,15 @@ class _BillingPeriodSelector extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: BillingPeriod.values.map((period) {
@@ -141,15 +214,15 @@ class _BillingPeriodSelector extends StatelessWidget {
             child: GestureDetector(
               onTap: () => onChanged(period),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
-                  color: isSelected ? Colors.white : Colors.transparent,
+                  color: isSelected ? AppColors.primary : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 4,
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                            blurRadius: 8,
                             offset: const Offset(0, 2),
                           )
                         ]
@@ -161,32 +234,53 @@ class _BillingPeriodSelector extends StatelessWidget {
                       period.displayName,
                       style: TextStyle(
                         fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.normal,
+                            isSelected ? FontWeight.bold : FontWeight.w600,
                         color: isSelected
-                            ? AppColors.textPrimary
+                            ? Colors.white
                             : AppColors.textSecondary,
+                        fontSize: isSelected ? 14 : 13,
                       ),
                     ),
                     if (period == BillingPeriod.yearly)
-                      Text(
-                        'Save 25%',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                      Container(
+                        margin: const EdgeInsets.only(top: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
                           color: isSelected
-                              ? AppColors.success
-                              : AppColors.textHint,
+                              ? Colors.white.withValues(alpha: 0.2)
+                              : AppColors.success.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          'Save 25%',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.success,
+                          ),
                         ),
                       ),
                     if (period == BillingPeriod.quarterly)
-                      Text(
-                        'Save 10%',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                      Container(
+                        margin: const EdgeInsets.only(top: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
                           color: isSelected
-                              ? AppColors.success
-                              : AppColors.textHint,
+                              ? Colors.white.withValues(alpha: 0.2)
+                              : AppColors.success.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          'Save 10%',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.success,
+                          ),
                         ),
                       ),
                   ],
@@ -289,7 +383,7 @@ class _PlanCard extends StatelessWidget {
                 Text(
                   pricing.plan.description,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                 ),
                 const SizedBox(height: 16),
@@ -320,7 +414,7 @@ class _PlanCard extends StatelessWidget {
                           '/${billingPeriod == BillingPeriod.monthly ? 'mo' : billingPeriod == BillingPeriod.quarterly ? 'qtr' : 'yr'}',
                           style:
                               Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: AppColors.textSecondary,
+                                    color: context.colors.textSecondary,
                                   ),
                         ),
                       ),
@@ -461,9 +555,9 @@ class _FeatureComparisonTable extends StatelessWidget {
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: const BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(11)),
+                decoration: BoxDecoration(
+                  color: context.colors.surface,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
                 ),
                 child: Row(
                   children: [

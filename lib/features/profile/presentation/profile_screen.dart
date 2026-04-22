@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/widgets/optimized_image.dart';
+import '../../../core/widgets/app_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../auth/providers/auth_providers.dart';
@@ -40,199 +40,161 @@ class ProfileScreen extends ConsumerWidget {
       backgroundColor: context.colors.background,
       body: CustomScrollView(
         slivers: [
-          // ── Header ─────────────────────────────────────────────────────────
+          // ── Premium Profile Header ─────────────────────────────────────────
           SliverToBoxAdapter(
             child: Container(
-              color: context.colors.surface,
-              padding: EdgeInsets.fromLTRB(20, topPad + 12, 20, 16),
-              child: Column(
-                children: [
-                  // Back + title + settings row
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: Icon(Icons.arrow_back_rounded, size: 24, color: context.colors.textPrimary),
-                        tooltip: l10n.goBack,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(l10n.profile, style: AppTextStyles.headline2),
-                      ),
-                      IconButton(
-                        onPressed: () => context.push(AppRoutes.profileEdit),
-                        icon: Icon(Icons.edit_outlined, size: 22, color: context.colors.textSecondary),
-                        tooltip: l10n.editProfile,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // ── Modern Profile Card ─────────────────────────────────────
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: Theme.of(context).brightness == Brightness.dark
-                            ? [const Color(0xFF2D3748), const Color(0xFF1A202C)]
-                            : [const Color(0xFF4A7C59), const Color(0xFF3D6B4A)],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (Theme.of(context).brightness == Brightness.dark
-                              ? Colors.black
-                              : const Color(0xFF4A7C59)).withValues(alpha: 0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Row(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? context.colors.surface
+                  : Colors.white,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(20, topPad + 12, 20, 24),
+                child: Column(
+                  children: [
+                    // Top bar
+                    Row(
                       children: [
-                        // Avatar with ring
+                        // Back button
                         Container(
-                          padding: const EdgeInsets.all(3),
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.4),
-                              width: 2,
-                            ),
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Container(
-                            width: 72,
-                            height: 72,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
+                          child: IconButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: Icon(
+                              Icons.arrow_back_rounded,
+                              size: 22,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black87,
                             ),
-                            child: user?.photoUrl != null
-                                ? ClipOval(
-                                    child: OptimizedAvatarImage(
-                                      imageUrl: user!.photoUrl!,
-                                      radius: 36,
-                                    ),
-                                  )
-                                : Center(
-                                    child: Text(
-                                      (user?.displayName.isNotEmpty == true)
-                                          ? user!.displayName[0].toUpperCase()
-                                          : '?',
-                                      style: TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.w700,
-                                        color: Theme.of(context).brightness == Brightness.dark
-                                            ? const Color(0xFF2D3748)
-                                            : const Color(0xFF4A7C59),
-                                      ),
-                                    ),
-                                  ),
+                            tooltip: l10n.goBack,
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        
-                        // User info
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user?.displayName ?? l10n.defaultRiderName,
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                  letterSpacing: -0.5,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                user?.email ?? '',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.white.withValues(alpha: 0.75),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 10),
-                              // Plan badge
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                decoration: BoxDecoration(
-                                  color: isPremium 
-                                      ? Colors.amber.shade600
-                                      : Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (isPremium) ...[
-                                      const Icon(Icons.star_rounded, size: 14, color: Colors.white),
-                                      const SizedBox(width: 4),
-                                    ],
-                                    Text(
-                                      planLabel,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                        const Spacer(),
+                        // Edit button
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: IconButton(
+                            onPressed: () => context.push(AppRoutes.profileEdit),
+                            icon: Icon(
+                              Icons.edit_outlined,
+                              size: 22,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black87,
+                            ),
+                            tooltip: l10n.editProfile,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  
-                  const SizedBox(height: 12),
-                  
-                  // ── Quick Stats Row ─────────────────────────────────────────
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _QuickStatCard(
-                          icon: Icons.directions_bike_rounded,
-                          value: bikeCount.toString(),
-                          label: l10n.myBikes,
-                          isDark: Theme.of(context).brightness == Brightness.dark,
-                        ),
+                    
+                    const SizedBox(height: 24),
+                        
+                    // Profile Avatar
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0),
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _QuickStatCard(
-                          icon: Icons.route_rounded,
-                          value: '0',
-                          label: l10n.ridesLabel,
-                          isDark: Theme.of(context).brightness == Brightness.dark,
-                        ),
+                      child: user?.photoUrl != null
+                          ? AppAvatar(
+                              url: user!.photoUrl,
+                              size: 80,
+                            )
+                          : Center(
+                              child: Text(
+                                (user?.displayName.isNotEmpty == true)
+                                    ? user!.displayName[0].toUpperCase()
+                                    : '?',
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w900,
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.white
+                                      : const Color(0xFF64748B),
+                                ),
+                              ),
+                            ),
+                    ),
+                    
+                    const SizedBox(height: 16),
+                        
+                    // Username
+                    Text(
+                      user?.displayName ?? l10n.defaultRiderName,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : const Color(0xFF0F172A),
+                        letterSpacing: -0.3,
+                        height: 1.2,
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _QuickStatCard(
-                          icon: Icons.bookmark_rounded,
-                          value: '0',
-                          label: l10n.marketplaceSaved,
-                          isDark: Theme.of(context).brightness == Brightness.dark,
-                        ),
+                      textAlign: TextAlign.center,
+                    ),
+                    
+                    const SizedBox(height: 6),
+                    
+                    // Subtitle
+                    Text(
+                      isPremium ? '⭐ ${l10n.premiumPlan}' : 'Cyclist',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withValues(alpha: 0.7)
+                            : const Color(0xFF64748B),
+                        letterSpacing: 0.3,
                       ),
-                    ],
-                  ),
-                ],
+                      textAlign: TextAlign.center,
+                    ),
+                    
+                    const SizedBox(height: 24),
+                        
+                    // Stats Cards
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _GlassStatCard(
+                            value: bikeCount.toString(),
+                            label: l10n.myBikes,
+                            isDark: Theme.of(context).brightness == Brightness.dark,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _GlassStatCard(
+                            value: '0',
+                            label: l10n.ridesLabel,
+                            isDark: Theme.of(context).brightness == Brightness.dark,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _GlassStatCard(
+                            value: '0',
+                            label: 'Saved',
+                            isDark: Theme.of(context).brightness == Brightness.dark,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -304,6 +266,11 @@ class ProfileScreen extends ConsumerWidget {
                       icon: Icons.person_outline_rounded,
                       label: l10n.editProfile,
                       onTap: () => context.push(AppRoutes.profileEdit),
+                    ),
+                    _SettingsTile(
+                      icon: Icons.family_restroom_rounded,
+                      label: 'Family',
+                      onTap: () => context.push(AppRoutes.familyGroups),
                     ),
                     _SettingsTile(
                       icon: Icons.place_outlined,
@@ -566,8 +533,22 @@ class _SettingsSection extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: context.colors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: context.colors.border, width: 0.8),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF334155)
+                  : const Color(0xFFE2E8F0),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.black.withValues(alpha: 0.2)
+                    : const Color(0xFF64748B).withValues(alpha: 0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             children: List.generate(tiles.length, (i) {
@@ -611,17 +592,43 @@ class _SettingsTile extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: isDark ? Colors.white : Colors.black),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                size: 20,
+                color: isDark
+                    ? const Color(0xFF94A3B8)
+                    : const Color(0xFF475569),
+              ),
+            ),
             const SizedBox(width: 14),
             Expanded(
-              child: Text(label, style: AppTextStyles.bodyMedium),
+              child: Text(
+                label,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
+                ),
+              ),
             ),
             trailing ??
-                Icon(Icons.chevron_right_rounded,
-                    size: 20, color: context.colors.textHint),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 22,
+                  color: isDark
+                      ? const Color(0xFF475569)
+                      : const Color(0xFF94A3B8),
+                ),
           ],
         ),
       ),
@@ -653,7 +660,7 @@ class _SubscriptionTile extends StatelessWidget {
                 ? Icons.workspace_premium_rounded
                 : Icons.star_border_rounded,
             size: 20,
-            color: isDark ? Colors.white : Colors.black,
+            color: context.colors.textPrimary,
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -678,7 +685,7 @@ class _SubscriptionTile extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: isDark ? Colors.white : Colors.black,
+                color: context.colors.textPrimary,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -853,7 +860,7 @@ class _GdprToggleTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: isDark ? Colors.white : Colors.black),
+          Icon(icon, size: 20, color: context.colors.textPrimary),
           const SizedBox(width: 14),
           Expanded(child: Text(label, style: AppTextStyles.bodyMedium)),
           Switch(
@@ -964,7 +971,7 @@ class _ThemeTile extends ConsumerWidget {
                   color: isDark ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: isDark ? Colors.white : Colors.black, size: 20),
+                child: Icon(icon, color: context.colors.textPrimary, size: 20),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -1101,16 +1108,14 @@ class _ThemeOption extends StatelessWidget {
   }
 }
 
-// ─── Quick Stat Card Widget ────────────────────────────────────────────────────
-class _QuickStatCard extends StatelessWidget {
-  const _QuickStatCard({
-    required this.icon,
+// ─── Glass Stat Card Widget (Premium Style) ────────────────────────────────────
+class _GlassStatCard extends StatelessWidget {
+  const _GlassStatCard({
     required this.value,
     required this.label,
     required this.isDark,
   });
 
-  final IconData icon;
   final String value;
   final String label;
   final bool isDark;
@@ -1118,37 +1123,59 @@ class _QuickStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2D3748) : const Color(0xFFF4F5F2),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark ? const Color(0xFF4A5568) : const Color(0xFFE9ECE6),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [
+                  const Color(0xFF1E293B),
+                  const Color(0xFF0F172A),
+                ]
+              : [
+                  const Color(0xFFF8FAFC),
+                  const Color(0xFFF1F5F9),
+                ],
         ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark
+              ? const Color(0xFF334155)
+              : const Color(0xFFE2E8F0),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.2)
+                : const Color(0xFF64748B).withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          Icon(
-            icon,
-            size: 22,
-            color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF4A7C59),
-          ),
-          const SizedBox(height: 6),
           Text(
             value,
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: isDark ? Colors.white : const Color(0xFF0F172A),
+              letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
               fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B6B6B),
+              fontWeight: FontWeight.w600,
+              color: isDark
+                  ? const Color(0xFF94A3B8)
+                  : const Color(0xFF64748B),
+              letterSpacing: 0.3,
             ),
             textAlign: TextAlign.center,
             maxLines: 1,

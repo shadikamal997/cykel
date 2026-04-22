@@ -9,8 +9,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../domain/place.dart';
 
 // ─── Design Colors ─────────────────────────────────────────────────────────────
-const _kPrimaryColor = Color(0xFF4A7C59);
-const _kBackground = Color(0xFFFFFFFF);
+const _kPrimaryColor = AppColors.primary;
 
 class LocationDetailScreen extends StatelessWidget {
   const LocationDetailScreen({super.key, required this.place});
@@ -22,7 +21,7 @@ class LocationDetailScreen extends StatelessWidget {
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: _kBackground,
+      backgroundColor: context.colors.background,
       body: CustomScrollView(
         slivers: [
           // ── Header ──────────────────────────────────────────────────────
@@ -49,7 +48,7 @@ class LocationDetailScreen extends StatelessWidget {
               ),
               title: Text(
                 place.name,
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -191,7 +190,7 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
+        color: context.colors.surfaceVariant,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(

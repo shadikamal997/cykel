@@ -97,7 +97,7 @@ class MediaStep extends StatelessWidget {
             Text(
               '${galleryFiles.length} / $_maxGallery',
               style: AppTextStyles.labelSmall
-                  .copyWith(color: AppColors.textSecondary),
+                  .copyWith(color: context.colors.textSecondary),
             ),
           ],
         ),
@@ -160,9 +160,9 @@ class _ImageSlot extends StatelessWidget {
                 width: double.infinity,
                 errorBuilder: (_, _, _) => Container(
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.colors.surface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: context.colors.border),
                   ),
                   alignment: Alignment.center,
                   child: Column(
@@ -208,19 +208,19 @@ class _ImageSlot extends StatelessWidget {
         aspectRatio: aspectRatio,
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.colors.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border, width: 1.5),
+            border: Border.all(color: context.colors.border, width: 1.5),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 36, color: AppColors.textSecondary),
+              Icon(icon, size: 36, color: context.colors.textSecondary),
               const SizedBox(height: 8),
               Text(
                 hint,
                 style: AppTextStyles.bodySmall
-                    .copyWith(color: AppColors.textSecondary),
+                    .copyWith(color: context.colors.textSecondary),
               ),
             ],
           ),
@@ -261,7 +261,7 @@ class _GalleryThumbnail extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.primaryLight,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: context.colors.border),
                 ),
                 child: const Icon(Icons.image_rounded,
                     color: AppColors.primary, size: 28),
@@ -305,15 +305,15 @@ class _AddGalleryButton extends StatelessWidget {
         width: 80,
         height: 80,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: AppColors.border,
+            color: context.colors.border,
             width: 1.5,
           ),
         ),
-        child: const Icon(Icons.add_photo_alternate_outlined,
-            color: AppColors.textSecondary, size: 28),
+        child: Icon(Icons.add_photo_alternate_outlined,
+            color: context.colors.textSecondary, size: 28),
       ),
     );
   }

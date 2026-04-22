@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 /// CYKEL — Create / Edit Listing Screen
 
 import 'dart:async';
@@ -20,10 +21,6 @@ import '../domain/marketplace_listing.dart';
 import 'listing_helpers.dart';
 
 // ─── Design Colors ─────────────────────────────────────────────────────────────
-const _kPrimaryText = Color(0xFF1A1A1A);
-const _kSecondaryText = Color(0xFF6B6B6B);
-const _kBackground = Color(0xFFFFFFFF);
-const _kSoftElements = Color(0xFFE9ECE6);
 
 class CreateListingScreen extends ConsumerStatefulWidget {
   const CreateListingScreen({super.key, this.editListing});
@@ -133,7 +130,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(l10n.discardButton,
-                style: TextStyle(color: isDark ? Colors.white : Colors.black)),
+                style: TextStyle(color: context.colors.textPrimary)),
           ),
         ],
       ),
@@ -158,9 +155,9 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         }
       },
       child: Scaffold(
-      backgroundColor: _kBackground,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: _kBackground,
+        backgroundColor: context.colors.background,
         elevation: 0,
         scrolledUnderElevation: 1,
         title: Text(isEdit ? l10n.listingEditTitle : l10n.listingCreateTitle,
@@ -216,22 +213,22 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: (isDark ? Colors.white : Colors.black)
+                                  color: (context.colors.textPrimary)
                                       .withValues(alpha: 0.35),
                                   width: 2,
                                 ),
-                                color: (isDark ? Colors.white : Colors.black)
+                                color: (context.colors.textPrimary)
                                     .withValues(alpha: 0.05),
                               ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(Icons.add_photo_alternate_rounded,
-                                      color: isDark ? Colors.white : Colors.black, size: 28),
+                                      color: context.colors.textPrimary, size: 28),
                                   const SizedBox(height: 4),
                                   Text('$totalImages/5',
                                       style: AppTextStyles.labelSmall
-                                          .copyWith(color: isDark ? Colors.white : Colors.black)),
+                                          .copyWith(color: context.colors.textPrimary)),
                                 ],
                               ),
                             ),
@@ -244,7 +241,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(l10n.addUpToPhotos,
                           style: AppTextStyles.bodySmall
-                              .copyWith(color: _kSecondaryText)),
+                              .copyWith(color: context.colors.textSecondary)),
                     ),
                 ],
               ),
@@ -297,7 +294,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                           emoji: _categoryEmoji(c),
                           selected: _category == c,
                           onTap: () => setState(() => _category = c),
-                          selectedColor: isDark ? Colors.white : Colors.black,
+                          selectedColor: context.colors.textPrimary,
                         ))
                     .toList(),
               ),
@@ -341,9 +338,9 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                       style: AppTextStyles.bodyMedium),
                   subtitle: Text(l10n.listingIsElectricHint,
                       style: AppTextStyles.bodySmall
-                          .copyWith(color: _kSecondaryText)),
+                          .copyWith(color: context.colors.textSecondary)),
                   value: _isElectric,
-                  activeTrackColor: isDark ? Colors.white : Colors.black,
+                  activeTrackColor: context.colors.textPrimary,
                   onChanged: (v) => setState(() => _isElectric = v),
                 ),
               ]),
@@ -364,7 +361,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                 const SizedBox(height: 6),
                 Text(l10n.listingSerialHelp,
                     style: AppTextStyles.bodySmall
-                        .copyWith(color: _kSecondaryText)),
+                        .copyWith(color: context.colors.textSecondary)),
                 if (_serialCtrl.text.trim().isEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
@@ -473,7 +470,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
               child: FilledButton(
                 style: FilledButton.styleFrom(
-                  backgroundColor: isDark ? Colors.white : Colors.black,
+                  backgroundColor: context.colors.textPrimary,
                   foregroundColor: isDark ? Colors.black : Colors.white,
                   minimumSize: const Size.fromHeight(52),
                   elevation: 0,
@@ -671,13 +668,6 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         }
       }
 
-      // Upload new images
-      List<String> newUrls = [];
-      if (_newImages.isNotEmpty) {
-        newUrls = await svc.uploadImages(user.uid, _newImages);
-      }
-      final allImageUrls = [..._existingUrls, ...newUrls];
-
       final title = _titleCtrl.text.trim();
       final price = double.tryParse(_priceCtrl.text.trim()) ?? 0;
       final description = _descCtrl.text.trim();
@@ -690,7 +680,13 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
           _serialCtrl.text.trim().isEmpty ? null : _serialCtrl.text.trim();
 
       if (widget.editListing != null) {
-        // Edit mode
+        // Edit mode: upload new images in parallel with the Firestore update
+        List<String> newUrls = [];
+        if (_newImages.isNotEmpty) {
+          newUrls = await svc.uploadImages(user.uid, _newImages);
+        }
+        final allImageUrls = [..._existingUrls, ...newUrls];
+
         final updated = widget.editListing!.copyWith(
           title: title,
           price: price,
@@ -712,8 +708,9 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
           context.pop();
         }
       } else {
-        // Create mode
-        await svc.createListing(
+        // Create mode: create the Firestore document immediately (no images yet)
+        // so the user sees success instantly, then upload images in the background.
+        final listingId = await svc.createListing(
           MarketplaceListing(
             id: '',
             sellerId: user.uid,
@@ -726,7 +723,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
             condition: _condition,
             city: city,
             isShop: false,
-            imageUrls: allImageUrls,
+            imageUrls: _existingUrls, // existing URLs only; new ones upload in background
             isSold: false,
             createdAt: DateTime.now(),
             phone: phone,
@@ -735,19 +732,64 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
             serialNumber: serial,
           ),
         );
+
+        // Snapshot the image lists before navigation disposes the widget
+        final imagesToUpload = List.of(_newImages);
+        final existingImageUrls = List.of(_existingUrls);
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(l10n.listingPublished)));
           context.pop();
         }
+
+        // Upload new images in the background and attach them to the listing
+        if (imagesToUpload.isNotEmpty) {
+          unawaited(_uploadAndAttachImages(
+              svc, user.uid, listingId, imagesToUpload, existingImageUrls));
+        }
       }
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('🔴 CREATE LISTING ERROR: $e');
+      debugPrint('🔴 Stack: $stack');
       if (mounted) {
+        String errorMsg = e.toString();
+        // Extract meaningful Firebase error messages
+        if (errorMsg.contains('PERMISSION_DENIED')) {
+          errorMsg = 'Permission denied. Please check App Check configuration.';
+        } else if (errorMsg.contains('app-check-token')) {
+          errorMsg = 'App Check token error. Please restart the app.';
+        } else if (errorMsg.contains('network')) {
+          errorMsg = 'Network error. Please check your connection.';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.l10n.genericError(e.toString()))));
+            SnackBar(
+              content: Text('Error: $errorMsg'),
+              duration: const Duration(seconds: 5),
+              backgroundColor: Colors.red,
+            ));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  /// Uploads images in the background and attaches their URLs to the listing.
+  /// All parameters are passed explicitly so this is safe after widget disposal.
+  Future<void> _uploadAndAttachImages(
+    MarketplaceService svc,
+    String uid,
+    String listingId,
+    List<XFile> newImages,
+    List<String> existingUrls,
+  ) async {
+    try {
+      final newUrls = await svc.uploadImages(uid, newImages);
+      if (newUrls.isNotEmpty) {
+        await svc.updateListingImages(listingId, [...existingUrls, ...newUrls]);
+      }
+    } catch (_) {
+      // Non-critical: listing already exists; image upload failure is silent
     }
   }
 
@@ -776,7 +818,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               context.push('/subscription');
             },
             style: FilledButton.styleFrom(
-              backgroundColor: isDark ? Colors.white : Colors.black,
+              backgroundColor: context.colors.textPrimary,
               foregroundColor: isDark ? Colors.black : Colors.white,
             ),
             child: Text(l10n.upgradeToPremium),
@@ -794,28 +836,28 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     return InputDecoration(
         hintText: hint,
         hintStyle:
-            AppTextStyles.bodyMedium.copyWith(color: _kSecondaryText),
+            AppTextStyles.bodyMedium.copyWith(color: context.colors.textSecondary),
         suffixText: suffix,
         prefixIcon: prefix != null ? Icon(prefix, size: 18) : null,
         filled: true,
-        fillColor: _kBackground,
+        fillColor: context.colors.background,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _kSoftElements)),
+            borderSide: BorderSide(color: context.colors.surfaceVariant)),
         enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _kSoftElements)),
+            borderSide: BorderSide(color: context.colors.surfaceVariant)),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: isDark ? Colors.white : Colors.black, width: 2)),
+            borderSide: BorderSide(color: context.colors.textPrimary, width: 2)),
         errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.7))),
+            borderSide: BorderSide(color: (context.colors.textPrimary).withValues(alpha: 0.7))),
         focusedErrorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.7), width: 2)),
+            borderSide: BorderSide(color: (context.colors.textPrimary).withValues(alpha: 0.7), width: 2)),
     );
   }
 
@@ -855,7 +897,7 @@ class _SectionCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
         decoration: BoxDecoration(
-          color: _kBackground,
+          color: context.colors.background,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -875,15 +917,15 @@ class _SectionCard extends StatelessWidget {
                   width: 30,
                   height: 30,
                   decoration: BoxDecoration(
-                    color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.10),
+                    color: (context.colors.textPrimary).withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(icon, size: 16, color: isDark ? Colors.white : Colors.black),
+                  child: Icon(icon, size: 16, color: context.colors.textPrimary),
                 ),
                 const SizedBox(width: 10),
                 Text(title,
                     style: AppTextStyles.labelLarge
-                        .copyWith(color: _kPrimaryText)),
+                        .copyWith(color: context.colors.textPrimary)),
               ]),
             ),
             const SizedBox(height: 12),
@@ -923,10 +965,10 @@ class _ChoiceChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected
                 ? selectedColor.withValues(alpha: 0.12)
-                : _kBackground,
+                : context.colors.background,
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
-                color: selected ? selectedColor : _kSoftElements,
+                color: selected ? selectedColor : context.colors.surfaceVariant,
                 width: 1.5),
           ),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -937,7 +979,7 @@ class _ChoiceChip extends StatelessWidget {
             Text(label,
                 style: AppTextStyles.labelMedium.copyWith(
                     color:
-                        selected ? selectedColor : _kSecondaryText,
+                        selected ? selectedColor : context.colors.textSecondary,
                     fontWeight:
                         selected ? FontWeight.w600 : FontWeight.w500)),
           ]),
@@ -964,7 +1006,7 @@ class _ImageThumb extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             image: DecorationImage(
-                image: NetworkImage(imageUrl), fit: BoxFit.cover),
+                image: CachedNetworkImageProvider(imageUrl), fit: BoxFit.cover),
           ),
         ),
         Positioned(
@@ -976,7 +1018,7 @@ class _ImageThumb extends StatelessWidget {
               width: 22,
               height: 22,
               decoration: BoxDecoration(
-                  color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.7), shape: BoxShape.circle),
+                  color: (context.colors.textPrimary).withValues(alpha: 0.7), shape: BoxShape.circle),
               child: const Icon(Icons.close_rounded,
                   size: 13, color: Colors.white),
             ),
@@ -1013,7 +1055,7 @@ class _LocalImageThumbState extends State<_LocalImageThumb> {
             margin: const EdgeInsets.only(right: 10),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
-              color: _kSoftElements,
+              color: context.colors.surfaceVariant,
               image: snap.hasData
                   ? DecorationImage(
                       image: MemoryImage(snap.data!), fit: BoxFit.cover)
@@ -1034,7 +1076,7 @@ class _LocalImageThumbState extends State<_LocalImageThumb> {
               width: 22,
               height: 22,
               decoration: BoxDecoration(
-                  color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.7), shape: BoxShape.circle),
+                  color: (context.colors.textPrimary).withValues(alpha: 0.7), shape: BoxShape.circle),
               child: const Icon(Icons.close_rounded,
                   size: 13, color: Colors.white),
             ),

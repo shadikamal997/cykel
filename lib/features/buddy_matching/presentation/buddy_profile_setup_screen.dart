@@ -120,10 +120,10 @@ class _BuddyProfileSetupScreenState extends ConsumerState<BuddyProfileSetupScree
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
         title: Text(widget.existingProfile != null ? 'Edit Profile' : 'Create Profile'),
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
       ),
@@ -143,7 +143,7 @@ class _BuddyProfileSetupScreenState extends ConsumerState<BuddyProfileSetupScree
             Text(
               'Help us find the perfect riding buddies for you',
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
             const SizedBox(height: 24),
@@ -180,7 +180,7 @@ class _BuddyProfileSetupScreenState extends ConsumerState<BuddyProfileSetupScree
             Text(
               'Select your current riding ability',
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
             const SizedBox(height: 12),
@@ -213,7 +213,7 @@ class _BuddyProfileSetupScreenState extends ConsumerState<BuddyProfileSetupScree
                             Text(
                               level.description,
                               style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.textSecondary,
+                                color: context.colors.textSecondary,
                               ),
                             ),
                           ],
@@ -232,7 +232,7 @@ class _BuddyProfileSetupScreenState extends ConsumerState<BuddyProfileSetupScree
             Text(
               'Select all that apply (choose at least one)',
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
             const SizedBox(height: 12),
@@ -271,7 +271,7 @@ class _BuddyProfileSetupScreenState extends ConsumerState<BuddyProfileSetupScree
             Text(
               'When are you usually available to ride? (choose at least one)',
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
             const SizedBox(height: 12),
@@ -310,7 +310,7 @@ class _BuddyProfileSetupScreenState extends ConsumerState<BuddyProfileSetupScree
             Text(
               'What languages do you speak? (Optional)',
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
             const SizedBox(height: 12),

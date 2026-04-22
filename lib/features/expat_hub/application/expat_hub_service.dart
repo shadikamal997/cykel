@@ -71,7 +71,7 @@ class ExpatHubService {
     // This is a simple implementation
     return expatGuides
         .orderBy('createdAt', descending: true)
-        .limit(100)
+        .limit(30)  // Optimized limit for better performance
         .snapshots()
         .map((snapshot) {
       final guides = snapshot.docs.map((doc) => ExpatGuide.fromFirestore(doc)).toList();
@@ -154,6 +154,7 @@ class ExpatHubService {
     return query
         .orderBy('priority', descending: true)
         .orderBy('createdAt', descending: true)
+        .limit(50)  // Limit to prevent over-fetching
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.map((doc) => QuickTip.fromFirestore(doc)).toList();

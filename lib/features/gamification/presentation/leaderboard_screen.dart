@@ -1,3 +1,5 @@
+import '../../../core/widgets/app_image.dart';
+import '../../auth/domain/app_user.dart';
 /// CYKEL — Leaderboard Screen
 /// View rankings across different categories and time periods
 
@@ -193,22 +195,11 @@ class _LeaderboardTile extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             // Avatar
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: (Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white).withValues(alpha: 0.3),
-              backgroundImage: entry.photoUrl != null 
-                  ? NetworkImage(entry.photoUrl!)
-                  : null,
-              child: entry.photoUrl == null
-                  ? Text(
-                      entry.displayName.isNotEmpty 
-                          ? entry.displayName[0].toUpperCase()
-                          : '?',
-                      style: AppTextStyles.labelLarge.copyWith(
-                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.white,
-                      ),
-                    )
-                  : null,
+            AppAvatar(
+              url: entry.photoUrl,
+              thumbnailUrl: AppUser.getThumbnailUrl(entry.photoUrl),
+              size: 40,
+              fallbackText: entry.displayName.isNotEmpty ? entry.displayName[0].toUpperCase() : '?',
             ),
           ],
         ),

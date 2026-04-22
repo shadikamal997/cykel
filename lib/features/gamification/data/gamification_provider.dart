@@ -51,6 +51,7 @@ class GamificationService {
     return _userChallengesCol(uid)
         .where('completedAt', isNull: false)
         .orderBy('completedAt', descending: true)
+        .limit(50)  // Limit completed challenges
         .snapshots()
         .map((s) => s.docs.map(ChallengeProgress.fromFirestore).toList());
   }
@@ -112,7 +113,9 @@ class GamificationService {
 
   /// Get all badges
   Stream<List<Badge>> watchAllBadges() {
-    return _badgesCol.snapshots()
+    return _badgesCol
+        .limit(100)  // Limit total badges
+        .snapshots()
         .map((s) => s.docs.map(Badge.fromFirestore).toList());
   }
 
@@ -120,6 +123,7 @@ class GamificationService {
   Stream<List<UserBadge>> watchUserBadges(String uid) {
     return _userBadgesCol(uid)
         .orderBy('earnedAt', descending: true)
+        .limit(100)  // Limit user badges
         .snapshots()
         .map((s) => s.docs.map(UserBadge.fromFirestore).toList());
   }

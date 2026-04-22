@@ -3,6 +3,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -16,6 +17,7 @@ final bikeRentalServiceProvider = Provider<BikeRentalService>((ref) {
   return BikeRentalService(
     firestore: FirebaseFirestore.instance,
     auth: FirebaseAuth.instance,
+    storage: FirebaseStorage.instance,
   );
 });
 

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
+import '../../../core/l10n/l10n.dart';
 import '../domain/expat_resource.dart';
 import '../application/expat_hub_providers.dart';
 
@@ -18,7 +19,7 @@ class CultureScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Culture & Etiquette'),
+        title: Text(context.l10n.expatCultureEtiquette),
       ),
       body: guidesAsync.when(
         data: (guides) {
@@ -50,7 +51,7 @@ class CultureScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
-          child: Text('Error loading guide: $error'),
+          child: Text(context.l10n.expatErrorLoading(error.toString())),
         ),
       ),
     );

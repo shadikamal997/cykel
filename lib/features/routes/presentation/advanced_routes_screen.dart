@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/l10n/l10n.dart';
 import '../domain/advanced_route.dart';
 import '../application/advanced_route_providers.dart';
 import 'route_creator_screen.dart';
@@ -30,7 +31,7 @@ class _AdvancedRoutesScreenState extends ConsumerState<AdvancedRoutesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Routes'),
+        title: Text(context.l10n.routesMyRoutes),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
@@ -114,7 +115,9 @@ class _AdvancedRoutesScreenState extends ConsumerState<AdvancedRoutesScreen> {
                     padding: const EdgeInsets.all(16),
                     itemCount: routes.length,
                     itemBuilder: (context, index) {
-                      return _RouteCard(route: routes[index]);
+                      return RepaintBoundary(
+                        child: _RouteCard(route: routes[index]),
+                      );
                     },
                   ),
                 );
@@ -126,11 +129,11 @@ class _AdvancedRoutesScreenState extends ConsumerState<AdvancedRoutesScreen> {
                   children: [
                     const Icon(Icons.error_outline, size: 48),
                     const SizedBox(height: 16),
-                    Text('Error loading routes: $error'),
+                    Text(context.l10n.routesErrorLoadingRoutes(error.toString())),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () => ref.invalidate(userRoutesProvider),
-                      child: const Text('Retry'),
+                      child: Text(context.l10n.routesRetry),
                     ),
                   ],
                 ),
@@ -147,7 +150,7 @@ class _AdvancedRoutesScreenState extends ConsumerState<AdvancedRoutesScreen> {
           );
         },
         icon: const Icon(Icons.add),
-        label: const Text('Create Route'),
+        label: Text(context.l10n.routesCreate),
       ),
     );
   }

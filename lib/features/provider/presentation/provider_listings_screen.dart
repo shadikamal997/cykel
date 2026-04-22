@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/cached_image.dart';
+
 import '../../../core/l10n/l10n.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
@@ -23,9 +25,9 @@ class ProviderListingsScreen extends ConsumerWidget {
     final listingsAsync = ref.watch(myListingsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         title: Text(l10n.marketplaceMyListings, style: AppTextStyles.headline3),
       ),
       body: listingsAsync.when(
@@ -42,12 +44,12 @@ class ProviderListingsScreen extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.sell_outlined,
-                        size: 56, color: AppColors.textSecondary),
+                    Icon(Icons.sell_outlined,
+                        size: 56, color: context.colors.textSecondary),
                     const SizedBox(height: 16),
                     Text(l10n.listingMyListingsEmpty,
                         style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.textSecondary),
+                            color: context.colors.textSecondary),
                         textAlign: TextAlign.center),
                     const SizedBox(height: 24),
                     FilledButton.icon(
@@ -99,7 +101,7 @@ class _ListingCard extends ConsumerWidget {
         listing.imageUrls.isNotEmpty ? listing.imageUrls.first : null;
 
     return Material(
-      color: AppColors.surface,
+      color: context.colors.surface,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: () => context.push(
@@ -110,7 +112,7 @@ class _ListingCard extends ConsumerWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: context.colors.border),
           ),
           child: Row(
             children: [
@@ -119,19 +121,18 @@ class _ListingCard extends ConsumerWidget {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
+                  color: context.colors.surfaceVariant,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: context.colors.border),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: thumb != null
-                    ? Image.network(thumb,
+                    ? CachedImage(
+                        imageUrl: thumb,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const Icon(
-                            Icons.pedal_bike_rounded,
-                            color: AppColors.textSecondary))
-                    : const Icon(Icons.pedal_bike_rounded,
-                        color: AppColors.textSecondary),
+                      )
+                    : Icon(Icons.pedal_bike_rounded,
+                        color: context.colors.textSecondary),
               ),
               const SizedBox(width: 14),
               // Details
@@ -172,8 +173,8 @@ class _ListingCard extends ConsumerWidget {
 
               // Actions menu
               PopupMenuButton<_Action>(
-                icon: const Icon(Icons.more_vert_rounded,
-                    size: 20, color: AppColors.textSecondary),
+                icon: Icon(Icons.more_vert_rounded,
+                    size: 20, color: context.colors.textSecondary),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18),
                 ),
@@ -320,11 +321,11 @@ class _Stat extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: AppColors.textSecondary),
+        Icon(icon, size: 14, color: context.colors.textSecondary),
         const SizedBox(width: 3),
         Text('$value',
             style: AppTextStyles.labelSmall
-                .copyWith(color: AppColors.textSecondary)),
+                .copyWith(color: context.colors.textSecondary)),
       ],
     );
   }

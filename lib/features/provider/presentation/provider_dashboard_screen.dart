@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/cached_image.dart';
+
 import '../../../core/l10n/l10n.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
@@ -27,9 +29,9 @@ class ProviderDashboardScreen extends ConsumerWidget {
 
     if (provider == null) {
       return Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.colors.background,
         appBar: AppBar(
-          backgroundColor: AppColors.surface,
+          backgroundColor: context.colors.surface,
           title: Text(l10n.dashboardTitle, style: AppTextStyles.headline3),
         ),
         body: Center(
@@ -38,13 +40,13 @@ class ProviderDashboardScreen extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.storefront_outlined,
-                    size: 56, color: AppColors.textSecondary),
+                Icon(Icons.storefront_outlined,
+                    size: 56, color: context.colors.textSecondary),
                 const SizedBox(height: 16),
                 Text(
                   l10n.noProviderFound,
                   style: AppTextStyles.bodyMedium
-                      .copyWith(color: AppColors.textSecondary),
+                      .copyWith(color: context.colors.textSecondary),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
@@ -71,12 +73,12 @@ class ProviderDashboardScreen extends ConsumerWidget {
     final analytics = analyticsAsync.valueOrNull;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       body: CustomScrollView(
         slivers: [
           // ── App Bar ──────────────────────────────────────────────────────
           SliverAppBar(
-            backgroundColor: AppColors.surface,
+            backgroundColor: context.colors.surface,
             pinned: true,
             title: Text(l10n.dashboardTitle, style: AppTextStyles.headline3),
             actions: [
@@ -293,9 +295,9 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,7 +309,7 @@ class _StatCard extends StatelessWidget {
           Text(
             label,
             style: AppTextStyles.labelSmall
-                .copyWith(color: AppColors.textSecondary),
+                .copyWith(color: context.colors.textSecondary),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -333,7 +335,7 @@ class _ActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
-      color: AppColors.surface,
+      color: context.colors.surface,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
@@ -342,7 +344,7 @@ class _ActionTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: context.colors.border),
           ),
           child: Row(
             children: [
@@ -359,8 +361,8 @@ class _ActionTile extends StatelessWidget {
               Expanded(
                 child: Text(label, style: AppTextStyles.bodyMedium),
               ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: AppColors.textSecondary, size: 22),
+              Icon(Icons.chevron_right_rounded,
+                  color: context.colors.textSecondary, size: 22),
             ],
           ),
         ),
@@ -391,9 +393,9 @@ class _BusinessCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,12 +413,9 @@ class _BusinessCard extends StatelessWidget {
                 child: provider.logoUrl != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          provider.logoUrl!,
+                        child: CachedImage(
+                          imageUrl: provider.logoUrl!,
                           fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) =>
-                              Icon(Icons.storefront_rounded,
-                                  color: isDark ? Colors.white : Colors.white, size: 24),
                         ),
                       )
                     : Icon(Icons.storefront_rounded,
@@ -441,7 +440,7 @@ class _BusinessCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(height: 1, color: AppColors.border),
+          Divider(height: 1, color: context.colors.border),
           const SizedBox(height: 12),
           _InfoRow(Icons.location_on_outlined,
               '${provider.streetAddress}, ${provider.postalCode} ${provider.city}'),
@@ -464,12 +463,12 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: AppColors.textSecondary),
+        Icon(icon, size: 16, color: context.colors.textSecondary),
         const SizedBox(width: 8),
         Expanded(
           child: Text(text,
               style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.textSecondary),
+                  .copyWith(color: context.colors.textSecondary),
               maxLines: 1,
               overflow: TextOverflow.ellipsis),
         ),

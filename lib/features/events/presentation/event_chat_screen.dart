@@ -1,6 +1,3 @@
-/// CYKEL — Event Chat Screen
-/// Group chat for event participants
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/app_image.dart';
 import '../../auth/domain/app_user.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../data/events_provider.dart';
@@ -167,23 +165,13 @@ class _EventChatScreenState extends ConsumerState<EventChatScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (!isMe) ...[
-                CircleAvatar(
-                  radius: 16,
-                  backgroundImage: message.userPhotoUrl != null
-                      ? NetworkImage(message.userPhotoUrl!)
-                      : null,
-                  backgroundColor: isDark 
-                      ? Colors.white.withValues(alpha: 0.2)
-                      : Colors.black.withValues(alpha: 0.1),
-                  child: message.userPhotoUrl == null
-                      ? Text(
-                          message.userName[0].toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        )
-                      : null,
+                AppAvatar(
+                  url: message.userPhotoUrl,
+                  thumbnailUrl: AppUser.getThumbnailUrl(message.userPhotoUrl),
+                  size: 32,
+                  fallbackText: message.userName.isNotEmpty
+                      ? message.userName[0].toUpperCase()
+                      : '?',
                 ),
                 const SizedBox(width: 8),
               ],
@@ -195,7 +183,7 @@ class _EventChatScreenState extends ConsumerState<EventChatScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: isMe
-                        ? (isDark ? Colors.white : Colors.black)
+                        ? (context.colors.textPrimary)
                         : (isDark 
                             ? Colors.white.withValues(alpha: 0.15)
                             : Colors.black.withValues(alpha: 0.05)),
@@ -254,7 +242,7 @@ class _EventChatScreenState extends ConsumerState<EventChatScreen> {
           color: context.colors.surface,
           boxShadow: [
             BoxShadow(
-              color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+              color: (context.colors.textPrimary).withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, -2),
             ),
@@ -276,7 +264,7 @@ class _EventChatScreenState extends ConsumerState<EventChatScreen> {
         color: context.colors.surface,
         boxShadow: [
           BoxShadow(
-            color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+            color: (context.colors.textPrimary).withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -310,7 +298,7 @@ class _EventChatScreenState extends ConsumerState<EventChatScreen> {
             const SizedBox(width: 12),
             Container(
               decoration: BoxDecoration(
-                color: isDark ? Colors.white : Colors.black,
+                color: context.colors.textPrimary,
                 shape: BoxShape.circle,
               ),
               child: IconButton(

@@ -26,6 +26,9 @@ class OptimizedNetworkImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final shimmerBase = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+    
     final image = CachedNetworkImage(
       imageUrl: imageUrl,
       fit: fit,
@@ -34,10 +37,8 @@ class OptimizedNetworkImage extends StatelessWidget {
       placeholder: (context, url) =>
           placeholder ??
           Container(
-            color: Colors.grey[200],
-            child: const Center(
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
+            color: shimmerBase,
+            child: const SizedBox.shrink(),
           ),
       errorWidget: (context, url, error) =>
           errorWidget ??

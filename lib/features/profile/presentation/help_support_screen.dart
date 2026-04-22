@@ -44,9 +44,9 @@ class HelpSupportScreen extends StatelessWidget {
           ),
           Container(
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.colors.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border, width: 0.8),
+              border: Border.all(color: context.colors.border, width: 0.8),
             ),
             child: Column(
               children: faqs
@@ -79,7 +79,7 @@ class HelpSupportScreen extends StatelessWidget {
                     horizontal: 16, vertical: 16),
                 child: Row(children: [
                   Icon(Icons.email_outlined,
-                      size: 20, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+                      size: 20, color: context.colors.textPrimary),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
@@ -89,7 +89,7 @@ class HelpSupportScreen extends StatelessWidget {
                             style: AppTextStyles.bodyMedium),
                         Text(l10n.helpEmailAddress,
                             style: AppTextStyles.bodySmall.copyWith(
-                                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)),
+                                color: context.colors.textPrimary)),
                       ],
                     ),
                   ),

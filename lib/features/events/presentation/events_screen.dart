@@ -11,6 +11,8 @@ import '../../../core/router/app_router.dart';
 import '../../profile/data/user_profile_provider.dart';
 import '../data/events_provider.dart';
 import '../domain/event.dart';
+import '../../../core/widgets/cached_image.dart';
+import '../../../core/widgets/app_image.dart';
 
 // ─── Design Colors ─────────────────────────────────────────────────────────────
 const _kPrimaryColor = Color(0xFF4A7C59);
@@ -345,7 +347,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
         image: isDark
             ? null
             : const DecorationImage(
-                image: AssetImage('assets/images/eventhero.jpg'),
+                image: AssetImage('assets/images/eventhero.webp'),
                 fit: BoxFit.cover,
               ),
         gradient: isDark
@@ -855,7 +857,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     backgroundColor: _kPrimaryColor,
                     minimumSize: const Size.fromHeight(50),
                   ),
-                  child: const Text('Apply Filter'),
+                  child: Text(context.l10n.eventsApplyFilter),
                 ),
                 const SizedBox(height: 10),
               ],
@@ -1453,7 +1455,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             child: Center(
               child: Text(
                 context.l10n.noUpcomingEvents,
-                style: const TextStyle(color: AppColors.textSecondary),
+                style: TextStyle(color: context.colors.textSecondary),
               ),
             ),
           );
@@ -1727,10 +1729,9 @@ class _PremiumEventCard extends ConsumerWidget {
                 children: [
                   // Event image or gradient
                   if (event.imageUrl != null && event.imageUrl!.isNotEmpty)
-                    Image.network(
-                      event.imageUrl!,
+                    CachedImage(
+                      imageUrl: event.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => _buildGradientPlaceholder(),
                     )
                   else
                     _buildGradientPlaceholder(),
@@ -2062,12 +2063,11 @@ class _CompactEventCard extends StatelessWidget {
               height: 72,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                image: event.imageUrl != null && event.imageUrl!.isNotEmpty
-                    ? DecorationImage(
-                        image: NetworkImage(event.imageUrl!),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
+                image: AppImage.decorationImage(
+                  url: event.imageUrl,
+                  thumbnailUrl: null,
+                  fit: BoxFit.cover,
+                ),
                 gradient: event.imageUrl == null || event.imageUrl!.isEmpty
                     ? const LinearGradient(
                         colors: [_kPrimaryColor, _kPrimaryPressed],

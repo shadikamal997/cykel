@@ -50,7 +50,7 @@ class ReviewStep extends StatelessWidget {
         Text(
           l10n.reviewSubtitle,
           style: AppTextStyles.bodySmall
-              .copyWith(color: AppColors.textSecondary),
+              .copyWith(color: context.colors.textSecondary),
         ),
         const SizedBox(height: 24),
 
@@ -190,9 +190,9 @@ class _Section extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -233,7 +233,7 @@ class _Row extends StatelessWidget {
             child: Text(
               label,
               style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.textSecondary),
+                  .copyWith(color: context.colors.textSecondary),
             ),
           ),
           Expanded(

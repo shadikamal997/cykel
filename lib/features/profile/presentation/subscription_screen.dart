@@ -187,69 +187,17 @@ class SubscriptionScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n       = context.l10n;
     final isPremium  = ref.watch(isPremiumProvider);
-    final topPad     = MediaQuery.of(context).padding.top;
     final tableItems = _buildTable(l10n);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: Theme.of(context).brightness == Brightness.dark
-                      ? [Colors.white.withValues(alpha: 0.15), Colors.white.withValues(alpha: 0.1)]
-                      : [Colors.black.withValues(alpha: 0.9), Colors.black.withValues(alpha: 0.7)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              padding: EdgeInsets.fromLTRB(24, topPad + 16, 24, 32),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                            color: Colors.white, size: 20),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                      const Spacer(),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Icon(Icons.workspace_premium_rounded,
-                      size: 64, color: Colors.white),
-                  const SizedBox(height: 12),
-                  Text(
-                    l10n.cykelPremiumTitle,
-                    style: AppTextStyles.headline1
-                        .copyWith(color: Colors.white, fontSize: 28),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    l10n.premiumTagline,
-                    style: AppTextStyles.bodyMedium.copyWith(color: Colors.white70),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
-                    ),
-                    child: Text(
-                      isPremium
-                          ? l10n.onPremiumStatus
-                          : l10n.onFreeStatus,
-                      style: AppTextStyles.labelMedium.copyWith(color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
+            child: Image.asset(
+              'assets/images/subscriptionhero.webp',
+              width: double.infinity,
+              fit: BoxFit.fitWidth,
             ),
           ),
 
@@ -268,7 +216,7 @@ class SubscriptionScreen extends ConsumerWidget {
                   Expanded(child: Text(l10n.featuresHeader, style: AppTextStyles.labelSmall)),
                   _ColLabel(l10n.freeColumn, Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.7) : Colors.black.withValues(alpha: 0.7)),
                   const SizedBox(width: 8),
-                  _ColLabel(l10n.proColumn, Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+                  _ColLabel(l10n.proColumn, context.colors.textPrimary),
                 ],
               ),
             ),
@@ -319,7 +267,7 @@ class _SectionTile extends StatelessWidget {
         margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.07),
+          color: (context.colors.textPrimary).withValues(alpha: 0.07),
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(10),
             topRight: Radius.circular(10),
@@ -333,7 +281,7 @@ class _SectionTile extends StatelessWidget {
               child: Text(
                 section.title,
                 style: AppTextStyles.labelMedium.copyWith(
-                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                  color: context.colors.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -353,10 +301,10 @@ class _FeatureTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.colors.surface,
             border: Border(
               bottom: BorderSide(
-                  color: AppColors.surfaceVariant.withValues(alpha: 0.5)),
+                  color: context.colors.surfaceVariant.withValues(alpha: 0.5)),
             ),
           ),
           child: Row(
@@ -371,7 +319,7 @@ class _FeatureTile extends StatelessWidget {
                       Text(
                         data.note!,
                         style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textSecondary, fontSize: 11),
+                            color: context.colors.textSecondary, fontSize: 11),
                       ),
                   ],
                 ),
@@ -397,7 +345,7 @@ class _Tick extends StatelessWidget {
           child: included
               ? Icon(Icons.check_circle_rounded,
                   size: 18,
-                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)
+                  color: context.colors.textPrimary)
               : Icon(Icons.remove_rounded, size: 18, color: context.colors.textHint),
         ),
       );
@@ -456,7 +404,7 @@ class _PriceCardState extends ConsumerState<_PriceCard> {
     return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -547,7 +495,7 @@ class _PriceCardState extends ConsumerState<_PriceCard> {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
+                  color: context.colors.surfaceVariant,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -588,13 +536,13 @@ class _PriceCardState extends ConsumerState<_PriceCard> {
               children: [
                 Text(displayPrice,
                     style: AppTextStyles.headline1
-                        .copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, fontSize: 38)),
+                        .copyWith(color: context.colors.textPrimary, fontSize: 38)),
                 const SizedBox(width: 4),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Text(_isMonthly ? l10n.premiumPerMonth : '/year',
                       style: AppTextStyles.bodyMedium
-                          .copyWith(color: AppColors.textSecondary)),
+                          .copyWith(color: context.colors.textSecondary)),
                 ),
               ],
             ),
@@ -611,7 +559,7 @@ class _PriceCardState extends ConsumerState<_PriceCard> {
               Text(
                 l10n.premiumPriceNote,
                 style: AppTextStyles.bodySmall
-                    .copyWith(color: AppColors.textSecondary),
+                    .copyWith(color: context.colors.textSecondary),
               ),
             const SizedBox(height: 20),
             SizedBox(
@@ -631,7 +579,7 @@ class _PriceCardState extends ConsumerState<_PriceCard> {
                               TextButton(
                                   onPressed: () => Navigator.pop(context, true),
                                   child: Text(l10n.cancel,
-                                      style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black))),
+                                      style: TextStyle(color: context.colors.textPrimary))),
                             ],
                           ),
                         );
@@ -651,8 +599,8 @@ class _PriceCardState extends ConsumerState<_PriceCard> {
                         }
                       },
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                        side: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+                        foregroundColor: context.colors.textPrimary,
+                        side: BorderSide(color: context.colors.textPrimary),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
@@ -684,8 +632,8 @@ class _PriceCardState extends ConsumerState<_PriceCard> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                        foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -711,7 +659,7 @@ class _PriceCardState extends ConsumerState<_PriceCard> {
                 },
                 child: Text(l10n.restorePurchases,
                     style: AppTextStyles.bodySmall
-                        .copyWith(color: AppColors.textSecondary)),
+                        .copyWith(color: context.colors.textSecondary)),
               ),
           ],
         ),
@@ -739,7 +687,7 @@ class _BillingPeriodButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: isSelected 
-              ? (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)
+              ? (context.colors.textPrimary)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
@@ -770,7 +718,7 @@ class _ValuePill extends StatelessWidget {
           const SizedBox(height: 4),
           Text(label,
               style: AppTextStyles.bodySmall
-                  .copyWith(fontSize: 10, color: AppColors.textSecondary)),
+                  .copyWith(fontSize: 10, color: context.colors.textSecondary)),
         ],
       );
 }

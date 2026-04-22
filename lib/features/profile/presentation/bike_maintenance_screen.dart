@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/app_image.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../data/bikes_provider.dart';
 import '../data/maintenance_provider.dart';
@@ -108,7 +109,7 @@ class BikeMaintenanceScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -119,7 +120,7 @@ class BikeMaintenanceScreen extends ConsumerWidget {
   void _showRecordDetails(BuildContext context, WidgetRef ref, MaintenanceRecord record) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -139,7 +140,7 @@ class _HealthScoreCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final score = status.healthScore;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark ? Colors.white : Colors.black;
+    final baseColor = context.colors.textPrimary;
     final color = score >= 80
         ? baseColor.withValues(alpha: 1.0)
         : score >= 60
@@ -317,32 +318,17 @@ class _RecordTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark ? Colors.white : Colors.black;
-    final isOverdue = record.isOverdue(totalKm);
-    final isDueSoon = record.isDueSoon(totalKm);
-
     return ListTile(
       onTap: onTap,
-      leading: CircleAvatar(
-        backgroundColor: isOverdue
-            ? baseColor.withValues(alpha: 0.1)
-            : isDueSoon
-                ? baseColor.withValues(alpha: 0.1)
-                : context.colors.surface,
-        child: Icon(
-          Icons.build_circle_outlined,
-          color: isOverdue
-              ? baseColor.withValues(alpha: 0.9)
-              : isDueSoon
-                  ? baseColor.withValues(alpha: 0.7)
-                  : baseColor.withValues(alpha: 0.5),
-        ),
+      leading: AppAvatar(
+        url: null,
+        size: 40,
+        fallbackIcon: Icons.build_circle_outlined,
       ),
       title: Text(record.type.displayName),
       subtitle: Text(
         '${_formatDate(record.date)} • ${record.kmAtService.toStringAsFixed(0)} km',
-        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+        style: AppTextStyles.bodySmall.copyWith(color: context.colors.textSecondary),
       ),
       trailing: record.cost != null
           ? Text(
@@ -374,20 +360,20 @@ class _EmptyState extends StatelessWidget {
           Icon(
             Icons.build_circle_outlined,
             size: 64,
-            color: AppColors.textSecondary.withValues(alpha: 0.5),
+            color: context.colors.textSecondary.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
             context.l10n.noServiceHistory,
             style: AppTextStyles.bodyLarge.copyWith(
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             context.l10n.addFirstService,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -464,7 +450,7 @@ class _AddMaintenanceSheetState extends ConsumerState<_AddMaintenanceSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.textSecondary.withValues(alpha: 0.3),
+                    color: context.colors.textSecondary.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -658,7 +644,7 @@ class _RecordDetailsSheet extends ConsumerWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.textSecondary.withValues(alpha: 0.3),
+                color: context.colors.textSecondary.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -681,12 +667,12 @@ class _RecordDetailsSheet extends ConsumerWidget {
 
           // Next Service Info
           Card(
-            color: AppColors.surface,
+            color: context.colors.surface,
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  Icon(Icons.update, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+                  Icon(Icons.update, color: context.colors.textPrimary),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -695,7 +681,7 @@ class _RecordDetailsSheet extends ConsumerWidget {
                         Text(
                           context.l10n.nextService,
                           style: AppTextStyles.labelMedium.copyWith(
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                         ),
                         Text(
@@ -715,10 +701,10 @@ class _RecordDetailsSheet extends ConsumerWidget {
           // Delete Button
           TextButton.icon(
             onPressed: () => _delete(context, ref),
-            icon: Icon(Icons.delete_outline, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+            icon: Icon(Icons.delete_outline, color: context.colors.textPrimary),
             label: Text(
               context.l10n.confirmDelete,
-              style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+              style: TextStyle(color: context.colors.textPrimary),
             ),
           ),
         ],
@@ -744,7 +730,7 @@ class _RecordDetailsSheet extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.confirmDelete, style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)),
+            child: Text(l10n.confirmDelete, style: TextStyle(color: context.colors.textPrimary)),
           ),
         ],
       ),
@@ -791,7 +777,7 @@ class _DetailRow extends StatelessWidget {
             child: Text(
               label,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
           ),

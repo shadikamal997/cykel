@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 /// CYKEL — Edit Event Screen
 /// Edit an existing group ride event
 
@@ -6,12 +7,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../../../core/utils/upload_retry_helper.dart';
 
 import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../discover/data/places_service.dart';
 import '../data/events_provider.dart';
 import '../domain/event.dart';
 
@@ -31,6 +35,24 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _locationNameController = TextEditingController();
+  final _instructionsController = TextEditingController();
+  final _distanceController = TextEditingController();
+  final _durationController = TextEditingController();
+  final _paceController = TextEditingController();
+  final _maxParticipantsController = TextEditingController();
+  final _minAgeController = TextEditingController();
+  final _maxAgeController = TextEditingController();
+
+  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
+  TimeOfDay _selectedTime = const TimeOfDay(hour: 10, minute: 0);
+  EventType _selectedType = EventType.social;
+  EventDifficulty _selectedDifficulty = EventDifficulty.moderate;
+  EventVisibility _selectedVisibility = EventVisibility.public;
+  bool _isNoDrop = false;
+  bool _requiresLights = false;
+  LatLng? _selectedLocation;
 
   bool _isLoading = false;
   
@@ -39,12 +61,30 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   String? _currentImageUrl;
   final _imagePicker = ImagePicker();
 
+  // Address autocomplete
+  Timer? _debounce;
+  List<PlaceResult> _addressSuggestions = [];
+  bool _showSuggestions = false;
+  final _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
+
   bool _initialized = false;
 
   @override
   void dispose() {
+    _debounce?.cancel();
+    _removeOverlay();
     _titleController.dispose();
     _descriptionController.dispose();
+    _addressController.dispose();
+    _locationNameController.dispose();
+    _instructionsController.dispose();
+    _distanceController.dispose();
+    _durationController.dispose();
+    _paceController.dispose();
+    _maxParticipantsController.dispose();
+    _minAgeController.dispose();
+    _maxAgeController.dispose();
     super.dispose();
   }
 
@@ -55,6 +95,49 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     _titleController.text = event.title;
     _descriptionController.text = event.description ?? '';
     _currentImageUrl = event.imageUrl;
+    
+    _selectedDate = DateTime(
+      event.dateTime.year,
+      event.dateTime.month,
+      event.dateTime.day,
+    );
+    _selectedTime = TimeOfDay(
+      hour: event.dateTime.hour,
+      minute: event.dateTime.minute,
+    );
+    
+    _selectedType = event.eventType;
+    _selectedDifficulty = event.difficulty;
+    _selectedVisibility = event.visibility;
+    _isNoDrop = event.isNoDrop;
+    _requiresLights = event.requiresLights;
+    
+    _selectedLocation = LatLng(
+      event.meetingPoint.latitude,
+      event.meetingPoint.longitude,
+    );
+    _addressController.text = event.meetingPoint.address;
+    _locationNameController.text = event.meetingPoint.name ?? '';
+    _instructionsController.text = event.meetingPoint.instructions ?? '';
+    
+    if (event.distanceKm != null) {
+      _distanceController.text = event.distanceKm!.toString();
+    }
+    if (event.durationMinutes != null) {
+      _durationController.text = event.durationMinutes!.toString();
+    }
+    if (event.paceKmh != null) {
+      _paceController.text = event.paceKmh!.toString();
+    }
+    if (event.maxParticipants != null) {
+      _maxParticipantsController.text = event.maxParticipants!.toString();
+    }
+    if (event.minAge != null) {
+      _minAgeController.text = event.minAge!.toString();
+    }
+    if (event.maxAge != null) {
+      _maxAgeController.text = event.maxAge!.toString();
+    }
   }
 
   @override
@@ -80,10 +163,10 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         _initializeFromEvent(event);
 
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: context.colors.background,
           appBar: AppBar(
             title: Text(context.l10n.editEvent),
-            backgroundColor: AppColors.surface,
+            backgroundColor: context.colors.surface,
             foregroundColor: AppColors.textPrimary,
             elevation: 0,
           ),
@@ -92,7 +175,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // Basic Info
+                // Basic Info Section
                 Text(
                   context.l10n.basicInfo,
                   style: AppTextStyles.headline3,
@@ -121,7 +204,267 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
 
                 // Event Image
                 _buildImagePicker(),
+                const SizedBox(height: 16),
+
+                // Type & Difficulty
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDropdownField(
+                        label: context.l10n.eventType,
+                        value: _selectedType,
+                        items: EventType.values.map((t) => DropdownMenuItem(
+                          value: t,
+                          child: Text('${t.icon} ${t.localizedLabel(context)}'),
+                        )).toList(),
+                        onChanged: (v) => setState(() => _selectedType = v!),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildDropdownField(
+                        label: context.l10n.difficultyLevel,
+                        value: _selectedDifficulty,
+                        items: EventDifficulty.values.map((d) => DropdownMenuItem(
+                          value: d,
+                          child: Text('${d.icon} ${d.localizedLabel(context)}'),
+                        )).toList(),
+                        onChanged: (v) => setState(() => _selectedDifficulty = v!),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 24),
+
+                // Date & Time Section
+                Text(
+                  context.l10n.dateAndTimeSection,
+                  style: AppTextStyles.headline3,
+                ),
+                const SizedBox(height: 12),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDatePicker(),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildTimePicker(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Location Section
+                Text(
+                  context.l10n.meetingPointSection,
+                  style: AppTextStyles.headline3,
+                ),
+                const SizedBox(height: 12),
+
+                TextFormField(
+                  controller: _locationNameController,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.placeName,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                CompositedTransformTarget(
+                  link: _layerLink,
+                  child: TextFormField(
+                    controller: _addressController,
+                    decoration: InputDecoration(
+                      labelText: context.l10n.address,
+                      border: const OutlineInputBorder(),
+                      suffixIcon: _showSuggestions
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _addressController.clear();
+                                _removeOverlay();
+                                setState(() {
+                                  _addressSuggestions = [];
+                                  _showSuggestions = false;
+                                  _selectedLocation = null;
+                                });
+                              },
+                            )
+                          : const Icon(Icons.search),
+                    ),
+                    onChanged: _onAddressChanged,
+                    onTap: () {
+                      if (_addressSuggestions.isNotEmpty) {
+                        _showOverlay();
+                      }
+                    },
+                    validator: (v) => v?.isEmpty == true ? context.l10n.addressRequired : null,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                if (_selectedLocation != null)
+                  Container(
+                    height: 150,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: context.colors.border),
+                    ),
+                    clipBehavior: Clip.hardEdge,
+                    child: GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: _selectedLocation!,
+                        zoom: 15,
+                      ),
+                      markers: {
+                        Marker(
+                          markerId: const MarkerId('meeting'),
+                          position: _selectedLocation!,
+                        ),
+                      },
+                      zoomControlsEnabled: false,
+                      scrollGesturesEnabled: false,
+                    ),
+                  ),
+                const SizedBox(height: 12),
+
+                TextFormField(
+                  controller: _instructionsController,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.eventInstructions,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Route Details Section
+                Text(
+                  context.l10n.rideDetailsSection,
+                  style: AppTextStyles.headline3,
+                ),
+                const SizedBox(height: 12),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _distanceController,
+                        decoration: InputDecoration(
+                          labelText: context.l10n.distanceKm,
+                          border: const OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _durationController,
+                        decoration: InputDecoration(
+                          labelText: context.l10n.durationMin,
+                          border: const OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _paceController,
+                        decoration: InputDecoration(
+                          labelText: context.l10n.paceKmh,
+                          border: const OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _maxParticipantsController,
+                        decoration: InputDecoration(
+                          labelText: context.l10n.maxParticipants,
+                          border: const OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Age Restrictions Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _minAgeController,
+                        decoration: const InputDecoration(
+                          labelText: 'Min Age (Optional)',
+                          border: OutlineInputBorder(),
+                          hintText: 'e.g., 18',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _maxAgeController,
+                        decoration: const InputDecoration(
+                          labelText: 'Max Age (Optional)',
+                          border: OutlineInputBorder(),
+                          hintText: 'e.g., 65',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Settings Section
+                Text(
+                  context.l10n.settingsSection,
+                  style: AppTextStyles.headline3,
+                ),
+                const SizedBox(height: 12),
+
+                _buildDropdownField(
+                  label: context.l10n.visibility,
+                  value: _selectedVisibility,
+                  items: EventVisibility.values.map((v) => DropdownMenuItem(
+                    value: v,
+                    child: Text(v.localizedLabel(context)),
+                  )).toList(),
+                  onChanged: (v) => setState(() => _selectedVisibility = v!),
+                ),
+                const SizedBox(height: 12),
+
+                SwitchListTile(
+                  value: _isNoDrop,
+                  onChanged: (v) => setState(() => _isNoDrop = v),
+                  title: Text(context.l10n.noDropPolicy),
+                  subtitle: Text(context.l10n.noDropDescription),
+                  contentPadding: EdgeInsets.zero,
+                ),
+
+                SwitchListTile(
+                  value: _requiresLights,
+                  onChanged: (v) => setState(() => _requiresLights = v),
+                  title: Text(context.l10n.lightsRequiredToggle),
+                  subtitle: Text(context.l10n.lightsRequiredDescription),
+                  contentPadding: EdgeInsets.zero,
+                ),
+
+                const SizedBox(height: 32),
 
                 // Update Button
                 SizedBox(
@@ -144,12 +487,171 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                         : Text(context.l10n.updateEvent),
                   ),
                 ),
+                const SizedBox(height: 32),
               ],
             ),
           ),
         );
       },
     );
+  }
+
+  Widget _buildDatePicker() {
+    return InkWell(
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: _selectedDate,
+          firstDate: DateTime.now(),
+          lastDate: DateTime.now().add(const Duration(days: 365)),
+        );
+        if (picked != null) {
+          setState(() => _selectedDate = picked);
+        }
+      },
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: context.l10n.dateLabel,
+          border: const OutlineInputBorder(),
+          suffixIcon: const Icon(Icons.calendar_today),
+        ),
+        child: Text(
+          '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimePicker() {
+    return InkWell(
+      onTap: () async {
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: _selectedTime,
+        );
+        if (picked != null) {
+          setState(() => _selectedTime = picked);
+        }
+      },
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: context.l10n.timeLabel,
+          border: const OutlineInputBorder(),
+          suffixIcon: const Icon(Icons.access_time),
+        ),
+        child: Text('${_selectedTime.hour}:${_selectedTime.minute.toString().padLeft(2, '0')}'),
+      ),
+    );
+  }
+
+  Widget _buildDropdownField<T>({
+    required String label,
+    required T value,
+    required List<DropdownMenuItem<T>> items,
+    required void Function(T?) onChanged,
+  }) {
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          value: value,
+          isExpanded: true,
+          items: items,
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+
+  void _onAddressChanged(String value) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      if (value.isNotEmpty) {
+        _fetchAddressSuggestions(value);
+      } else {
+        _removeOverlay();
+        setState(() {
+          _addressSuggestions = [];
+          _showSuggestions = false;
+        });
+      }
+    });
+  }
+
+  Future<void> _fetchAddressSuggestions(String input) async {
+    try {
+      final placesService = PlacesService();
+      final results = await placesService.autocomplete(input, language: 'da');
+      setState(() {
+        _addressSuggestions = results;
+        _showSuggestions = results.isNotEmpty;
+      });
+      if (results.isNotEmpty) {
+        _showOverlay();
+      }
+    } catch (e) {
+      // Handle error silently
+    }
+  }
+
+  void _showOverlay() {
+    _removeOverlay();
+
+    final overlay = Overlay.of(context);
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        width: renderBox.size.width - 32,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          offset: const Offset(0, 56),
+          child: Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              constraints: const BoxConstraints(maxHeight: 200),
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                itemCount: _addressSuggestions.length,
+                itemBuilder: (context, index) {
+                  final suggestion = _addressSuggestions[index];
+                  return ListTile(
+                    leading: const Icon(Icons.location_on),
+                    title: Text(suggestion.text),
+                    subtitle: Text(suggestion.subtitle),
+                    onTap: () => _selectAddress(suggestion),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(_overlayEntry!);
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  Future<void> _selectAddress(PlaceResult place) async {
+    _removeOverlay();
+    setState(() {
+      _addressController.text = place.subtitle.isNotEmpty ? place.subtitle : place.text;
+      _locationNameController.text = place.text;
+      _selectedLocation = place.latLng;
+      _showSuggestions = false;
+    });
   }
 
   Widget _buildImagePicker() {
@@ -169,9 +671,9 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
             height: 200,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.colors.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: context.colors.border),
               image: _selectedImage != null
                   ? DecorationImage(
                       image: FileImage(_selectedImage!),
@@ -179,7 +681,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                     )
                   : _currentImageUrl != null
                       ? DecorationImage(
-                          image: NetworkImage(_currentImageUrl!),
+                          image: CachedNetworkImageProvider(_currentImageUrl!),
                           fit: BoxFit.cover,
                         )
                       : null,
@@ -188,16 +690,16 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.add_photo_alternate,
                         size: 48,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Tap to add event image',
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                       ),
                     ],
@@ -271,8 +773,21 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       final fileName = 'events/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
       final ref = FirebaseStorage.instance.ref().child(fileName);
 
-      await ref.putFile(_selectedImage!);
-      return await ref.getDownloadURL();
+      return await UploadRetryHelper.uploadFileWithRetry(
+        storageRef: ref,
+        file: _selectedImage!,
+        metadata: SettableMetadata(
+          contentType: 'image/jpeg',
+          cacheControl: 'public, max-age=31536000',
+        ),
+      );
+    } on UploadException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to upload image after retries: ${e.message}')),
+        );
+      }
+      return null;
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -286,6 +801,14 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   Future<void> _updateEvent(RideEvent originalEvent) async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Validate location
+    if (_selectedLocation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a location')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -295,12 +818,56 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         imageUrl = await _uploadImage(originalEvent.organizerId);
       }
 
+      // Combine date and time
+      final eventDateTime = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _selectedTime.hour,
+        _selectedTime.minute,
+      );
+
+      // Parse numeric values
+      final distance = double.tryParse(_distanceController.text.trim());
+      final duration = int.tryParse(_durationController.text.trim());
+      final pace = double.tryParse(_paceController.text.trim());
+      final maxParticipants = int.tryParse(_maxParticipantsController.text.trim());
+      final minAge = _minAgeController.text.trim().isNotEmpty 
+          ? int.tryParse(_minAgeController.text.trim())
+          : null;
+      final maxAge = _maxAgeController.text.trim().isNotEmpty
+          ? int.tryParse(_maxAgeController.text.trim())
+          : null;
+
       final updatedEvent = originalEvent.copyWith(
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim().isEmpty
             ? null
             : _descriptionController.text.trim(),
         imageUrl: imageUrl,
+        dateTime: eventDateTime,
+        meetingPoint: MeetingPoint(
+          latitude: _selectedLocation!.latitude,
+          longitude: _selectedLocation!.longitude,
+          address: _addressController.text.trim(),
+          name: _locationNameController.text.trim().isEmpty
+              ? null
+              : _locationNameController.text.trim(),
+          instructions: _instructionsController.text.trim().isEmpty
+              ? null
+              : _instructionsController.text.trim(),
+        ),
+        eventType: _selectedType,
+        difficulty: _selectedDifficulty,
+        visibility: _selectedVisibility,
+        distanceKm: distance,
+        durationMinutes: duration,
+        paceKmh: pace,
+        maxParticipants: maxParticipants,
+        minAge: minAge,
+        maxAge: maxAge,
+        isNoDrop: _isNoDrop,
+        requiresLights: _requiresLights,
       );
 
       await ref.read(eventsServiceProvider).updateEvent(updatedEvent);

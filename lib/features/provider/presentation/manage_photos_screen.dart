@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/widgets/cached_image.dart';
+
 import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -139,9 +141,9 @@ class _ManagePhotosScreenState extends ConsumerState<ManagePhotosScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         title: Text(l10n.managePhotosTitle, style: AppTextStyles.headline3),
       ),
       body: _busy
@@ -182,7 +184,7 @@ class _ManagePhotosScreenState extends ConsumerState<ManagePhotosScreen> {
                     Text(
                       '${provider.galleryUrls.length} / $_maxGallery',
                       style: AppTextStyles.labelSmall
-                          .copyWith(color: AppColors.textSecondary),
+                          .copyWith(color: context.colors.textSecondary),
                     ),
                   ],
                 ),
@@ -191,14 +193,14 @@ class _ManagePhotosScreenState extends ConsumerState<ManagePhotosScreen> {
                   Container(
                     height: 100,
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceVariant,
+                      color: context.colors.surfaceVariant,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       l10n.analyticsNoData,
                       style: AppTextStyles.bodySmall
-                          .copyWith(color: AppColors.textSecondary),
+                          .copyWith(color: context.colors.textSecondary),
                     ),
                   ),
                 if (provider.galleryUrls.isNotEmpty)
@@ -220,8 +222,8 @@ class _ManagePhotosScreenState extends ConsumerState<ManagePhotosScreen> {
                     icon: const Icon(Icons.add_photo_alternate_outlined),
                     label: Text(l10n.addPhotos),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                      side: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+                      foregroundColor: context.colors.textPrimary,
+                      side: BorderSide(color: context.colors.textPrimary),
                       minimumSize: const Size.fromHeight(48),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
@@ -258,24 +260,20 @@ class _PhotoCard extends StatelessWidget {
           aspectRatio: aspectRatio,
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
+              color: context.colors.surfaceVariant,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: context.colors.border),
             ),
             clipBehavior: Clip.antiAlias,
             child: url != null
-                ? Image.network(
-                    url!,
+                ? CachedImage(
+                    imageUrl: url!,
                     fit: BoxFit.cover,
                     width: double.infinity,
-                    errorBuilder: (_, _, _) => Center(
-                      child: Icon(placeholder,
-                          size: 40, color: AppColors.textSecondary),
-                    ),
                   )
                 : Center(
                     child: Icon(placeholder,
-                        size: 40, color: AppColors.textSecondary),
+                        size: 40, color: context.colors.textSecondary),
                   ),
           ),
         ),
@@ -286,7 +284,7 @@ class _PhotoCard extends StatelessWidget {
             onPressed: onAction,
             icon: const Icon(Icons.upload_outlined, size: 18),
             label: Text(actionLabel),
-            style: TextButton.styleFrom(foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+            style: TextButton.styleFrom(foregroundColor: context.colors.textPrimary),
           ),
         ),
       ],
@@ -314,19 +312,14 @@ class _GalleryTile extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: context.colors.border),
             ),
             clipBehavior: Clip.antiAlias,
-            child: Image.network(
-              url,
+            child: CachedImage(
+              imageUrl: url,
               fit: BoxFit.cover,
               width: size,
               height: size,
-              errorBuilder: (_, _, _) => Container(
-                color: AppColors.surfaceVariant,
-                child: const Icon(Icons.broken_image_outlined,
-                    color: AppColors.textSecondary),
-              ),
             ),
           ),
           Positioned(
@@ -337,7 +330,7 @@ class _GalleryTile extends StatelessWidget {
               icon: const Icon(Icons.close_rounded, size: 14),
               style: IconButton.styleFrom(
                 backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.9) : Colors.black.withValues(alpha: 0.9),
-                foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                foregroundColor: Colors.white,
                 minimumSize: const Size(24, 24),
                 padding: EdgeInsets.zero,
               ),

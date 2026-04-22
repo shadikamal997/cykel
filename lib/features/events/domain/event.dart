@@ -314,6 +314,7 @@ class RideEvent {
     required this.createdAt,
     this.description,
     this.organizerPhotoUrl,
+    this.organizerPhotoThumbnailUrl,
     this.route,
     this.distanceKm,
     this.durationMinutes,
@@ -337,6 +338,7 @@ class RideEvent {
   final String organizerId;
   final String organizerName;
   final String? organizerPhotoUrl;
+  final String? organizerPhotoThumbnailUrl;
   final DateTime dateTime;
   final MeetingPoint meetingPoint;
   final EventRoute? route;
@@ -376,6 +378,31 @@ class RideEvent {
            dateTime.month == now.month && 
            dateTime.day == now.day;
   }
+
+  /// Calculate thumbnail URL from image URL based on Cloud Function pattern
+  static String? getThumbnailUrl(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) return null;
+    
+    final uri = Uri.parse(imageUrl);
+    final encodedPath = uri.pathSegments.lastWhere(
+      (segment) => segment.contains('%2F'),
+      orElse: () => '',
+    );
+    
+    if (encodedPath.isEmpty) return imageUrl;
+    
+    final decodedPath = Uri.decodeComponent(encodedPath);
+    final thumbnailPath = 'thumbnails/$decodedPath';
+    final encodedThumbnailPath = Uri.encodeComponent(thumbnailPath);
+    
+    return imageUrl.replaceFirst(encodedPath, encodedThumbnailPath);
+  }
+
+  /// Get calculated thumbnail for organizer photo
+  String? get organizerPhotoThumbnail => getThumbnailUrl(organizerPhotoUrl);
+
+  /// Get calculated thumbnail for event image
+  String? get imageThumbnail => getThumbnailUrl(imageUrl);
 
   String get formattedDate {
     final months = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
@@ -424,8 +451,7 @@ class RideEvent {
       description: data['description'] as String?,
       organizerId: data['organizerId'] as String? ?? '',
       organizerName: data['organizerName'] as String? ?? 'Ukendt',
-      organizerPhotoUrl: data['organizerPhotoUrl'] as String?,
-      dateTime: (data['dateTime'] as Timestamp).toDate(),
+      organizerPhotoUrl: data['organizerPhotoUrl'] as String?,      organizerPhotoThumbnailUrl: data['organizerPhotoThumbnailUrl'] as String?,      dateTime: (data['dateTime'] as Timestamp).toDate(),
       meetingPoint: MeetingPoint.fromMap(data['meetingPoint'] as Map<String, dynamic>),
       route: data['route'] != null 
           ? EventRoute.fromMap(data['route'] as Map<String, dynamic>) 
@@ -472,6 +498,7 @@ class RideEvent {
     'organizerId': organizerId,
     'organizerName': organizerName,
     'organizerPhotoUrl': organizerPhotoUrl,
+    'organizerPhotoThumbnailUrl': organizerPhotoThumbnailUrl,
     'dateTime': Timestamp.fromDate(dateTime),
     'meetingPoint': meetingPoint.toMap(),
     'route': route?.toMap(),
@@ -503,6 +530,7 @@ class RideEvent {
     String? organizerId,
     String? organizerName,
     String? organizerPhotoUrl,
+    String? organizerPhotoThumbnailUrl,
     DateTime? dateTime,
     MeetingPoint? meetingPoint,
     EventRoute? route,
@@ -532,6 +560,7 @@ class RideEvent {
       organizerId: organizerId ?? this.organizerId,
       organizerName: organizerName ?? this.organizerName,
       organizerPhotoUrl: organizerPhotoUrl ?? this.organizerPhotoUrl,
+      organizerPhotoThumbnailUrl: organizerPhotoThumbnailUrl ?? this.organizerPhotoThumbnailUrl,
       dateTime: dateTime ?? this.dateTime,
       meetingPoint: meetingPoint ?? this.meetingPoint,
       route: route ?? this.route,

@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../../core/l10n/l10n.dart';
+import '../../../core/widgets/app_image.dart';
 import '../domain/advanced_route.dart';
 import '../application/advanced_route_providers.dart';
 import '../application/advanced_route_service.dart';
@@ -44,7 +46,7 @@ class _RouteCreatorScreenState extends ConsumerState<RouteCreatorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Route'),
+        title: Text(context.l10n.routesCreateRoute),
         actions: [
           if (_waypoints.length >= 2)
             TextButton.icon(
@@ -96,7 +98,7 @@ class _RouteCreatorScreenState extends ConsumerState<RouteCreatorScreen> {
                       const SizedBox(height: 8),
                       _MapButton(
                         icon: Icons.route,
-                        tooltip: 'Optimize Route',
+                        tooltip: context.l10n.routesOptimizeRoute,
                         onPressed: _waypoints.length < 3 ? null : _showOptimizationDialog,
                       ),
                     ],
@@ -261,7 +263,7 @@ class _RouteCreatorScreenState extends ConsumerState<RouteCreatorScreen> {
     showDialog<RouteOptimizationStrategy>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Optimize Route'),
+        title: Text(context.l10n.routesOptimizeRoute),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: RouteOptimizationStrategy.values.map((strategy) {
@@ -303,14 +305,14 @@ class _RouteCreatorScreenState extends ConsumerState<RouteCreatorScreen> {
   Future<void> _createRoute() async {
     if (_waypoints.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Route must have at least 2 waypoints')),
+        SnackBar(content: Text(context.l10n.routesMinTwoWaypoints)),
       );
       return;
     }
 
     if (_routeNameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a route name')),
+        SnackBar(content: Text(context.l10n.routesEnterName)),
       );
       return;
     }
@@ -340,14 +342,14 @@ class _RouteCreatorScreenState extends ConsumerState<RouteCreatorScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Route created successfully!')),
+          SnackBar(content: Text(context.l10n.routesCreatedSuccess)),
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creating route: $e')),
+          SnackBar(content: Text(context.l10n.routesErrorCreating(e.toString()))),
         );
       }
     } finally {
@@ -448,20 +450,20 @@ class _RouteDetailsPanel extends StatelessWidget {
 
           // Options
           SwitchListTile(
-            title: const Text('Round Trip'),
-            subtitle: const Text('Route returns to start'),
+            title: Text(context.l10n.routesRoundTrip),
+            subtitle: Text(context.l10n.routesRoundTripDesc),
             value: isRoundTrip,
             onChanged: onToggleRoundTrip,
           ),
           SwitchListTile(
-            title: const Text('Calculate Elevation'),
-            subtitle: const Text('Include elevation profile'),
+            title: Text(context.l10n.routesCalculateElevation),
+            subtitle: Text(context.l10n.routesCalculateElevationDesc),
             value: calculateElevation,
             onChanged: onToggleElevation,
           ),
           SwitchListTile(
-            title: const Text('Fetch Weather'),
-            subtitle: const Text('Get current weather data'),
+            title: Text(context.l10n.routesFetchWeather),
+            subtitle: Text(context.l10n.routesFetchWeatherDesc),
             value: fetchWeather,
             onChanged: onToggleWeather,
           ),
@@ -483,7 +485,7 @@ class _RouteDetailsPanel extends StatelessWidget {
                   )),
               ActionChip(
                 avatar: const Icon(Icons.add),
-                label: const Text('Add Tag'),
+                label: Text(context.l10n.routesAddTag),
                 onPressed: () => _showAddTagDialog(context),
               ),
             ],
@@ -588,9 +590,10 @@ class _WaypointTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _getWaypointColor(context),
-          child: Text('${index + 1}'),
+        leading: AppAvatar(
+          url: null,
+          size: 40,
+          fallbackText: '${index + 1}',
         ),
         title: Text(waypoint.name ?? 'Waypoint ${index + 1}'),
         subtitle: Text(waypoint.type.displayName),
@@ -601,17 +604,6 @@ class _WaypointTile extends StatelessWidget {
         onTap: () => _showEditWaypointDialog(context),
       ),
     );
-  }
-
-  Color _getWaypointColor(BuildContext context) {
-    switch (waypoint.type) {
-      case WaypointType.start:
-        return Colors.green;
-      case WaypointType.end:
-        return Colors.red;
-      default:
-        return Theme.of(context).colorScheme.primary;
-    }
   }
 
   void _showEditWaypointDialog(BuildContext context) {

@@ -53,6 +53,12 @@ dependencies:
   cloud_functions: ^5.4.5
   firebase_crashlytics: ^4.3.5
   firebase_app_check: ^0.3.2+10
+  firebase_performance: ^0.10.1+10
+  firebase_remote_config: ^5.2.2
+  firebase_dynamic_links: ^6.1.2
+  
+  # --- Geospatial ---
+  geoflutterfire_plus: ^0.0.4
 
   # --- HTTP / API ---
   dio: ^5.8.0
@@ -65,11 +71,14 @@ dependencies:
   # --- Security ---
   local_auth: ^2.3.0
   crypto: ^3.0.6
+  uuid: ^4.5.1
 
   # --- Maps & Location ---
   google_maps_flutter: ^2.10.0
   geolocator: ^13.0.2
   flutter_polyline_points: ^2.1.0
+  sensors_plus: ^6.1.1
+  google_maps_cluster_manager: ^3.0.0+1
 
   # --- UI Utilities ---
   video_player: ^2.9.2
@@ -94,6 +103,9 @@ dependencies:
   # --- Localisation ---
   intl: ^0.20.2
   in_app_purchase: ^3.2.3
+  
+  # --- Calendar Integration ---
+  add_2_calendar: ^3.0.1
 
 dev_dependencies:
   flutter_test:
@@ -116,14 +128,14 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/playstore-icon.png"
+  image_path: "assets/images/playstore-icon.webp"
   remove_alpha_ios: true
   min_sdk_android: 21
   web:
     generate: false
   # Android adaptive icon (API 26+) — icon on a solid background layer
   adaptive_icon_background: "#000000"
-  adaptive_icon_foreground: "assets/images/playstore-icon.png"
+  adaptive_icon_foreground: "assets/images/playstore-icon.webp"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

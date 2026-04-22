@@ -1,10 +1,13 @@
-/// CYKEL — Commuter Tax Tracking Service (Phase 8.6)
+/// CYKEL — Commuter Tax Tracking Service
 ///
 /// Auto-detects commute rides (Home ↔ Work pattern) and calculates
-/// annual km for Danish commuter tax deduction (kørselsfradrag).
+/// annual km for Danish commuter tax deduction (befordringsfradrag).
 ///
-/// Denmark rule: tax deduction applies after 24 km/day (round trip).
-/// Rate: 2.25 DKK/km (2026) for km above the threshold.
+/// Denmark 2026 rules:
+/// - Minimum: 24 km/day (round trip) to qualify
+/// - Standard rate: 1.98 DKK/km for 24-120 km/day
+/// - Higher distance rate: 0.99 DKK/km for above 120 km/day
+/// - Tax savings: Deduction × marginal tax rate (~42% average)
 ///
 /// Data stored locally in SharedPreferences; users can export a yearly report.
 
@@ -61,6 +64,7 @@ class TaxDeductionSummary {
     required this.totalCommuteKm,
     required this.deductibleKm,
     required this.estimatedDeductionDkk,
+    required this.estimatedTaxSavingsDkk,
     required this.trips,
   });
 
@@ -69,8 +73,10 @@ class TaxDeductionSummary {
   final double totalCommuteKm;
   /// Km eligible for deduction (after 24 km/day threshold per day).
   final double deductibleKm;
-  /// Estimated tax deduction in DKK.
+  /// Estimated tax deduction amount in DKK (before applying tax rate).
   final double estimatedDeductionDkk;
+  /// Estimated actual tax savings in DKK (deduction × marginal tax rate).
+  final double estimatedTaxSavingsDkk;
   final List<CommuteTrip> trips;
 
   /// CSV export for annual tax filing.
@@ -87,6 +93,7 @@ class TaxDeductionSummary {
     sb.writeln('Total commute km,${totalCommuteKm.toStringAsFixed(1)}');
     sb.writeln('Deductible km,${deductibleKm.toStringAsFixed(1)}');
     sb.writeln('Estimated deduction DKK,${estimatedDeductionDkk.toStringAsFixed(0)}');
+    sb.writeln('Estimated tax savings DKK,${estimatedTaxSavingsDkk.toStringAsFixed(0)}');
     return sb.toString();
   }
 }
@@ -148,6 +155,7 @@ class CommuterTaxService {
   }
 
   /// Calculate the tax deduction summary for a given year.
+  /// Uses 2026 tiered rates: 1.98 DKK/km (24-120km), 0.99 DKK/km (above 120km).
   Future<TaxDeductionSummary> calculateDeduction({int? year}) async {
     final y = year ?? DateTime.now().year;
     final trips = await getTrips(year: y);
@@ -162,22 +170,42 @@ class CommuterTaxService {
 
     double totalKm = 0;
     double deductibleKm = 0;
+    double totalDeductionDkk = 0;
+    
     for (final entry in dailyKm.entries) {
-      totalKm += entry.value;
+      final dayKm = entry.value;
+      totalKm += dayKm;
+      
       // Deduction only applies to km above the 24 km/day threshold.
-      if (entry.value > DenmarkConstants.taxDeductionMinKmPerDay) {
-        deductibleKm +=
-            entry.value - DenmarkConstants.taxDeductionMinKmPerDay;
+      if (dayKm > DenmarkConstants.taxDeductionMinKmPerDay) {
+        final deductibleForDay = dayKm - DenmarkConstants.taxDeductionMinKmPerDay;
+        deductibleKm += deductibleForDay;
+        
+        // Apply tiered rates
+        if (dayKm <= DenmarkConstants.taxDeductionHigherThreshold) {
+          // All deductible distance at standard rate
+          totalDeductionDkk += deductibleForDay * DenmarkConstants.taxDeductionStandardRate;
+        } else {
+          // Split between standard and higher rate
+          const standardTierKm = DenmarkConstants.taxDeductionHigherThreshold - DenmarkConstants.taxDeductionMinKmPerDay;
+          final higherTierKm = dayKm - DenmarkConstants.taxDeductionHigherThreshold;
+          
+          totalDeductionDkk += (standardTierKm * DenmarkConstants.taxDeductionStandardRate) +
+                               (higherTierKm * DenmarkConstants.taxDeductionHigherRate);
+        }
       }
     }
+    
+    // Calculate estimated tax savings (deduction × marginal tax rate)
+    final estimatedSavings = totalDeductionDkk * DenmarkConstants.averageMarginalTaxRate;
 
     return TaxDeductionSummary(
       year: y,
       totalCommuteDays: dailyKm.length,
       totalCommuteKm: totalKm,
       deductibleKm: deductibleKm,
-      estimatedDeductionDkk:
-          deductibleKm * DenmarkConstants.taxDeductionRateKm,
+      estimatedDeductionDkk: totalDeductionDkk,
+      estimatedTaxSavingsDkk: estimatedSavings,
       trips: trips,
     );
   }
@@ -185,6 +213,91 @@ class CommuterTaxService {
   Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_kCommuteLogKey);
+  }
+
+  /// Calculate potential annual savings by switching from car to bike
+  /// 
+  /// [oneWayDistanceKm] - Distance from home to work (one way)
+  /// [workDaysPerYear] - Number of commuting days per year (default 220)
+  /// [carCostPerKm] - Cost per km for car (fuel, maintenance, depreciation)
+  ///                  Default: 2.50 DKK/km (Danish average)
+  /// 
+  /// Returns map with annual costs and savings breakdown
+  static Map<String, double> calculateCarVsBikeSavings({
+    required double oneWayDistanceKm,
+    int workDaysPerYear = 220,
+    double carCostPerKm = 2.50,
+  }) {
+    final dailyRoundTripKm = oneWayDistanceKm * 2;
+    final annualDistanceKm = dailyRoundTripKm * workDaysPerYear;
+    
+    // Annual car operating costs
+    final annualCarCost = annualDistanceKm * carCostPerKm;
+    
+    // Calculate tax savings using tiered rates
+    double taxDeduction = 0;
+    if (dailyRoundTripKm > DenmarkConstants.taxDeductionMinKmPerDay) {
+      final deductiblePerDay = dailyRoundTripKm - DenmarkConstants.taxDeductionMinKmPerDay;
+      
+      double dailyDeduction = 0;
+      if (dailyRoundTripKm <= DenmarkConstants.taxDeductionHigherThreshold) {
+        dailyDeduction = deductiblePerDay * DenmarkConstants.taxDeductionStandardRate;
+      } else {
+        const standardTierKm = DenmarkConstants.taxDeductionHigherThreshold - DenmarkConstants.taxDeductionMinKmPerDay;
+        final higherTierKm = dailyRoundTripKm - DenmarkConstants.taxDeductionHigherThreshold;
+        dailyDeduction = (standardTierKm * DenmarkConstants.taxDeductionStandardRate) +
+                        (higherTierKm * DenmarkConstants.taxDeductionHigherRate);
+      }
+      
+      taxDeduction = dailyDeduction * workDaysPerYear;
+    }
+    
+    final taxSavings = taxDeduction * DenmarkConstants.averageMarginalTaxRate;
+    final totalAnnualSavings = annualCarCost + taxSavings;
+    
+    return {
+      'annualCarCost': annualCarCost,
+      'annualTaxSavings': taxSavings,
+      'totalAnnualSavings': totalAnnualSavings,
+      'monthlySavings': totalAnnualSavings / 12,
+    };
+  }
+
+  /// Format currency amount in Danish Kroner
+  static String formatDKK(double amount) {
+    if (amount >= 1000) {
+      return '${(amount / 1000).toStringAsFixed(1)}k kr';
+    }
+    return '${amount.toStringAsFixed(0)} kr';
+  }
+
+  /// Get informational text about the Danish tax deduction system
+  static String getDeductionInfo() {
+    return '''
+Danish Commuter Tax Deduction (Befordringsfradrag)
+
+Qualification:
+• Minimum 24 km round trip per day (12 km each way)
+• Only distance above 24 km is deductible
+
+Rates (2026):
+• Standard: ${DenmarkConstants.taxDeductionStandardRate} DKK/km (24-120 km/day)
+• Higher distance: ${DenmarkConstants.taxDeductionHigherRate} DKK/km (above 120 km/day)
+
+Tax Savings:
+• Deduction reduces your taxable income
+• Actual savings depend on your tax rate (typically 37-55%)
+• CYKEL estimates savings at ${(DenmarkConstants.averageMarginalTaxRate * 100).toStringAsFixed(0)}% marginal rate
+
+How It Works:
+• CYKEL automatically detects commute rides based on your home and work locations
+• Year-to-date totals are tracked and can be exported for tax filing
+• Report your total on Årsopgørelse (annual tax return)
+
+Notes:
+• Consult SKAT (Danish Tax Agency) for official guidance
+• CYKEL provides estimates only - not official tax advice
+''';
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────

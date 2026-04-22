@@ -31,6 +31,7 @@ class TheftAlertService {
     return _reportsCol
         .where('status', isEqualTo: TheftReportStatus.active.name)
         .orderBy('reportedAt', descending: true)
+        .limit(20)  // Reduced for faster initial load
         .snapshots()
         .map((s) => s.docs.map(TheftReport.fromFirestore).toList());
   }
@@ -43,7 +44,7 @@ class TheftAlertService {
     return _reportsCol
         .where('status', isEqualTo: TheftReportStatus.active.name)
         .orderBy('reportedAt', descending: true)
-        .limit(100) // Limit for performance
+        .limit(20) // Reduced for faster initial load
         .snapshots()
         .map((snapshot) {
       final reports = snapshot.docs.map(TheftReport.fromFirestore).toList();

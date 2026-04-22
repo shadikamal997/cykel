@@ -359,9 +359,9 @@ class _ProviderOnboardingScreenState
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         title: Text(l10n.providerOnboardingTitle,
             style: AppTextStyles.headline3),
         leading: IconButton(
@@ -525,13 +525,13 @@ class _ProviderOnboardingScreenState
                         onPressed: _submitting ? null : _prevPage,
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size(0, 52),
-                          side: const BorderSide(color: AppColors.border),
+                          side: BorderSide(color: context.colors.border),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14)),
                         ),
                         child: Text(l10n.backLabel,
                             style: AppTextStyles.button
-                                .copyWith(color: AppColors.textPrimary)),
+                                .copyWith(color: context.colors.textPrimary)),
                       ),
                     ),
                   if (_currentPage > 0) const SizedBox(width: 12),

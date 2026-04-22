@@ -66,7 +66,7 @@ class _Body extends ConsumerWidget {
 
         // Monthly Challenge
         SwitchListTile(
-          tileColor: isDark ? Colors.white : Colors.black,
+          tileColor: context.colors.textPrimary,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Text(context.l10n.sectionMonthlyChallenge, style: AppTextStyles.bodyMedium.copyWith(color: isDark ? Colors.black : Colors.white)),
             subtitle: Text(context.l10n.sectionMonthlyChallengeDesc,
@@ -80,7 +80,7 @@ class _Body extends ConsumerWidget {
         const SizedBox(height: 8),
         // E-bike Range
         SwitchListTile(
-          tileColor: isDark ? Colors.white : Colors.black,
+          tileColor: context.colors.textPrimary,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Text(context.l10n.sectionEbikeRange, style: AppTextStyles.bodyMedium.copyWith(color: isDark ? Colors.black : Colors.white)),
             subtitle: Text(context.l10n.sectionEbikeRangeDesc,
@@ -94,7 +94,7 @@ class _Body extends ConsumerWidget {
         const SizedBox(height: 8),
         // Quick Routes
         SwitchListTile(
-          tileColor: isDark ? Colors.white : Colors.black,
+          tileColor: context.colors.textPrimary,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Text(context.l10n.sectionQuickRoutesLabel, style: AppTextStyles.bodyMedium.copyWith(color: isDark ? Colors.black : Colors.white)),
             subtitle: Text(context.l10n.sectionQuickRoutesDesc,
@@ -108,7 +108,7 @@ class _Body extends ConsumerWidget {
         const SizedBox(height: 8),
         // Recent Activity
         SwitchListTile(
-          tileColor: isDark ? Colors.white : Colors.black,
+          tileColor: context.colors.textPrimary,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Text(context.l10n.sectionRecentActivity, style: AppTextStyles.bodyMedium.copyWith(color: isDark ? Colors.black : Colors.white)),
             subtitle: Text(context.l10n.sectionRecentActivityDesc,
@@ -122,7 +122,7 @@ class _Body extends ConsumerWidget {
         const SizedBox(height: 8),
         // Maintenance Reminder
         SwitchListTile(
-          tileColor: isDark ? Colors.white : Colors.black,
+          tileColor: context.colors.textPrimary,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Text(context.l10n.sectionMaintenanceReminder, style: AppTextStyles.bodyMedium.copyWith(color: isDark ? Colors.black : Colors.white)),
             subtitle: Text(context.l10n.sectionMaintenanceReminderDesc,
@@ -136,7 +136,7 @@ class _Body extends ConsumerWidget {
         const SizedBox(height: 40),
         Text(
           context.l10n.changesImmediate,
-          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+          style: AppTextStyles.bodySmall.copyWith(color: context.colors.textSecondary),
           textAlign: TextAlign.center,
         ),
       ],

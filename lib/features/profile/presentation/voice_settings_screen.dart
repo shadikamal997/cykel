@@ -95,7 +95,7 @@ class _BodyState extends ConsumerState<_Body> {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: RadioListTile<VoiceStyle>(
-                  tileColor: isDark ? Colors.white : Colors.black,
+                  tileColor: context.colors.textPrimary,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   title: Text(label, style: AppTextStyles.bodyMedium.copyWith(color: isDark ? Colors.black : Colors.white)),
                   subtitle: Text(desc,
@@ -157,8 +157,8 @@ class _BodyState extends ConsumerState<_Body> {
             icon: const Icon(Icons.play_circle_outline_rounded, size: 18),
             label: Text(context.l10n.previewVoice),
             style: OutlinedButton.styleFrom(
-              backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-              foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
               side: BorderSide.none,
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(
@@ -184,7 +184,7 @@ class _BodyState extends ConsumerState<_Body> {
         Text(
           context.l10n.announcementDistanceDesc,
           style:
-              AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+              AppTextStyles.bodySmall.copyWith(color: context.colors.textSecondary),
         ),
         const SizedBox(height: 8),
         RadioGroup<AnnouncementFrequency>(
@@ -206,7 +206,7 @@ class _BodyState extends ConsumerState<_Body> {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: RadioListTile<AnnouncementFrequency>(
-                  tileColor: isDark ? Colors.white : Colors.black,
+                  tileColor: context.colors.textPrimary,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   title: Text(label, style: AppTextStyles.bodyMedium.copyWith(color: isDark ? Colors.black : Colors.white)),
                   subtitle: Text(desc,

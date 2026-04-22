@@ -6,13 +6,13 @@ import '../../activity/data/ride_recording_provider.dart';
 import '../../activity/domain/ride.dart';
 
 /// Today's activity stats
-final todayStatsProvider = FutureProvider<TodayStats>((ref) async {
+final todayStatsProvider = FutureProvider.autoDispose<TodayStats>((ref) async {
   final rides = await ref.watch(rideHistoryProvider.future);
   return _calculateTodayStats(rides);
 });
 
 /// Riding streak counter
-final ridingStreakProvider = FutureProvider<int>((ref) async {
+final ridingStreakProvider = FutureProvider.autoDispose<int>((ref) async {
   final rides = await ref.watch(rideHistoryProvider.future);
   return _calculateStreak(rides);
 });

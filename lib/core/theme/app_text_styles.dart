@@ -11,7 +11,7 @@ class AppTextStyles {
   static const TextStyle display = TextStyle(
     fontSize: 32,
     fontWeight: FontWeight.w800,
-    color: AppColors.textPrimary,
+    // color removed - will use theme default
     letterSpacing: -0.5,
     height: 1.2,
   );
@@ -20,7 +20,7 @@ class AppTextStyles {
   static const TextStyle headline1 = TextStyle(
     fontSize: 26,
     fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
+    // color removed - will use theme default
     letterSpacing: -0.3,
     height: 1.3,
   );
@@ -28,14 +28,14 @@ class AppTextStyles {
   static const TextStyle headline2 = TextStyle(
     fontSize: 22,
     fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
+    // color removed - will use theme default
     height: 1.3,
   );
 
   static const TextStyle headline3 = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    // color removed - will use theme default
     height: 1.4,
   );
 
@@ -43,21 +43,21 @@ class AppTextStyles {
   static const TextStyle bodyLarge = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w400,
-    color: AppColors.textPrimary,
+    // color removed - will use theme default
     height: 1.5,
   );
 
   static const TextStyle bodyMedium = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w400,
-    color: AppColors.textPrimary,
+    // color removed - will use theme default
     height: 1.5,
   );
 
   static const TextStyle bodySmall = TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.w400,
-    color: AppColors.textSecondary,
+    // color removed - will use theme default (or specify via copyWith)
     height: 1.4,
   );
 
@@ -65,21 +65,21 @@ class AppTextStyles {
   static const TextStyle labelLarge = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    // color removed - will use theme default
     letterSpacing: 0.1,
   );
 
   static const TextStyle labelMedium = TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.w600,
-    color: AppColors.textSecondary,
+    // color removed - will use theme default
     letterSpacing: 0.5,
   );
 
   static const TextStyle labelSmall = TextStyle(
     fontSize: 10,
     fontWeight: FontWeight.w600,
-    color: AppColors.textHint,
+    // color removed - will use theme default
     letterSpacing: 0.5,
   );
 

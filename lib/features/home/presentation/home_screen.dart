@@ -9,6 +9,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../../core/widgets/cached_image.dart';
+
 import '../../auth/providers/auth_providers.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/providers/locale_provider.dart';
@@ -33,20 +35,22 @@ import '../../../services/dashboard_settings_provider.dart';
 import '../domain/ride_condition.dart';
 import '../../../services/daylight_service.dart';
 import '../../../services/commuter_tax_service.dart';
+import 'commuter_tax_detail_screen.dart';
 import '../../events/data/events_provider.dart';
 import '../../events/domain/event.dart';
 
-// ─── Design Colors ─────────────────────────────────────────────────────────────
-const _kPrimaryColor = Color(0xFF4A7C59);
-const _kPrimaryPressed = Color(0xFF3D6B4A);
-const _kPrimaryText = Color(0xFF1A1A1A);
-const _kSecondaryText = Color(0xFF6B6B6B);
-const _kBackground = Color(0xFFFFFFFF);
-const _kCardBackground = Color(0xFFF4F5F2);
-const _kSoftElements = Color(0xFFE9ECE6);
+// ─── Design Colors (kept for compatibility with white-on-color elements) ─────
+const _kPrimaryColor = AppColors.primary;
+const _kPrimaryPressed = AppColors.primaryDark;
+const _kPrimaryText = AppColors.textPrimary;
+const _kSecondaryText = AppColors.textSecondary;
+const _kBackground = AppColors.background;
+const _kCardBackground = AppColors.surface;
+const _kSoftElements = AppColors.surfaceVariant;
+// NOTE: For dark mode support, widgets should use context.colors.textPrimary instead of _kPrimaryText
 
 // ─── Nearby POI provider ──────────────────────────────────────────────────────
-final _homeNearbyProvider = FutureProvider.autoDispose<List<PlaceResult>>((ref) async {
+final _homeNearbyProvider = FutureProvider<List<PlaceResult>>((ref) async {
   LatLng loc;
   try {
     loc = await ref.read(locationServiceProvider).getLastKnownOrCurrent();
@@ -69,7 +73,7 @@ class HomeScreen extends ConsumerWidget {
     final topPad = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.colors.background,
       body: RefreshIndicator(
         color: _kPrimaryColor,
         onRefresh: () async {
@@ -139,18 +143,20 @@ class HomeScreen extends ConsumerWidget {
                           Text(
                             '${_greeting(context)}, $firstName!',
                             style: AppTextStyles.headline3.copyWith(
-                              fontSize: 22,
+                              fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              letterSpacing: -0.5,
+                              letterSpacing: -0.3,
                               height: 1.2,
-                              color: _kPrimaryText,
+                              color: context.colors.textPrimary,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 2),
                           Text(
                             _todayDate(context),
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: _kSecondaryText,
+                              color: context.colors.textSecondary,
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
@@ -164,10 +170,10 @@ class HomeScreen extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(22),
                       child: _LanguageToggle(),
                     ),
-                    const SizedBox(width: 8),
-                    // Notification bell
+                    const SizedBox(width: 6),
+                    // App notifications bell
                     InkWell(
-                      onTap: () => context.push(AppRoutes.profileNotifications),
+                      onTap: () => context.push(AppRoutes.notifications),
                       borderRadius: BorderRadius.circular(22),
                       child: Container(
                         width: 44,
@@ -176,32 +182,18 @@ class HomeScreen extends ConsumerWidget {
                           color: _kCardBackground,
                           borderRadius: BorderRadius.circular(22),
                         ),
-                        child: Stack(
-                          children: [
-                            const Center(
-                              child: Icon(
-                                Icons.notifications_outlined,
-                                size: 22,
-                                color: _kPrimaryText,
-                              ),
-                            ),
-                            // Badge (if needed, can be conditional)
-                            Positioned(
-                              top: 10,
-                              right: 10,
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: _kPrimaryColor,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            ),
-                          ],
+                        child: const Center(
+                          child: Icon(
+                            Icons.notifications_none_rounded,
+                            size: 22,
+                            color: _kPrimaryText,
+                          ),
                         ),
                       ),
                     ),
+                    const SizedBox(width: 6),
+                    // Weather alerts bell with badge
+                    const _WeatherAlertsBell(),
                   ],
                 ),
               ),
@@ -211,13 +203,18 @@ class HomeScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  // ── Ride Condition Card ─────────────────────────────────
+                  // ── Ride Condition Card (PERFORMANCE: RepaintBoundary) ─────────────────────────────────
                   _SectionLabel(l10n.sectionRidingConditions),
                   const SizedBox(height: 10),
-                  const _RideConditionCard(),                  const SizedBox(height: 24),
+                  const RepaintBoundary(
+                    child: _RideConditionCard(),
+                  ),
+                  const SizedBox(height: 24),
 
-                  // ── Upcoming Events ────────────────────────────────────
-                  const _UpcomingEventsCard(),
+                  // ── Upcoming Events (PERFORMANCE: RepaintBoundary) ────────────────────────────────────
+                  const RepaintBoundary(
+                    child: _UpcomingEventsCard(),
+                  ),
                   const SizedBox(height: 12),
 
                   // ── Commute Suggestion ───────────────────────────
@@ -229,7 +226,9 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: 10),
                     const _TodayActivityStrip(),
                     const SizedBox(height: 12),
-                    const _ActivityStatsCard(),
+                    const RepaintBoundary(
+                      child: _ActivityStatsCard(),
+                    ),
                     const SizedBox(height: 12),
                     if (dashboardSettings.showMonthlyChallenge) ...[
                       const _MonthlyChallengeCard(),
@@ -257,20 +256,7 @@ class HomeScreen extends ConsumerWidget {
                     const _FrequentDestinationsCard(),
                     const SizedBox(height: 24),
                   ],
-                  // ── Alerts ──────────────────────────────────────────────
-                  _SectionLabel(l10n.sectionAlerts),
-                  const SizedBox(height: 10),
-                  const _WeatherAlertsCard(),
-                  const SizedBox(height: 12),
-                  if (dashboardSettings.showMaintenanceReminder) ...[
-                    const _MaintenanceAlertsCard(),
-                    const SizedBox(height: 12),
-                  ],
 
-                  // ── Nearby ──────────────────────────────────────────────
-                  _SectionLabel(l10n.sectionNearby),
-                  const SizedBox(height: 10),
-                  const _NearbyCard(),
                   const SizedBox(height: 120), // Extra padding for navbar clearance
                 ]),
               ),
@@ -284,8 +270,11 @@ class HomeScreen extends ConsumerWidget {
   static String _greeting(BuildContext context) {
     final hour = DateTime.now().hour;
     final l10n = context.l10n;
+    // Morning: Midnight (12 AM) through 11:59 AM (hours 0-11)
     if (hour < 12) return l10n.goodMorning;
-    if (hour < 17) return l10n.goodAfternoon;
+    // Afternoon: Noon through 5:59 PM (hours 12-17)
+    if (hour < 18) return l10n.goodAfternoon;
+    // Evening: 6 PM through 11:59 PM (hours 18-23)
     return l10n.goodEvening;
   }
 
@@ -379,8 +368,9 @@ class _RideConditionCard extends ConsumerWidget {
             : '0 mm';
         final hasBattery = ref.watch(userProfileProvider).hasBatteryLevel;
         final batteryLevel = ref.watch(userProfileProvider).batteryLevel ?? 0;
-        final batteryLabel = ref.watch(allBikesRangeProvider) != null
-            ? '$batteryLevel% · ${ref.watch(allBikesRangeProvider)!.label}'
+        final batteryRange = ref.watch(allBikesRangeProvider);
+        final batteryLabel = batteryRange != null
+            ? '$batteryLevel% · ${batteryRange.label}'
             : '$batteryLevel%';
 
         return Container(
@@ -389,8 +379,8 @@ class _RideConditionCard extends ConsumerWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0xFFE8F5E9), // Soft green light
-                Color(0xFFC8E6C9), // Soft green medium
+                AppColors.successLight, // Soft green light
+                AppColors.successLight, // Soft green medium
               ],
             ),
             borderRadius: BorderRadius.circular(20),
@@ -415,7 +405,7 @@ class _RideConditionCard extends ConsumerWidget {
                     width: 58,
                     height: 58,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.colors.surface,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -478,11 +468,11 @@ class _RideConditionCard extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.colors.surface,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.06),
+                          color: context.colors.border,
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -680,7 +670,11 @@ class _TodayActivityStrip extends ConsumerWidget {
           child: CircularProgressIndicator(),
         ),
       ),
-      error: (_, _) => _buildRow(l10n, '0 km', '0 min', '0'),
+      error: (_, _) => _EmptyStateCard(
+        icon: Icons.directions_bike_rounded,
+        title: context.l10n.noRidesToday,
+        subtitle: context.l10n.noRidesTodaySubtitle,
+      ),
       data: (rides) {
         final now = DateTime.now();
         final today = DateTime(now.year, now.month, now.day);
@@ -706,6 +700,15 @@ class _TodayActivityStrip extends ConsumerWidget {
           if (!hasRide) break;
           streak++;
           checkDay = checkDay.subtract(const Duration(days: 1));
+        }
+
+        // Show empty state if no activity today
+        if (totalDistM == 0 && totalMins == 0 && streak == 0) {
+          return _EmptyStateCard(
+            icon: Icons.directions_bike_rounded,
+            title: context.l10n.noRidesToday,
+            subtitle: context.l10n.noRidesTodaySubtitle,
+          );
         }
 
         final distText = totalDistM < 1000
@@ -933,14 +936,10 @@ class _QuickRoutesCard extends ConsumerWidget {
           ),
           if (neitherSet) ...[
             const SizedBox(height: 16),
-            Text(
-              l10n.quickRoutesEmpty,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: _kSecondaryText,
-                fontSize: 13,
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,
+            _EmptyStateCard(
+              icon: Icons.near_me_rounded,
+              title: context.l10n.noQuickRoutesYet,
+              subtitle: context.l10n.noQuickRoutesSubtitle,
             ),
           ] else if (home != null && work != null) ...[
             const SizedBox(height: 14),
@@ -1371,16 +1370,18 @@ void _showLanguageSelector(BuildContext context, WidgetRef ref) {
   showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
-    builder: (context) => Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A202C) : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    useSafeArea: true,
+    builder: (context) => SafeArea(
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // Header
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
@@ -1413,7 +1414,7 @@ void _showLanguageSelector(BuildContext context, WidgetRef ref) {
                   border: Border.all(
                     color: isSelected
                         ? _kPrimaryColor
-                        : (isDark ? const Color(0xFF2D3748) : _kSoftElements),
+                        : (isDark ? AppColors.cardDark : _kSoftElements),
                     width: isSelected ? 2 : 1,
                   ),
                 ),
@@ -1447,6 +1448,7 @@ void _showLanguageSelector(BuildContext context, WidgetRef ref) {
           }),
           const SizedBox(height: 8),
         ],
+        ),
       ),
     ),
   );
@@ -1469,6 +1471,77 @@ class _LanguageToggle extends ConsumerWidget {
         child: Text(
           isEn ? '🇬🇧' : '🇩🇰',
           style: const TextStyle(fontSize: 20),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Weather Alerts Bell ──────────────────────────────────────────────────────
+
+class _WeatherAlertsBell extends ConsumerWidget {
+  const _WeatherAlertsBell();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final alertsAsync = ref.watch(weatherAlertsProvider);
+
+    return alertsAsync.when(
+      loading: () => _buildBell(context, 0),
+      error: (_, _) => _buildBell(context, 0),
+      data: (alerts) => _buildBell(context, alerts.length),
+    );
+  }
+
+  Widget _buildBell(BuildContext context, int alertCount) {
+    return InkWell(
+      onTap: () => context.push(AppRoutes.weatherAlerts),
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: _kCardBackground,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Stack(
+          children: [
+            Center(
+              child: Icon(
+                Icons.warning_amber_rounded,
+                size: 22,
+                color: alertCount > 0 ? AppColors.warning : _kPrimaryText,
+              ),
+            ),
+            if (alertCount > 0)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.error,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: _kCardBackground, width: 1.5),
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 18,
+                    minHeight: 18,
+                  ),
+                  child: Center(
+                    child: Text(
+                      alertCount > 9 ? '9+' : '$alertCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -1714,13 +1787,37 @@ class _FrequentDestinationsCard extends ConsumerWidget {
 
 // ─── Activity Stats Card ──────────────────────────────────────────────────────
 
-class _ActivityStatsCard extends ConsumerWidget {
+class _ActivityStatsCard extends ConsumerStatefulWidget {
   const _ActivityStatsCard();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ActivityStatsCard> createState() => _ActivityStatsCardState();
+}
+
+class _ActivityStatsCardState extends ConsumerState<_ActivityStatsCard>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true; // Cache this widget after first build
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     final todayStatsAsync = ref.watch(todayStatsProvider);
     final streakAsync = ref.watch(ridingStreakProvider);
+
+    // Check if both values are loaded and empty
+    final hasData = todayStatsAsync.hasValue && streakAsync.hasValue;
+    final isEmpty = hasData && 
+                    todayStatsAsync.value!.rideCount == 0 && 
+                    streakAsync.value! == 0;
+
+    if (isEmpty) {
+      return _EmptyStateCard(
+        icon: Icons.analytics_rounded,
+        title: context.l10n.startTrackingRides,
+        subtitle: context.l10n.startTrackingRidesSubtitle,
+      );
+    }
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -1807,11 +1904,21 @@ class _ActivityStatsCard extends ConsumerWidget {
 
 // ─── Weather Alerts Card ──────────────────────────────────────────────────────
 
-class _WeatherAlertsCard extends ConsumerWidget {
+class _WeatherAlertsCard extends ConsumerStatefulWidget {
   const _WeatherAlertsCard();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_WeatherAlertsCard> createState() => _WeatherAlertsCardState();
+}
+
+class _WeatherAlertsCardState extends ConsumerState<_WeatherAlertsCard>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true; // Cache this widget after first build
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     final alertsAsync = ref.watch(weatherAlertsProvider);
 
     return alertsAsync.when(
@@ -1824,6 +1931,7 @@ class _WeatherAlertsCard extends ConsumerWidget {
           );
         }
 
+        // PERFORMANCE: Use RepaintBoundary for each alert to reduce paint area
         return Container(
           decoration: BoxDecoration(
             color: _kCardBackground,
@@ -1858,9 +1966,11 @@ class _WeatherAlertsCard extends ConsumerWidget {
                 const SizedBox(height: 16),
                 ...alerts.map((alert) {
                   final localized = alert.localized(context);
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Row(
+                  // PERFORMANCE: RepaintBoundary per alert
+                  return RepaintBoundary(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
@@ -1899,7 +2009,7 @@ class _WeatherAlertsCard extends ConsumerWidget {
                         ),
                       ],
                     ),
-                  );
+                  ));
                 }),
               ],
             ),
@@ -2144,9 +2254,10 @@ class _StatItemSkeleton extends StatelessWidget {
 }
 // ─── Nearby Card ──────────────────────────────────────────────────────────────
 
-class _NearbyCard extends ConsumerWidget {
+class _NearbyCard extends ConsumerStatefulWidget {
   const _NearbyCard();
 
+  // Static helper methods remain in parent class for access from child widgets
   static Color _poiColor(String placeId) {
     if (placeId.startsWith('shop_')) return _kPrimaryColor;
     if (placeId.startsWith('charging_')) return AppColors.warning;
@@ -2162,7 +2273,17 @@ class _NearbyCard extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_NearbyCard> createState() => _NearbyCardState();
+}
+
+class _NearbyCardState extends ConsumerState<_NearbyCard>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true; // Cache this widget after first build
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     final nearbyAsync = ref.watch(_homeNearbyProvider);
 
     return nearbyAsync.when(
@@ -2310,7 +2431,7 @@ class _MonthlyChallengeCard extends ConsumerWidget {
                 ? const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFFE8F5E9), Color(0xFFC8E6C9)],
+                    colors: [AppColors.successLight, AppColors.successLight],
                   )
                 : null,
             color: challenge.isComplete ? null : Colors.white,
@@ -2381,7 +2502,7 @@ class _MonthlyChallengeCard extends ConsumerWidget {
                   Text(
                     challenge.statusLabel,
                     style: const TextStyle(
-                      color: _kPrimaryColor,
+                      color: Colors.black,
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),
@@ -2544,10 +2665,16 @@ class _CommuterTaxCard extends ConsumerWidget {
         // Only show if there are commute trips recorded.
         if (summary.totalCommuteDays == 0) return const SizedBox.shrink();
 
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
+        return GestureDetector(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const CommuterTaxDetailScreen(),
+            ),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: _kPrimaryColor.withValues(alpha: 0.25),
@@ -2604,25 +2731,90 @@ class _CommuterTaxCard extends ConsumerWidget {
               Container(
                 width: double.infinity,
                 padding:
-                    const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                 decoration: BoxDecoration(
                   color: _kPrimaryColor.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  l10n.estimatedDeduction(
-                      summary.estimatedDeductionDkk.toStringAsFixed(0)),
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: _kPrimaryColor,
-                  ),
-                  textAlign: TextAlign.center,
+                child: Column(
+                  children: [
+                    Text(
+                      l10n.estimatedDeduction(
+                          summary.estimatedDeductionDkk.toStringAsFixed(0)),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: _kPrimaryText,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      l10n.estimatedTaxSavings(
+                          summary.estimatedTaxSavingsDkk.toStringAsFixed(0)),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: _kPrimaryColor,
+                        fontSize: 15,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () => _showTaxDeductionInfo(context),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: _kPrimaryColor.withValues(alpha: 0.7),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      l10n.taxDeductionInfo,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: _kPrimaryColor.withValues(alpha: 0.7),
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
+          ), // GestureDetector child
         );
       },
+    );
+  }
+
+  void _showTaxDeductionInfo(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.receipt_long_rounded, color: _kPrimaryColor),
+            const SizedBox(width: 8),
+            Text(context.l10n.taxDeductionInfo),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Text(
+            CommuterTaxService.getDeductionInfo(),
+            style: AppTextStyles.bodyMedium,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -2667,18 +2859,28 @@ class _UpcomingEventsCard extends ConsumerWidget {
     final eventsAsync = ref.watch(upcomingEventsProvider);
 
     return eventsAsync.when(
-      loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
+      loading: () => const SizedBox(
+        height: 174,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, stack) {
+        debugPrint('🔴 EVENTS ERROR: $e');
+        debugPrint('🔴 Stack: $stack');
+        return const SizedBox.shrink();
+      },
       data: (events) {
+        debugPrint('🟢 EVENTS: Loaded ${events.length} upcoming events');
         if (events.isEmpty) {
+          debugPrint('🟡 EVENTS: No events found - showing discover card');
           return Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
-                  'Group Rides',
-                  style: TextStyle(
+                  context.l10n.groupRides,
+                  style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     color: _kPrimaryText,
                     fontSize: 20,
@@ -2687,11 +2889,14 @@ class _UpcomingEventsCard extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               SizedBox(
-                height: 160,
-                child: ListView(
+                height: 174,
+                child: ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   scrollDirection: Axis.horizontal,
-                  children: [_buildDiscoverCard(context)],
+                  cacheExtent: 0,
+                  physics: const ClampingScrollPhysics(),
+                  itemCount: 1,
+                  itemBuilder: (context, index) => _buildDiscoverCard(context),
                 ),
               ),
             ],
@@ -2699,6 +2904,7 @@ class _UpcomingEventsCard extends ConsumerWidget {
         }
 
         return Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
@@ -2706,21 +2912,31 @@ class _UpcomingEventsCard extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    context.l10n.upcomingGroupRides,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: _kPrimaryText,
-                      fontSize: 20,
+                  Expanded(
+                    child: Text(
+                      context.l10n.upcomingGroupRides,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: _kPrimaryText,
+                        fontSize: 20,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   TextButton(
                     onPressed: () => context.push(AppRoutes.events),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: const Size(0, 32),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                     child: Text(
                       context.l10n.seeAll,
                       style: const TextStyle(
                         color: _kPrimaryColor,
                         fontWeight: FontWeight.w600,
+                        fontSize: 14,
                       ),
                     ),
                   ),
@@ -2729,11 +2945,15 @@ class _UpcomingEventsCard extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: 160,
-              child: ListView(
+              height: 200,
+              child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 scrollDirection: Axis.horizontal,
-                children: events.take(3).map((event) => _buildEventItem(context, event)).toList(),
+                cacheExtent: 0,
+                addAutomaticKeepAlives: false,
+                addRepaintBoundaries: false,
+                itemCount: events.length,
+                itemBuilder: (context, index) => _buildEventItem(context, events[index]),
               ),
             ),
           ],
@@ -2746,7 +2966,7 @@ class _UpcomingEventsCard extends ConsumerWidget {
     return GestureDetector(
       onTap: () => context.push(AppRoutes.events),
       child: Container(
-        height: 160,
+        height: 174,
         margin: const EdgeInsets.only(right: 12),
         width: MediaQuery.of(context).size.width * 0.75,
         decoration: BoxDecoration(
@@ -2778,7 +2998,7 @@ class _UpcomingEventsCard extends ConsumerWidget {
             ),
             // Content
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -2786,30 +3006,30 @@ class _UpcomingEventsCard extends ConsumerWidget {
                   const Icon(
                     Icons.groups_rounded,
                     color: Colors.white,
-                    size: 32,
+                    size: 26,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 6),
                   Text(
                     context.l10n.findGroupRides,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
-                      fontSize: 18,
+                      fontSize: 15,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     context.l10n.discoverLocalRides,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.9),
-                      fontSize: 14,
+                      fontSize: 12,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
+                      horizontal: 14,
+                      vertical: 7,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -2834,60 +3054,133 @@ class _UpcomingEventsCard extends ConsumerWidget {
   }
 
   Widget _buildEventItem(BuildContext context, RideEvent event) {
+    final cardWidth = MediaQuery.of(context).size.width * 0.85;
+    
     return GestureDetector(
       onTap: () => context.push('${AppRoutes.events}/${event.id}'),
       child: Container(
-        height: 160,
-        width: MediaQuery.of(context).size.width * 0.75,
+        width: cardWidth,
+        margin: const EdgeInsets.only(right: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.grey[200],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image only - NO gradient, NO stack, NO shadow
+            SizedBox(
+              height: 135,
+              width: double.infinity,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                child: event.imageUrl != null && event.imageUrl!.isNotEmpty
+                    ? Image.network(
+                        event.imageUrl!,
+                        height: 135,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        cacheWidth: 400,
+                        cacheHeight: 270,
+                        filterQuality: FilterQuality.low,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: _kPrimaryColor,
+                          child: const Icon(Icons.event, color: Colors.white, size: 40),
+                        ),
+                      )
+                    : Container(
+                        color: _kPrimaryColor,
+                        child: const Icon(Icons.event, color: Colors.white, size: 40),
+                      ),
+              ),
+            ),
+            // Text BELOW image - simple, no overlays
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        event.eventType.icon,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          event.title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            height: 1.2,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (event.currentParticipants > 0) ...[
+                        const SizedBox(width: 8),
+                        const Icon(Icons.people, size: 13, color: Colors.grey),
+                        const SizedBox(width: 2),
+                        Text(
+                          '${event.currentParticipants}',
+                          style: const TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${event.formattedDate} • ${event.formattedTime}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Optimized event card without image loading to prevent GPU buffer issues
+  Widget _buildEventItemOptimized(BuildContext context, RideEvent event) {
+    final cardWidth = MediaQuery.of(context).size.width * 0.75;
+    const cardHeight = 174.0;
+    
+    // Generate stable gradient colors based on event type
+    final gradientColors = _getEventTypeGradient(event.eventType);
+    
+    return GestureDetector(
+      onTap: () => context.push('${AppRoutes.events}/${event.id}'),
+      child: Container(
+        height: cardHeight,
+        width: cardWidth,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: gradientColors,
+          ),
         ),
-        clipBehavior: Clip.antiAlias,
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Background image or gradient
-            if (event.imageUrl != null && event.imageUrl!.isNotEmpty)
-              Image.network(
-                event.imageUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  debugPrint('Error loading event image: $error');
-                  return Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          _kPrimaryColor,
-                          _kPrimaryPressed,
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              )
-            else
-              Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      _kPrimaryColor,
-                      _kPrimaryPressed,
-                    ],
-                  ),
-                ),
-              ),
-            // Gradient overlay for text readability
+            // Dark gradient overlay for text readability
             Positioned(
               bottom: 0,
               left: 0,
               right: 0,
               child: Container(
-                height: 120,
+                height: 100,
                 decoration: BoxDecoration(
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(18),
@@ -2898,7 +3191,7 @@ class _UpcomingEventsCard extends ConsumerWidget {
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      Colors.black.withValues(alpha: 0.7),
+                      Colors.black.withValues(alpha: 0.6),
                     ],
                   ),
                 ),
@@ -2914,7 +3207,7 @@ class _UpcomingEventsCard extends ConsumerWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.4),
+                  color: Colors.black.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.3),
@@ -2952,7 +3245,7 @@ class _UpcomingEventsCard extends ConsumerWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.4),
+                    color: Colors.black.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: Colors.white.withValues(alpha: 0.3),
@@ -2980,11 +3273,11 @@ class _UpcomingEventsCard extends ConsumerWidget {
                   ),
                 ),
               ),
-            // Content (bottom-left)
+            // Content (bottom)
             Positioned(
               bottom: 12,
               left: 16,
-              right: 120,
+              right: 16,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -2994,58 +3287,81 @@ class _UpcomingEventsCard extends ConsumerWidget {
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
-                      fontSize: 17,
+                      fontSize: 16,
                       height: 1.2,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     '${event.formattedDate} • ${event.formattedTime}',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.95),
-                      fontSize: 13,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                ],
-              ),
-            ),
-            // Join button (bottom-right)
-            Positioned(
-              bottom: 16,
-              right: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                  if (event.meetingPoint.name != null && event.meetingPoint.name!.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          color: Colors.white.withValues(alpha: 0.8),
+                          size: 12,
+                        ),
+                        const SizedBox(width: 2),
+                        Expanded(
+                          child: Text(
+                            event.meetingPoint.name!,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontSize: 11,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-                ),
-                child: Text(
-                  context.l10n.joinEvent,
-                  style: const TextStyle(
-                    color: _kPrimaryText,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
+                ],
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  List<Color> _getEventTypeGradient(EventType type) {
+    switch (type) {
+      case EventType.social:
+        return [const Color(0xFF4CAF50), const Color(0xFF2E7D32)];
+      case EventType.training:
+        return [const Color(0xFFFF6F00), const Color(0xFFE65100)];
+      case EventType.race:
+        return [const Color(0xFFD32F2F), const Color(0xFFB71C1C)];
+      case EventType.tour:
+        return [const Color(0xFF0288D1), const Color(0xFF01579B)];
+      case EventType.commute:
+        return [const Color(0xFF7B1FA2), const Color(0xFF4A148C)];
+      case EventType.gravel:
+        return [const Color(0xFF5D4037), const Color(0xFF3E2723)];
+      case EventType.family:
+        return [const Color(0xFFEC407A), const Color(0xFFC2185B)];
+      case EventType.night:
+        return [const Color(0xFF1A237E), const Color(0xFF0D47A1)];
+      case EventType.beginner:
+        return [const Color(0xFF66BB6A), const Color(0xFF43A047)];
+      case EventType.expat:
+        return [const Color(0xFF26A69A), const Color(0xFF00897B)];
+      case EventType.languageExchange:
+        return [const Color(0xFFAB47BC), const Color(0xFF8E24AA)];
+      default:
+        return [_kPrimaryColor, _kPrimaryPressed];
+    }
   }
 }
 

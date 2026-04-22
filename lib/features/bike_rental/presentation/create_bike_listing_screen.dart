@@ -6,6 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/l10n/l10n.dart';
+import '../../../core/widgets/cached_image.dart';
+
+import '../../auth/providers/auth_providers.dart';
 import '../domain/bike_listing.dart';
 import '../application/bike_rental_providers.dart';
 
@@ -140,22 +144,42 @@ class _CreateBikeListingScreenState
         _isLoading = true;
       });
 
-      // TODO: Upload images to Firebase Storage and get URLs
-      // For now, just use local paths (will need Firebase Storage implementation)
-      final List<String> urls = images.map((img) => img.path).toList();
+      try {
+        final user = ref.read(currentUserProvider);
+        if (user == null) {
+          throw Exception('User not authenticated');
+        }
 
-      setState(() {
-        _photoUrls.addAll(urls);
-        _isLoading = false;
-      });
+        // Upload images to Firebase Storage
+        final service = ref.read(bikeRentalServiceProvider);
+        final List<String> urls = await service.uploadBikeImages(user.uid, images);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Photos added (upload to storage pending)'),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        setState(() {
+          _photoUrls.addAll(urls);
+          _isLoading = false;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${images.length} photos uploaded successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        setState(() {
+          _isLoading = false;
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to upload images: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
@@ -379,7 +403,7 @@ class _CreateBikeListingScreenState
 
             // Basic info
             _buildSection(
-              title: 'Basic Information',
+              title: context.l10n.rentalSectionBasicInfo,
               children: [
                 TextFormField(
                   controller: _titleController,
@@ -472,7 +496,7 @@ class _CreateBikeListingScreenState
 
             // Optional details
             _buildSection(
-              title: 'Details (Optional)',
+              title: context.l10n.rentalSectionDetails,
               children: [
                 TextFormField(
                   controller: _brandController,
@@ -509,7 +533,7 @@ class _CreateBikeListingScreenState
 
             // Pricing
             _buildSection(
-              title: 'Pricing',
+              title: context.l10n.rentalSectionPricing,
               children: [
                 Row(
                   children: [
@@ -596,7 +620,7 @@ class _CreateBikeListingScreenState
 
             // Features
             _buildSection(
-              title: 'Features',
+              title: context.l10n.rentalSectionFeatures,
               children: [
                 _buildFeatureCheckbox('Lights', _hasLights, (value) {
                   setState(() => _hasLights = value);
@@ -650,7 +674,7 @@ class _CreateBikeListingScreenState
 
             // Location
             _buildSection(
-              title: 'Location',
+              title: context.l10n.rentalSectionLocation,
               children: [
                 TextFormField(
                   controller: _locationNameController,
@@ -680,7 +704,7 @@ class _CreateBikeListingScreenState
 
             // Availability
             _buildSection(
-              title: 'Availability',
+              title: context.l10n.rentalSectionAvailability,
               children: [
                 Row(
                   children: [
@@ -717,19 +741,19 @@ class _CreateBikeListingScreenState
                 const SizedBox(height: 16),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Available From'),
+                  title: Text(context.l10n.rentalAvailableFrom),
                   subtitle: Text(_availableFrom != null
                       ? '${_availableFrom!.day}/${_availableFrom!.month}/${_availableFrom!.year}'
-                      : 'No start date (available immediately)'),
+                      : context.l10n.rentalNoStartDate),
                   trailing: const Icon(Icons.calendar_today),
                   onTap: _selectAvailableFrom,
                 ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Available To'),
+                  title: Text(context.l10n.rentalAvailableTo),
                   subtitle: Text(_availableTo != null
                       ? '${_availableTo!.day}/${_availableTo!.month}/${_availableTo!.year}'
-                      : 'No end date (available indefinitely)'),
+                      : context.l10n.rentalNoEndDate),
                   trailing: const Icon(Icons.calendar_today),
                   onTap: _selectAvailableTo,
                 ),
@@ -740,7 +764,7 @@ class _CreateBikeListingScreenState
 
             // Additional Info
             _buildSection(
-              title: 'Additional Information',
+              title: context.l10n.rentalSectionAdditionalInfo,
               children: [
                 TextFormField(
                   controller: _pickupInstructionsController,
@@ -783,7 +807,7 @@ class _CreateBikeListingScreenState
             TextButton.icon(
               onPressed: _pickImages,
               icon: const Icon(Icons.add_photo_alternate),
-              label: const Text('Add Photos'),
+              label: Text(context.l10n.rentalAddPhotos),
             ),
           ],
         ),
@@ -795,14 +819,14 @@ class _CreateBikeListingScreenState
               border: Border.all(color: Colors.grey),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Center(
+            child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.photo_camera, size: 48, color: Colors.grey),
-                  SizedBox(height: 8),
-                  Text('No photos added yet'),
-                  Text('Tap "Add Photos" to upload', style: TextStyle(fontSize: 12)),
+                  const Icon(Icons.photo_camera, size: 48, color: Colors.grey),
+                  const SizedBox(height: 8),
+                  Text(context.l10n.rentalNoPhotos),
+                  const Text('Tap "Add Photos" to upload', style: TextStyle(fontSize: 12)),
                 ],
               ),
             ),
@@ -820,19 +844,11 @@ class _CreateBikeListingScreenState
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          _photoUrls[index],
+                        child: CachedImage(
+                          imageUrl: _photoUrls[index],
                           width: 120,
                           height: 120,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: 120,
-                              height: 120,
-                              color: Colors.grey[300],
-                              child: const Icon(Icons.image, size: 48),
-                            );
-                          },
                         ),
                       ),
                       Positioned(

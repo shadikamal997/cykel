@@ -39,7 +39,9 @@ class GuidesScreen extends ConsumerWidget {
             itemCount: guides.length,
             itemBuilder: (context, index) {
               final guide = guides[index];
-              return _GuideCard(guide: guide);
+              return RepaintBoundary(
+                child: _GuideCard(guide: guide),
+              );
             },
           );
         },

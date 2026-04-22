@@ -66,7 +66,7 @@ class LanguageScreen extends ConsumerWidget {
                           ),
                           if (isSelected)
                             Icon(Icons.check_rounded,
-                                color: isDark ? Colors.white : Colors.black, size: 20),
+                                color: context.colors.textPrimary, size: 20),
                         ]),
                       ),
                     ),

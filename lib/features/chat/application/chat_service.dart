@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../../core/utils/input_validator.dart';
 import '../domain/conversation.dart';
 import '../domain/message.dart';
 
@@ -18,7 +19,6 @@ class ChatService {
   final FirebaseAuth _auth;
 
   static const String _conversationsCollection = 'conversations';
-  static const String _messagesCollection = 'messages';
 
   String? get currentUserId => _auth.currentUser?.uid;
   String get currentUserName => _auth.currentUser?.displayName ?? 'Unknown User';
@@ -36,6 +36,7 @@ class ChatService {
         .collection(_conversationsCollection)
         .where('participantIds', arrayContains: userId)
         .orderBy('updatedAt', descending: true)
+        .limit(30)  // Limit to 30 most recent conversations for performance
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
@@ -115,17 +116,14 @@ class ChatService {
       participantIds.add(userId);
     }
 
-    // Get participant names
-    final participantNames = <String, String>{};
-    for (final id in participantIds) {
-      final userDoc = await _firestore.collection('users').doc(id).get();
-      String userName = 'Unknown';
-      if (userDoc.exists) {
-        final data = userDoc.data();
-        userName = data?['name'] as String? ?? 'Unknown';
-      }
-      participantNames[id] = userName;
-    }
+    // Fetch all participant user documents in parallel
+    final userDocs = await Future.wait(
+      participantIds.map((id) => _firestore.collection('users').doc(id).get()),
+    );
+    final participantNames = <String, String>{
+      for (var i = 0; i < participantIds.length; i++)
+        participantIds[i]: (userDocs[i].data()?['name'] as String?) ?? 'Unknown',
+    };
 
     final conversation = Conversation(
       id: '',
@@ -157,10 +155,11 @@ class ChatService {
     final userId = currentUserId;
     if (userId == null) throw Exception('User not authenticated');
 
-    // Delete all messages in the conversation
+    // Delete all messages in the conversation (subcollection)
     final messagesQuery = await _firestore
-        .collection(_messagesCollection)
-        .where('conversationId', isEqualTo: conversationId)
+        .collection(_conversationsCollection)
+        .doc(conversationId)
+        .collection('messages')
         .get();
 
     final batch = _firestore.batch();
@@ -179,10 +178,11 @@ class ChatService {
   /// Get stream of messages in a conversation
   Stream<List<Message>> getMessages(String conversationId) {
     return _firestore
-        .collection(_messagesCollection)
-        .where('conversationId', isEqualTo: conversationId)
+        .collection(_conversationsCollection)
+        .doc(conversationId)
+        .collection('messages')
         .orderBy('createdAt', descending: true)
-        .limit(100)
+        .limit(20)  // Reduced for faster initial load
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
@@ -209,7 +209,7 @@ class ChatService {
       conversationId: conversationId,
       senderId: userId,
       senderName: currentUserName,
-      content: content,
+      content: InputValidator.sanitize(content), // XSS protection
       type: type,
       createdAt: DateTime.now(),
       imageUrl: imageUrl,
@@ -221,7 +221,9 @@ class ChatService {
 
     // Add message
     await _firestore
-        .collection(_messagesCollection)
+        .collection(_conversationsCollection)
+        .doc(conversationId)
+        .collection('messages')
         .add(message.toFirestore());
 
     // Update conversation
@@ -253,10 +255,11 @@ class ChatService {
     final userId = currentUserId;
     if (userId == null) return;
 
-    // Get unread messages
+    // Get unread messages from subcollection
     final messagesQuery = await _firestore
-        .collection(_messagesCollection)
-        .where('conversationId', isEqualTo: conversationId)
+        .collection(_conversationsCollection)
+        .doc(conversationId)
+        .collection('messages')
         .where('senderId', isNotEqualTo: userId)
         .get();
 
@@ -288,9 +291,11 @@ class ChatService {
   }
 
   /// Delete a message
-  Future<void> deleteMessage(String messageId) async {
+  Future<void> deleteMessage(String conversationId, String messageId) async {
     await _firestore
-        .collection(_messagesCollection)
+        .collection(_conversationsCollection)
+        .doc(conversationId)
+        .collection('messages')
         .doc(messageId)
         .delete();
   }

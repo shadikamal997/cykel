@@ -95,25 +95,25 @@ class EventsService {
     });
   }
 
-  /// Delete an event
+  /// Delete an event and its sub-collections.
+  /// Sub-collection reads run in parallel; deletions are batched.
   Future<void> deleteEvent(String eventId) async {
-    // Delete sub-collections first
-    final participants = await _participantsCol(eventId).get();
-    for (final doc in participants.docs) {
-      await doc.reference.delete();
-    }
-    
-    final chat = await _chatCol(eventId).get();
-    for (final doc in chat.docs) {
-      await doc.reference.delete();
-    }
+    // Fetch all three sub-collections in parallel
+    final results = await Future.wait([
+      _participantsCol(eventId).get(),
+      _chatCol(eventId).get(),
+      _reviewsCol(eventId).get(),
+    ]);
 
-    final reviews = await _reviewsCol(eventId).get();
-    for (final doc in reviews.docs) {
-      await doc.reference.delete();
+    // Batch all sub-document deletes + the event document itself
+    final batch = _db.batch();
+    for (final snap in results) {
+      for (final doc in snap.docs) {
+        batch.delete(doc.reference);
+      }
     }
-
-    await _eventsCol.doc(eventId).delete();
+    batch.delete(_eventsCol.doc(eventId));
+    await batch.commit();
   }
 
   /// Get a single event
@@ -155,7 +155,7 @@ class EventsService {
   }
 
   /// Get nearby events (simplified - for accurate results use geohash)
-  Future<List<RideEvent>> getNearbyEvents(LatLng location, {double radiusKm = 50}) async {
+  Future<List<RideEvent>> getNearbyEvents(LatLng location, {double radiusKm = 50, int limit = 100}) async {
     // Simple bounding box approximation
     // ~0.009 degrees = 1km at equator
     final latDelta = radiusKm * 0.009;
@@ -165,6 +165,7 @@ class EventsService {
         .where('status', isEqualTo: EventStatus.upcoming.name)
         .where('visibility', isEqualTo: EventVisibility.public.name)
         .where('dateTime', isGreaterThan: Timestamp.now())
+        .limit(limit)
         .get();
 
     return snapshot.docs
@@ -181,11 +182,13 @@ class EventsService {
   }
 
   /// Search events by title
-  Future<List<RideEvent>> searchEvents(String query) async {
+  /// NOTE: This is inefficient for production - use Algolia or Typesense for full-text search
+  Future<List<RideEvent>> searchEvents(String query, {int limit = 100}) async {
     final snapshot = await _eventsCol
         .where('status', isEqualTo: EventStatus.upcoming.name)
         .where('visibility', isEqualTo: EventVisibility.public.name)
         .where('dateTime', isGreaterThan: Timestamp.now())
+        .limit(limit)
         .get();
 
     final lowerQuery = query.toLowerCase();
@@ -294,51 +297,93 @@ class EventsService {
 
   // ─── User Events ──────────────────────────────────────────────────────────
 
-  /// Get events the user has joined
-  Future<List<RideEvent>> getUserJoinedEvents(String userId) async {
-    // First get all event IDs where user is a confirmed participant
-    final allEvents = await _eventsCol.get();
-    final joinedEventIds = <String>[];
+  /// Get events the user has joined.
+  /// All participant sub-collection checks run in parallel (Future.wait),
+  /// and we reuse the already-fetched event documents — eliminating the
+  /// previous N+1 sequential read pattern.
+  Future<List<RideEvent>> getUserJoinedEvents(String userId, {int limit = 50}) async {
+    final allEvents = await _eventsCol
+        .orderBy('dateTime', descending: true)
+        .limit(limit)
+        .get();
 
-    for (final eventDoc in allEvents.docs) {
-      final participants = await _participantsCol(eventDoc.id)
-          .where('userId', isEqualTo: userId)
-          .where('status', isEqualTo: ParticipantStatus.confirmed.name)
-          .get();
-      
-      if (participants.docs.isNotEmpty) {
-        joinedEventIds.add(eventDoc.id);
-      }
-    }
+    if (allEvents.docs.isEmpty) return [];
 
-    if (joinedEventIds.isEmpty) return [];
+    // Fire all participant checks in parallel instead of one-by-one
+    final participantChecks = await Future.wait(
+      allEvents.docs.map((eventDoc) =>
+          _participantsCol(eventDoc.id)
+              .where('userId', isEqualTo: userId)
+              .where('status', isEqualTo: ParticipantStatus.confirmed.name)
+              .get()),
+    );
 
-    // Get the actual events
+    // Reuse the already-fetched event documents — no second round of reads
     final events = <RideEvent>[];
-    for (final eventId in joinedEventIds) {
-      final doc = await _eventsCol.doc(eventId).get();
-      if (doc.exists) {
-        events.add(RideEvent.fromFirestore(doc));
+    for (var i = 0; i < allEvents.docs.length; i++) {
+      if (participantChecks[i].docs.isNotEmpty) {
+        events.add(RideEvent.fromFirestore(allEvents.docs[i]));
       }
     }
 
-    // Sort by date and filter upcoming
     events.sort((a, b) => a.dateTime.compareTo(b.dateTime));
     return events.where((e) => e.dateTime.isAfter(DateTime.now())).toList();
   }
 
-  /// Stream user's upcoming joined events
+  /// Stream user's upcoming joined events using a real-time Firestore listener
+  /// instead of polling every 30 seconds.
   Stream<List<RideEvent>> streamUserUpcomingEvents(String userId) {
-    // This is a simplified version - for production, consider denormalization
-    return Stream.periodic(const Duration(seconds: 30))
-        .asyncMap((_) => getUserJoinedEvents(userId));
+    return _eventsCol
+        .where('status', isEqualTo: EventStatus.upcoming.name)
+        .where('dateTime', isGreaterThan: Timestamp.now())
+        .orderBy('dateTime')
+        .limit(50)
+        .snapshots()
+        .asyncMap((snap) async {
+          if (snap.docs.isEmpty) return <RideEvent>[];
+          final events = snap.docs.map(RideEvent.fromFirestore).toList();
+          // Parallel participant checks
+          final checks = await Future.wait(
+            events.map((e) =>
+                _participantsCol(e.id)
+                    .where('userId', isEqualTo: userId)
+                    .where('status', isEqualTo: ParticipantStatus.confirmed.name)
+                    .get()),
+          );
+          return [
+            for (var i = 0; i < events.length; i++)
+              if (checks[i].docs.isNotEmpty) events[i],
+          ];
+        });
+  }
+
+  /// Update only the image URL on an event (used for background image uploads).
+  Future<void> updateEventImageUrl(String eventId, String imageUrl) async {
+    await _eventsCol.doc(eventId).update({'imageUrl': imageUrl});
   }
 
   // ─── Chat ─────────────────────────────────────────────────────────────────
 
   /// Send a chat message
   Future<void> sendMessage(EventChatMessage message) async {
-    await _chatCol(message.eventId).add(message.toFirestore());
+    // Sanitize message text for XSS protection
+    final sanitizedText = message.text != null 
+        ? InputValidator.sanitize(message.text!) 
+        : null;
+    
+    final sanitizedMessage = EventChatMessage(
+      id: message.id,
+      eventId: message.eventId,
+      userId: message.userId,
+      userName: message.userName,
+      userPhotoUrl: message.userPhotoUrl,
+      type: message.type,
+      text: sanitizedText,
+      imageUrl: message.imageUrl,
+      timestamp: message.timestamp,
+    );
+    
+    await _chatCol(sanitizedMessage.eventId).add(sanitizedMessage.toFirestore());
   }
 
   /// Stream chat messages
@@ -400,10 +445,10 @@ final upcomingEventsProvider = StreamProvider<List<RideEvent>>((ref) {
 });
 
 /// Stream of user's joined upcoming events
-final userUpcomingEventsProvider = FutureProvider<List<RideEvent>>((ref) async {
+final userUpcomingEventsProvider = StreamProvider<List<RideEvent>>((ref) {
   final user = ref.watch(currentUserProvider);
-  if (user == null) return [];
-  return ref.watch(eventsServiceProvider).getUserJoinedEvents(user.uid);
+  if (user == null) return Stream.value([]);
+  return ref.watch(eventsServiceProvider).streamUserUpcomingEvents(user.uid);
 });
 
 /// Stream events created by current user

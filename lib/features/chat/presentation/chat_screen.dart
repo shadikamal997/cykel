@@ -2,8 +2,14 @@
 /// Real-time chat conversation with message input
 
 import 'dart:async';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../core/l10n/l10n.dart';
+import '../../../core/widgets/app_image.dart';
+import '../../../core/widgets/cached_image.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../application/chat_providers.dart';
@@ -98,6 +104,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/OIUFKE0.webp'),
+              fit: BoxFit.cover,
+              opacity: 0.15,
+            ),
+          ),
+        ),
         title: conversationAsync.when(
           data: (conversation) {
             if (conversation == null) return const Text('Chat');
@@ -123,7 +138,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ],
             );
           },
-          loading: () => const Text('Loading...'),
+          loading: () => Text(context.l10n.chatLoading),
           error: (error, s) => const Text('Chat'),
         ),
         actions: [
@@ -188,24 +203,64 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo),
-              title: const Text('Send Photo'),
-              onTap: () {
+              title: Text(context.l10n.chatSendPhoto),
+              onTap: () async {
                 Navigator.pop(context);
-                // TODO: Implement image picker
+                final picker = ImagePicker();
+                final file = await picker.pickImage(
+                  source: ImageSource.gallery,
+                  imageQuality: 75,
+                );
+                if (file == null || !mounted) return;
+                try {
+                  final ref = FirebaseStorage.instance.ref(
+                    'chat/${widget.conversationId}/${DateTime.now().millisecondsSinceEpoch}.jpg',
+                  );
+                  await ref.putData(await file.readAsBytes());
+                  final url = await ref.getDownloadURL();
+                  if (!mounted) return;
+                  await sendImageMessage(this.ref, widget.conversationId, url, '');
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to send image: $e')),
+                  );
+                }
               },
             ),
             ListTile(
               leading: const Icon(Icons.location_on),
-              title: const Text('Share Location'),
-              onTap: () {
+              title: Text(context.l10n.chatShareLocation),
+              onTap: () async {
                 Navigator.pop(context);
-                // TODO: Implement location sharing
+                try {
+                  final perm = await Geolocator.checkPermission();
+                  if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+                    await Geolocator.requestPermission();
+                  }
+                  final pos = await Geolocator.getCurrentPosition();
+                  if (!mounted) return;
+                  await sendLocationMessage(
+                    ref,
+                    widget.conversationId,
+                    pos.latitude,
+                    pos.longitude,
+                    'My location',
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Could not get location: $e')),
+                  );
+                }
               },
             ),
             ListTile(
               leading: const Icon(Icons.delete, color: AppColors.error),
-              title: const Text('Delete Conversation',
-                  style: TextStyle(color: AppColors.error)),
+              title: Text(
+                context.l10n.chatDeleteConversationTitle,
+                style: const TextStyle(color: AppColors.error),
+              ),
               onTap: () async {
                 final navigator = Navigator.of(context);
                 navigator.pop();
@@ -247,19 +302,12 @@ class _MessageBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe && showAvatar) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-              child: Text(
-                message.senderName.isNotEmpty 
-                    ? message.senderName[0].toUpperCase() 
-                    : '?',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-              ),
+            AppAvatar(
+              url: null,
+              size: 32,
+              fallbackText: message.senderName.isNotEmpty 
+                  ? message.senderName[0].toUpperCase() 
+                  : '?',
             ),
             const SizedBox(width: 8),
           ] else if (!isMe) ...[
@@ -284,8 +332,8 @@ class _MessageBubble extends StatelessWidget {
                   if (message.type == MessageType.image && message.imageUrl != null)
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        message.imageUrl!,
+                      child: CachedImage(
+                        imageUrl: message.imageUrl!,
                         width: 200,
                         fit: BoxFit.cover,
                       ),

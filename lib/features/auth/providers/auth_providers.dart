@@ -97,6 +97,7 @@ class AuthNotifier extends AsyncNotifier<void> {
     required String uid,
     String? displayName,
     String? phone,
+    String? photoUrl,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
@@ -104,6 +105,7 @@ class AuthNotifier extends AsyncNotifier<void> {
         uid: uid,
         displayName: displayName,
         phone: phone,
+        photoUrl: photoUrl,
       ),
     );
   }

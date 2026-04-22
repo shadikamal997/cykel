@@ -82,19 +82,28 @@ class QuickRoutesNotifier extends StateNotifier<QuickRoutesState> {
     final h = p.getString(_homeKey);
     final w = p.getString(_workKey);
     final c = p.getString(_customKey);
-    state = QuickRoutesState(
-      home: h != null
-          ? QuickRoute.fromJson(json.decode(h) as Map<String, dynamic>)
-          : null,
-      work: w != null
-          ? QuickRoute.fromJson(json.decode(w) as Map<String, dynamic>)
-          : null,
-      custom: c != null
-          ? (json.decode(c) as List)
-              .map((e) => NamedQuickRoute.fromJson(e as Map<String, dynamic>))
-              .toList()
-          : [],
-    );
+    
+    try {
+      state = QuickRoutesState(
+        home: h != null
+            ? QuickRoute.fromJson(json.decode(h) as Map<String, dynamic>)
+            : null,
+        work: w != null
+            ? QuickRoute.fromJson(json.decode(w) as Map<String, dynamic>)
+            : null,
+        custom: c != null
+            ? (json.decode(c) as List)
+                .map((e) => NamedQuickRoute.fromJson(e as Map<String, dynamic>))
+                .toList()
+            : [],
+      );
+    } catch (e) {
+      // Handle corrupted SharedPreferences data - reset to empty state
+      await p.remove(_homeKey);
+      await p.remove(_workKey);
+      await p.remove(_customKey);
+      state = const QuickRoutesState(home: null, work: null, custom: []);
+    }
   }
 
   Future<void> setHome(QuickRoute r) async {

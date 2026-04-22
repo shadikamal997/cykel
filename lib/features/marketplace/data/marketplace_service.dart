@@ -24,15 +24,17 @@ class MarketplaceService {
     String sortBy = 'createdAt', // 'createdAt' | 'price_asc' | 'price_desc'
     bool prioritizePremium = false,
   }) {
-    return _col
+    // Filter isSold in Firestore so we never read sold listings over the wire.
+    // Requires a composite index on (isSold, createdAt) — create it in the
+    // Firebase console or via firebase.indexes.json if not already present.
+    var query = _col
+        .where('isSold', isEqualTo: false)
         .orderBy('createdAt', descending: true)
-        .limit(100)
-        .snapshots()
-        .map((snap) {
+        .limit(20);  // Reduced to 20 for faster initial load
+
+    return query.snapshots().map((snap) {
       var list =
           snap.docs.map(MarketplaceListing.fromFirestore).toList();
-      // client-side filters (avoids composite index requirements)
-      list = list.where((l) => !l.isSold).toList();
       if (category != null) {
         list = list.where((l) => l.category == category).toList();
       }
@@ -63,6 +65,7 @@ class MarketplaceService {
   Stream<List<MarketplaceListing>> streamMyListings(String uid) => _col
       .where('sellerId', isEqualTo: uid)
       .orderBy('createdAt', descending: true)
+      .limit(50)  // Limit to 50 most recent listings for performance
       .snapshots()
       .map((s) => s.docs.map(MarketplaceListing.fromFirestore).toList());
 
@@ -184,6 +187,25 @@ class MarketplaceService {
     }
   }
 
+  /// Report a listing for violating community guidelines
+  Future<void> reportListing({
+    required String listingId,
+    required String reporterId,
+    required String reason,
+  }) async {
+    try {
+      await _db.collection('reports').add({
+        'type': 'listing',
+        'targetId': listingId,
+        'reason': reason,
+        'reportedBy': reporterId,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw Exception('Failed to submit report: $e');
+    }
+  }
+
   // ── Image upload ───────────────────────────────────────────────────────────
 
   /// Uploads [files] to Firebase Storage concurrently (all in parallel).
@@ -191,6 +213,8 @@ class MarketplaceService {
   /// Sequential uploads were the primary cause of slow publish times.
   /// With parallel uploads, total time ≈ slowest single image instead of sum.
   /// Images are compressed before upload to reduce storage costs and upload time.
+  ///
+  /// Cloud Function automatically generates thumbnails in thumbnails/ folder.
   Future<List<String>> uploadImages(String uid, List<XFile> files) async {
     // Fire all uploads simultaneously.
     final futures = files.map((file) async {
@@ -206,10 +230,10 @@ class MarketplaceService {
         throw Exception('Image compression failed for ${file.name}');
       }
       
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${file.name}';
       final ref = _storage
           .ref()
-          .child('marketplace/$uid/'
-              '${DateTime.now().millisecondsSinceEpoch}_${file.name}');
+          .child('marketplace/$uid/$fileName');
       await ref.putData(
         compressedBytes,
         SettableMetadata(
@@ -267,16 +291,23 @@ class MarketplaceService {
   }
 
   Future<List<MarketplaceListing>> _fetchByIds(List<String> ids) async {
-    final results = <MarketplaceListing>[];
+    // Split into chunks of 10 (Firestore whereIn limit) and fetch in parallel.
+    final chunks = <List<String>>[];
     for (var i = 0; i < ids.length; i += 10) {
-      final chunk =
-          ids.sublist(i, (i + 10) < ids.length ? i + 10 : ids.length);
-      final snap = await _col
-          .where(FieldPath.documentId, whereIn: chunk)
-          .get();
-      results.addAll(snap.docs.map(MarketplaceListing.fromFirestore));
+      chunks.add(ids.sublist(i, (i + 10) < ids.length ? i + 10 : ids.length));
     }
-    return results;
+    final snapshots = await Future.wait(
+      chunks.map((chunk) =>
+          _col.where(FieldPath.documentId, whereIn: chunk).get()),
+    );
+    return snapshots
+        .expand((snap) => snap.docs.map(MarketplaceListing.fromFirestore))
+        .toList();
+  }
+
+  /// Update only the image URLs on a listing (used for background image uploads).
+  Future<void> updateListingImages(String listingId, List<String> imageUrls) async {
+    await _col.doc(listingId).update({'imageUrls': imageUrls});
   }
 }
 

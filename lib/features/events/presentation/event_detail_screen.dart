@@ -10,20 +10,24 @@ import 'package:share_plus/share_plus.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/providers/pending_route_provider.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../discover/data/places_service.dart';
 import '../../auth/providers/auth_providers.dart';
+import '../../../core/widgets/cached_image.dart';
+import '../../../core/widgets/app_image.dart';
+import '../../../services/calendar_service.dart';
 import '../data/events_provider.dart';
 import '../domain/event.dart';
 import 'event_chat_screen.dart';
 
 // ─── Design Colors ─────────────────────────────────────────────────────────────
-const _kPrimaryColor = Color(0xFF4A7C59);
-const _kPrimaryPressed = Color(0xFF3D6B4A);
-const _kPrimaryText = Color(0xFF1A1A1A);
-const _kSecondaryText = Color(0xFF6B6B6B);
-const _kBackground = Color(0xFFFFFFFF);
-const _kCardBackground = Color(0xFFF4F5F2);
-const _kSoftElements = Color(0xFFE9ECE6);
+const _kPrimaryColor = AppColors.primary;
+const _kPrimaryPressed = AppColors.primaryDark;
+const _kPrimaryText = AppColors.textPrimary;
+const _kSecondaryText = AppColors.textSecondary;
+const _kBackground = AppColors.background;
+const _kCardBackground = AppColors.surface;
+const _kSoftElements = AppColors.surfaceVariant;
 
 class EventDetailScreen extends ConsumerStatefulWidget {
   const EventDetailScreen({
@@ -68,7 +72,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         final heroHeight = MediaQuery.of(context).size.height * 0.45;
 
         return Scaffold(
-          backgroundColor: isDark ? const Color(0xFF1A202C) : _kBackground,
+          backgroundColor: isDark ? AppColors.surfaceDark : _kBackground,
           body: Stack(
             children: [
               // ─── Hero Image (Full width, 40-50% screen height) ───────────────
@@ -82,10 +86,10 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                   children: [
                     // Main image or map preview
                     if (event.imageUrl != null)
-                      Image.network(
-                        event.imageUrl!,
+                      CachedImage(
+                        imageUrl: event.imageUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => _buildMapPreviewBackground(event),
+                        height: heroHeight,
                       )
                     else
                       _buildMapPreviewBackground(event),
@@ -124,6 +128,11 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     Row(
                       children: [
                         _buildCircleButton(
+                          icon: Icons.calendar_today,
+                          onTap: () => _addToCalendar(event),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildCircleButton(
                           icon: Icons.share,
                           onTap: () => _shareEvent(event),
                         ),
@@ -145,7 +154,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 builder: (context, scrollController) {
                   return Container(
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1A202C) : _kBackground,
+                      color: isDark ? AppColors.surfaceDark : _kBackground,
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(28),
                       ),
@@ -173,8 +182,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                               height: 4,
                               decoration: BoxDecoration(
                                 color: isDark 
-                                    ? const Color(0xFF4A5568) 
-                                    : const Color(0xFFE2E8F0),
+                                    ? AppColors.mutedForeground 
+                                    : AppColors.muted,
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
@@ -290,9 +299,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Row(
               children: [
-                const Icon(Icons.delete_outline, size: 22, color: Color(0xFFE53E3E)),
+                const Icon(Icons.delete_outline, size: 22, color: AppColors.error),
                 const SizedBox(width: 14),
-                Text(ctx.l10n.deleteEvent, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Color(0xFFE53E3E))),
+                Text(ctx.l10n.deleteEvent, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.error)),
               ],
             ),
           ),
@@ -350,12 +359,12 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: isDark 
-            ? const Color(0xFF2D3748) 
+            ? AppColors.cardDark 
             : _kCardBackground,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isDark 
-              ? const Color(0xFF4A5568) 
+              ? AppColors.mutedForeground 
               : _kSoftElements,
         ),
       ),
@@ -404,15 +413,14 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                             ][index % 4],
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: isDark ? const Color(0xFF1A202C) : Colors.white,
+                              color: isDark ? AppColors.surfaceDark : Colors.white,
                               width: 2,
                             ),
-                            image: p.userPhotoUrl != null
-                                ? DecorationImage(
-                                    image: NetworkImage(p.userPhotoUrl!),
-                                    fit: BoxFit.cover,
-                                  )
-                                : null,
+                            image: AppImage.decorationImage(
+                              url: p.userPhotoUrl,
+                              thumbnailUrl: null,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                           child: p.userPhotoUrl == null
                               ? Center(
@@ -439,7 +447,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: isDark 
-                      ? const Color(0xFFA0AEC0) 
+                      ? AppColors.textSecondary 
                       : _kSecondaryText,
                 ),
               ),
@@ -448,7 +456,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE53E3E).withValues(alpha: 0.1),
+                    color: AppColors.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -456,7 +464,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFFE53E3E),
+                      color: AppColors.error,
                     ),
                   ),
                 ),
@@ -536,7 +544,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF2D3748) : Colors.white,
+          color: isDark ? AppColors.cardDark : Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -553,7 +561,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               height: 44,
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF4A5568)
+                    ? AppColors.mutedForeground
                     : _kCardBackground,
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -561,7 +569,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 icon,
                 size: 22,
                 color: isDark
-                    ? const Color(0xFFA0AEC0)
+                    ? AppColors.textSecondary
                     : _kPrimaryColor,
               ),
             ),
@@ -576,7 +584,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       color: isDark
-                          ? const Color(0xFFA0AEC0)
+                          ? AppColors.textSecondary
                           : _kSecondaryText,
                     ),
                   ),
@@ -596,7 +604,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       style: TextStyle(
                         fontSize: 13,
                         color: isDark
-                            ? const Color(0xFF718096)
+                            ? AppColors.textHint
                             : _kSecondaryText,
                       ),
                     ),
@@ -608,7 +616,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               Icon(
                 Icons.chevron_right,
                 color: isDark
-                    ? const Color(0xFF4A5568)
+                    ? AppColors.mutedForeground
                     : _kSoftElements,
               ),
           ],
@@ -622,7 +630,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2D3748) : _kBackground,
+        color: isDark ? AppColors.cardDark : _kBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -641,7 +649,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: isDark 
-                  ? const Color(0xFFA0AEC0)
+                  ? AppColors.textSecondary
                   : _kSecondaryText,
             ),
           ),
@@ -664,7 +672,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2D3748) : _kBackground,
+        color: isDark ? AppColors.cardDark : _kBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -682,12 +690,11 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
             decoration: BoxDecoration(
               color: _kPrimaryColor,
               shape: BoxShape.circle,
-              image: event.organizerPhotoUrl != null
-                  ? DecorationImage(
-                      image: NetworkImage(event.organizerPhotoUrl!),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
+              image: AppImage.decorationImage(
+                url: event.organizerPhotoUrl,
+                thumbnailUrl: event.organizerPhotoThumbnail,
+                preferThumbnail: true,
+              ),
             ),
             child: event.organizerPhotoUrl == null
                 ? Center(
@@ -715,7 +722,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: isDark
-                        ? const Color(0xFFA0AEC0)
+                        ? AppColors.textSecondary
                         : _kSecondaryText,
                   ),
                 ),
@@ -785,9 +792,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                   child: OutlinedButton(
                     onPressed: () => _leaveEvent(event),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF111111),
-                      side: const BorderSide(
-                        color: Color(0xFFE0E0E0),
+                      foregroundColor: AppColors.textPrimary,
+                      side: BorderSide(
+                        color: context.colors.border,
                         width: 1.5,
                       ),
                       minimumSize: const Size.fromHeight(54),
@@ -847,15 +854,15 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     return ElevatedButton(
       onPressed: isDisabled ? null : () => _joinEvent(event),
       style: ElevatedButton.styleFrom(
-        backgroundColor: isDisabled ? const Color(0xFFE0E0E0) : _kPrimaryColor,
-        foregroundColor: isDisabled ? const Color(0xFF999999) : Colors.white,
+        backgroundColor: isDisabled ? AppColors.border : _kPrimaryColor,
+        foregroundColor: isDisabled ? AppColors.textHint : Colors.white,
         minimumSize: const Size.fromHeight(54),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(27),
         ),
         elevation: 0,
-        disabledBackgroundColor: const Color(0xFFE0E0E0),
-        disabledForegroundColor: const Color(0xFF999999),
+        disabledBackgroundColor: AppColors.border,
+        disabledForegroundColor: AppColors.textHint,
       ),
       child: Text(
         event.isFull ? context.l10n.eventIsFull : context.l10n.joinEvent,
@@ -944,6 +951,37 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     );
   }
 
+  Future<void> _addToCalendar(RideEvent event) async {
+    try {
+      final success = await CalendarService.addEventToCalendar(event);
+      
+      if (mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Event added to calendar'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } else {
+          // User cancelled - no need to show error
+          debugPrint('[EventDetail] User cancelled adding to calendar');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to add to calendar: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _openInMaps(MeetingPoint point) async {
     // Create a PlaceResult from the meeting point
     final destination = PlaceResult(
@@ -991,7 +1029,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: isDark ? Colors.white : Colors.black),
+                style: TextButton.styleFrom(foregroundColor: context.colors.textPrimary),
                 child: Text(ctx.l10n.confirmCancel),
               ),
             ],
@@ -1019,7 +1057,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: isDark ? Colors.white : Colors.black),
+                style: TextButton.styleFrom(foregroundColor: context.colors.textPrimary),
                 child: Text(ctx.l10n.confirmDelete),
               ),
             ],

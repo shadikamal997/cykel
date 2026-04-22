@@ -4,6 +4,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/l10n/l10n.dart';
+import '../../../core/widgets/cached_image.dart';
+
 import '../domain/bike_listing.dart';
 import '../domain/rental_agreement.dart';
 import '../application/bike_rental_providers.dart';
@@ -90,8 +93,8 @@ class _BikeDetailScreenState extends ConsumerState<BikeDetailScreen> {
 
     if (startDateTime == null || endDateTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select start and end dates/times'),
+        SnackBar(
+          content: Text(context.l10n.rentalSelectDates),
           backgroundColor: Colors.red,
         ),
       );
@@ -100,8 +103,8 @@ class _BikeDetailScreenState extends ConsumerState<BikeDetailScreen> {
 
     if (endDateTime.isBefore(startDateTime)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('End time must be after start time'),
+        SnackBar(
+          content: Text(context.l10n.rentalEndAfterStart),
           backgroundColor: Colors.red,
         ),
       );
@@ -118,12 +121,12 @@ class _BikeDetailScreenState extends ConsumerState<BikeDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm Rental Request'),
+        title: Text(context.l10n.rentalConfirmRequest),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Bike: ${listing.title}'),
+            Text(context.l10n.rentalBikeLabel(listing.title)),
             const SizedBox(height: 8),
             Text('From: ${startDateTime.day}/${startDateTime.month} at ${startDateTime.hour}:${startDateTime.minute.toString().padLeft(2, '0')}'),
             Text('To: ${endDateTime.day}/${endDateTime.month} at ${endDateTime.hour}:${endDateTime.minute.toString().padLeft(2, '0')}'),
@@ -146,11 +149,11 @@ class _BikeDetailScreenState extends ConsumerState<BikeDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Send Request'),
+            child: Text(context.l10n.buddySendRequest),
           ),
         ],
       ),
@@ -169,8 +172,8 @@ class _BikeDetailScreenState extends ConsumerState<BikeDetailScreen> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Rental request sent! Owner will be notified.'),
+          SnackBar(
+            content: Text(context.l10n.rentalRequestSent),
             backgroundColor: Colors.green,
           ),
         );
@@ -197,7 +200,7 @@ class _BikeDetailScreenState extends ConsumerState<BikeDetailScreen> {
         if (listing == null) {
           return Scaffold(
             appBar: AppBar(),
-            body: const Center(child: Text('Listing not found')),
+            body: Center(child: Text(context.l10n.rentalListingNotFound)),
           );
         }
         return Scaffold(
@@ -211,7 +214,7 @@ class _BikeDetailScreenState extends ConsumerState<BikeDetailScreen> {
       ),
       error: (error, stack) => Scaffold(
         appBar: AppBar(),
-        body: Center(child: Text('Error: $error')),
+        body: Center(child: Text(context.l10n.errorPrefix(error.toString()))),
       ),
     );
   }
@@ -236,12 +239,9 @@ class _BikeDetailScreenState extends ConsumerState<BikeDetailScreen> {
                       });
                     },
                     itemBuilder: (context, index) {
-                      return Image.network(
-                        listing.photoUrls[index],
+                      return CachedImage(
+                        imageUrl: listing.photoUrls[index],
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildPlaceholder();
-                        },
                       );
                     },
                   )
@@ -656,7 +656,7 @@ class _BikeDetailScreenState extends ConsumerState<BikeDetailScreen> {
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size.fromHeight(48),
               ),
-              child: const Text('Request Rental'),
+              child: Text(context.l10n.rentalRequestButton),
             ),
           ],
         ),

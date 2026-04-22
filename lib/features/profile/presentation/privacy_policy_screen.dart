@@ -14,10 +14,10 @@ class PrivacyPolicyScreen extends StatelessWidget {
     final l10n = context.l10n;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
         title: Text(l10n.privacyPolicyTitle),
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
       ),
@@ -137,15 +137,15 @@ class _PolicyBody extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border, width: 0.8),
+          border: Border.all(color: context.colors.border, width: 0.8),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              Icon(icon, size: 18, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+              Icon(icon, size: 18, color: context.colors.textPrimary),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -159,7 +159,7 @@ class _PolicyBody extends StatelessWidget {
             Text(
               body,
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 height: 1.6,
               ),
             ),

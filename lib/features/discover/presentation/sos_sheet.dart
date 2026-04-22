@@ -47,7 +47,7 @@ class SosFab extends StatelessWidget {
   void _showSosSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -99,7 +99,7 @@ class _SosSheetState extends ConsumerState<SosSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
+                  color: context.colors.surfaceVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

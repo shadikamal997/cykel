@@ -271,6 +271,7 @@ class BuddyProfile {
     required this.createdAt,
     this.bio,
     this.photoUrl,
+    this.photoThumbnailUrl,
     this.hometown,
     this.spokenLanguages = const [],
     this.averagePaceKmh,
@@ -286,6 +287,7 @@ class BuddyProfile {
   final String displayName;
   final String? bio;
   final String? photoUrl;
+  final String? photoThumbnailUrl;
   final String? hometown;
   final RidingLevel ridingLevel;
   final List<RidingInterest> interests;
@@ -299,6 +301,28 @@ class BuddyProfile {
   final DateTime createdAt;
   final DateTime? lastActiveAt;
   final bool isActive;
+
+  /// Calculate thumbnail URL from photo URL based on Cloud Function pattern
+  static String? getThumbnailUrl(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) return null;
+    
+    final uri = Uri.parse(imageUrl);
+    final encodedPath = uri.pathSegments.lastWhere(
+      (segment) => segment.contains('%2F'),
+      orElse: () => '',
+    );
+    
+    if (encodedPath.isEmpty) return imageUrl;
+    
+    final decodedPath = Uri.decodeComponent(encodedPath);
+    final thumbnailPath = 'thumbnails/$decodedPath';
+    final encodedThumbnailPath = Uri.encodeComponent(thumbnailPath);
+    
+    return imageUrl.replaceFirst(encodedPath, encodedThumbnailPath);
+  }
+
+  /// Get calculated thumbnail for buddy photo
+  String? get photoThumbnail => getThumbnailUrl(photoUrl);
 
   /// Calculate match compatibility score (0-100)
   int calculateCompatibility(BuddyProfile other) {
@@ -371,8 +395,7 @@ class BuddyProfile {
       userId: doc.id,
       displayName: data['displayName'] as String,
       bio: data['bio'] as String?,
-      photoUrl: data['photoUrl'] as String?,
-      hometown: data['hometown'] as String?,
+      photoUrl: data['photoUrl'] as String?,      photoThumbnailUrl: data['photoThumbnailUrl'] as String?,      hometown: data['hometown'] as String?,
       ridingLevel: RidingLevel.values.firstWhere(
         (level) => level.name == data['ridingLevel'],
         orElse: () => RidingLevel.casual,
@@ -409,6 +432,7 @@ class BuddyProfile {
         'displayName': displayName,
         'bio': bio,
         'photoUrl': photoUrl,
+        'photoThumbnailUrl': photoThumbnailUrl,
         'hometown': hometown,
         'ridingLevel': ridingLevel.name,
         'interests': interests.map((i) => i.name).toList(),
@@ -428,6 +452,7 @@ class BuddyProfile {
     String? displayName,
     String? bio,
     String? photoUrl,
+    String? photoThumbnailUrl,
     String? hometown,
     RidingLevel? ridingLevel,
     List<RidingInterest>? interests,
@@ -446,6 +471,7 @@ class BuddyProfile {
       displayName: displayName ?? this.displayName,
       bio: bio ?? this.bio,
       photoUrl: photoUrl ?? this.photoUrl,
+      photoThumbnailUrl: photoThumbnailUrl ?? this.photoThumbnailUrl,
       hometown: hometown ?? this.hometown,
       ridingLevel: ridingLevel ?? this.ridingLevel,
       interests: interests ?? this.interests,

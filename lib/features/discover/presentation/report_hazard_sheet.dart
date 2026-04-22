@@ -42,7 +42,7 @@ class _ReportHazardSheetState extends ConsumerState<ReportHazardSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
+                  color: context.colors.surfaceVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -211,7 +211,7 @@ class _HazardTypeChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(icon, style: const TextStyle(fontSize: 18)),
+            Text(icon, style: TextStyle(fontSize: 18)),
             const SizedBox(width: 8),
             Text(
               label,

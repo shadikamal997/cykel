@@ -67,9 +67,174 @@ class NotificationsScreen extends ConsumerWidget {
               _Toggle(
                 icon: Icons.campaign_outlined,
                 label: l10n.notifMarketing,
-                subtitle: l10n.notifMarketingDesc,
+                subtitle: l10n.notifMarketplaceDesc,
                 value: state.marketing,
                 onChanged: notifier.setMarketing,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Phase 1: Rental & Events
+          _Section(
+            title: 'Rentals & Events',
+            tiles: [
+              _Toggle(
+                icon: Icons.pedal_bike_outlined,
+                label: 'Rental Updates',
+                subtitle: 'Requests, approvals, and rental reminders',
+                value: state.rentalUpdates,
+                onChanged: notifier.setRentalUpdates,
+              ),
+              _Toggle(
+                icon: Icons.event_outlined,
+                label: 'Event Updates',
+                subtitle: 'Event cancellations and start reminders',
+                value: state.eventUpdates,
+                onChanged: notifier.setEventUpdates,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Phase 1: Safety & Security
+          _Section(
+            title: 'Safety & Security',
+            tiles: [
+              _Toggle(
+                icon: Icons.warning_rounded,
+                label: 'Theft Alerts',
+                subtitle: 'Community alerts for stolen bikes nearby',
+                value: state.theftAlerts,
+                onChanged: notifier.setTheftAlerts,
+              ),
+              _Toggle(
+                icon: Icons.security_rounded,
+                label: 'Security Alerts',
+                subtitle: 'New device logins and suspicious activity',
+                value: state.securityAlerts,
+                onChanged: notifier.setSecurityAlerts,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Phase 1: Subscription
+          _Section(
+            title: 'Account',
+            tiles: [
+              _Toggle(
+                icon: Icons.card_membership_outlined,
+                label: 'Subscription Alerts',
+                subtitle: 'Expiring subscriptions and renewal reminders',
+                value: state.subscriptionAlerts,
+                onChanged: notifier.setSubscriptionAlerts,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Phase 2: Social & Community
+          _Section(
+            title: 'Social & Community',
+            tiles: [
+              _Toggle(
+                icon: Icons.people_outline,
+                label: 'Social Updates',
+                subtitle: 'Follows, friend requests, and shared rides',
+                value: state.socialUpdates,
+                onChanged: notifier.setSocialUpdates,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Phase 2: Gamification
+          _Section(
+            title: 'Achievements & Progress',
+            tiles: [
+              _Toggle(
+                icon: Icons.emoji_events_outlined,
+                label: 'Gamification',
+                subtitle: 'Badges, achievements, and leaderboard updates',
+                value: state.gamification,
+                onChanged: notifier.setGamification,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Phase 3: Community & Groups
+          _Section(
+            title: 'Community & Groups',
+            tiles: [
+              _Toggle(
+                icon: Icons.group_outlined,
+                label: 'Community Updates',
+                subtitle: 'Group ride invitations and buddy matches',
+                value: state.communityUpdates,
+                onChanged: notifier.setCommunityUpdates,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Phase 3: System Updates
+          _Section(
+            title: 'System & Maintenance',
+            tiles: [
+              _Toggle(
+                icon: Icons.system_update_outlined,
+                label: 'System Updates',
+                subtitle: 'App updates, maintenance notices, and announcements',
+                value: state.systemUpdates,
+                onChanged: notifier.setSystemUpdates,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Phase 4: Enhanced Experience
+          _Section(
+            title: 'Weather & Conditions',
+            tiles: [
+              _Toggle(
+                icon: Icons.wb_sunny_outlined,
+                label: 'Weather Alerts',
+                subtitle: 'Weather conditions for planned rides',
+                value: state.weatherAlerts,
+                onChanged: notifier.setWeatherAlerts,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _Section(
+            title: 'Statistics & Progress',
+            tiles: [
+              _Toggle(
+                icon: Icons.bar_chart_outlined,
+                label: 'Ride Statistics',
+                subtitle: 'Weekly and monthly ride summaries',
+                value: state.rideStats,
+                onChanged: notifier.setRideStats,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _Section(
+            title: 'Local Events',
+            tiles: [
+              _Toggle(
+                icon: Icons.event_outlined,
+                label: 'Event Notifications',
+                subtitle: 'Nearby cycling events and meetups',
+                value: state.localEvents,
+                onChanged: notifier.setLocalEvents,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _Section(
+            title: 'Celebrations',
+            tiles: [
+              _Toggle(
+                icon: Icons.celebration_outlined,
+                label: 'Milestone Achievements',
+                subtitle: 'Distance, carbon savings, and streak celebrations',
+                value: state.milestones,
+                onChanged: notifier.setMilestones,
               ),
             ],
           ),
@@ -150,7 +315,7 @@ class _Toggle extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(children: [
-        Icon(icon, size: 20, color: isDark ? Colors.white : Colors.black),
+        Icon(icon, size: 20, color: context.colors.textPrimary),
         const SizedBox(width: 14),
         Expanded(
           child: Column(
@@ -188,7 +353,7 @@ class _ScheduleReminderTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          Icon(Icons.alarm_rounded, size: 20, color: isDark ? Colors.white : Colors.black),
+          Icon(Icons.alarm_rounded, size: 20, color: context.colors.textPrimary),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -209,7 +374,7 @@ class _ScheduleReminderTile extends StatelessWidget {
           if (current != null)
             IconButton(
               icon: Icon(Icons.close_rounded,
-                  size: 18, color: isDark ? Colors.white : Colors.black),
+                  size: 18, color: context.colors.textPrimary),
               tooltip: l10n.removeReminder,
               onPressed: () => onChanged(null),
             ),
@@ -223,7 +388,7 @@ class _ScheduleReminderTile extends StatelessWidget {
             },
             child: Text(
               current == null ? l10n.setTime : l10n.changeTime,
-              style: TextStyle(color: isDark ? Colors.white : Colors.black),
+              style: TextStyle(color: context.colors.textPrimary),
             ),
           ),
         ],

@@ -31,7 +31,7 @@ class MonthlyChallenge {
   }
 }
 
-final monthlyChallengeProvider = FutureProvider<MonthlyChallenge>((ref) async {
+final monthlyChallengeProvider = FutureProvider.autoDispose<MonthlyChallenge>((ref) async {
   final summary = await ref.watch(monthlyRideSummaryProvider.future);
   final profile = ref.watch(userProfileProvider);
   return MonthlyChallenge(

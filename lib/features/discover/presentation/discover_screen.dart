@@ -28,11 +28,7 @@ import 'report_hazard_sheet.dart';
 
 // ─── Design Colors ─────────────────────────────────────────────────────────────
 const _kPrimaryColor = Color(0xFF4A7C59);
-const _kPrimaryText = Color(0xFF1A1A1A);
-const _kSecondaryText = Color(0xFF6B6B6B);
 const _kBackground = Color(0xFFFFFFFF);
-const _kCardBackground = Color(0xFFF4F5F2);
-const _kSoftElements = Color(0xFFE9ECE6);
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -254,7 +250,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           children: [
             // ── Header + Search bar ────────────────────────────────────────
             Container(
-              color: _kBackground,
+              color: context.colors.background,
               padding: EdgeInsets.fromLTRB(20, topPad + 16, 20, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,7 +262,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     ),
                     TextButton.icon(
                       onPressed: _goToMap,
-                      icon: const Icon(Icons.map_rounded, size: 16, color: _kPrimaryColor),
+                      icon: Icon(Icons.map_rounded, size: 16, color: _kPrimaryColor),
                       label: Text(l10n.tabMap,
                           style: AppTextStyles.bodySmall
                               .copyWith(fontWeight: FontWeight.w600, color: _kPrimaryColor)),
@@ -281,22 +277,22 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Material(
-                      color: _kSoftElements,
+                      color: context.colors.surfaceVariant,
                       child: TextField(
                         controller: _searchCtrl,
                         focusNode: _focusNode,
                         decoration: InputDecoration(
                           hintText: l10n.searchPlaces,
                           hintStyle: AppTextStyles.bodyMedium
-                              .copyWith(color: _kSecondaryText),
-                          prefixIcon: const Icon(Icons.search_rounded,
-                              color: _kSecondaryText),
+                              .copyWith(color: context.colors.textSecondary),
+                          prefixIcon: Icon(Icons.search_rounded,
+                              color: context.colors.textSecondary),
                           suffixIcon: _searchCtrl.text.isNotEmpty
                               ? IconButton(
                                   tooltip: 'Clear search',
-                                  icon: const Icon(Icons.clear_rounded,
+                                  icon: Icon(Icons.clear_rounded,
                                       size: 18,
-                                      color: _kSecondaryText),
+                                      color: context.colors.textSecondary),
                                   onPressed: () {
                                     _searchCtrl.clear();
                                     setState(() {
@@ -319,7 +315,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     const SizedBox(height: 4),
                     Container(
                       decoration: BoxDecoration(
-                        color: _kBackground,
+                        color: context.colors.background,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
@@ -329,7 +325,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         ],
                       ),
                       child: _searching
-                          ? const Padding(
+                          ? Padding(
                               padding: EdgeInsets.all(16),
                               child: Center(
                                   child: SizedBox(
@@ -342,22 +338,22 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                   padding: const EdgeInsets.all(16),
                                   child: Text(l10n.noPlacesFound,
                                       style: AppTextStyles.bodyMedium.copyWith(
-                                          color: _kSecondaryText)))
+                                          color: context.colors.textSecondary)))
                               : ListView.separated(
                                   shrinkWrap: true,
                                   physics:
                                       const NeverScrollableScrollPhysics(),
                                   itemCount: _suggestions.length,
                                   separatorBuilder: (context, index) =>
-                                      const Divider(height: 1, indent: 48),
+                                      Divider(height: 1, indent: 48),
                                   itemBuilder: (_, i) {
                                     final p = _suggestions[i];
                                     return ListTile(
                                       dense: true,
-                                      leading: const Icon(
+                                      leading: Icon(
                                           Icons.location_on_outlined,
                                           size: 18,
-                                          color: _kSecondaryText),
+                                          color: context.colors.textSecondary),
                                       title: Text(p.text,
                                           style: AppTextStyles.bodyMedium,
                                           maxLines: 1,
@@ -373,10 +369,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                               overflow:
                                                   TextOverflow.ellipsis)
                                           : null,
-                                      trailing: const Icon(
+                                      trailing: Icon(
                                           Icons.arrow_forward_ios_rounded,
                                           size: 12,
-                                          color: _kSecondaryText),
+                                          color: context.colors.textSecondary),
                                       onTap: () => _selectPlace(p),
                                     );
                                   }),
@@ -398,36 +394,41 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     Expanded(
                       child: _CategoryCard(
                           label: l10n.layerCharging,
+                          image: 'assets/images/charging.webp',
                           onTap: () => _goToProviderList(ProviderType.chargingLocation)),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: _CategoryCard(
                           label: l10n.layerRepair,
+                          image: 'assets/images/mechanic-repairing-bicycle.webp',
                           onTap: () => _goToProviderList(ProviderType.repairShop)),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: _CategoryCard(
                           label: l10n.layerShops,
+                          image: 'assets/images/close-up-young-businessman-bike-shop.webp',
                           onTap: () => _goToProviderList(ProviderType.bikeShop)),
                     ),
                   ]),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Row(children: [
                     Expanded(
                       child: _CategoryCard(
                           label: l10n.layerService,
+                          image: 'assets/images/medium-shot-people-travel-agency.webp',
                           onTap: () => _goToProviderList(ProviderType.servicePoint)),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: _CategoryCard(
                           label: l10n.layerRental,
+                          image: 'assets/images/paris-france-city-bicycles-bike-rental-bicycle-parking.webp',
                           onTap: () => _goToProviderList(ProviderType.rental)),
                     ),
-                    const SizedBox(width: 12),
-                    const Expanded(child: SizedBox()), // Empty placeholder
+                    const SizedBox(width: 10),
+                    const Expanded(child: SizedBox()),
                   ]),
                   const SizedBox(height: 28),
 
@@ -447,36 +448,41 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     Expanded(
                       child: _CategoryCard(
                           label: l10n.filterCykelRepair,
+                          image: 'assets/images/mechanic-repairing-bicycle.webp',
                           onTap: () => _goToMapWithLayer('cykel_repair')),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: _CategoryCard(
                           label: l10n.filterCykelShop,
+                          image: 'assets/images/close-up-young-businessman-bike-shop.webp',
                           onTap: () => _goToMapWithLayer('cykel_shop')),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: _CategoryCard(
                           label: l10n.filterCykelCharging,
+                          image: 'assets/images/charging.webp',
                           onTap: () => _goToMapWithLayer('cykel_charging')),
                     ),
                   ]),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Row(children: [
                     Expanded(
                       child: _CategoryCard(
                           label: l10n.filterCykelService,
+                          image: 'assets/images/medium-shot-people-travel-agency.webp',
                           onTap: () => _goToMapWithLayer('cykel_service')),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: _CategoryCard(
                           label: l10n.filterCykelRental,
+                          image: 'assets/images/paris-france-city-bicycles-bike-rental-bicycle-parking.webp',
                           onTap: () => _goToMapWithLayer('cykel_rental')),
                     ),
-                    const SizedBox(width: 12),
-                    const Expanded(child: SizedBox()), // Empty placeholder
+                    const SizedBox(width: 10),
+                    const Expanded(child: SizedBox()),
                   ]),
                   const SizedBox(height: 12),
                   _CykelNearbyProviders(
@@ -501,86 +507,77 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   const SizedBox(height: 12),
                   Row(children: [
                     Expanded(
-                      child: _FeatureCard(
-                        icon: Icons.pedal_bike_rounded,
+                      child: _CategoryCard(
                         label: 'Bike Share',
-                        color: const Color(0xFF4A7C59),
+                        image: 'assets/images/bikeshare.webp',
                         onTap: () => context.push(AppRoutes.bikeShare),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
-                      child: _FeatureCard(
-                        icon: Icons.chat_bubble_rounded,
-                        label: 'Messages',
-                        color: const Color(0xFF5B8DEE),
-                        onTap: () => context.push(AppRoutes.messages),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _FeatureCard(
-                        icon: Icons.family_restroom_rounded,
-                        label: 'Family',
-                        color: const Color(0xFFE67E22),
-                        onTap: () => context.push(AppRoutes.familyGroups),
-                      ),
-                    ),
-                  ]),
-                  const SizedBox(height: 12),
-                  Row(children: [
-                    Expanded(
-                      child: _FeatureCard(
-                        icon: Icons.people_rounded,
+                      child: _CategoryCard(
                         label: 'Buddy Match',
-                        color: const Color(0xFF9B59B6),
+                        image: 'assets/images/buddymatch.webp',
                         onTap: () => context.push(AppRoutes.buddyMatching),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
-                      child: _FeatureCard(
-                        icon: Icons.public_rounded,
-                        label: 'Expat Hub',
-                        color: const Color(0xFF1ABC9C),
-                        onTap: () => context.push(AppRoutes.expatHub),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _FeatureCard(
-                        icon: Icons.event_rounded,
+                      child: _CategoryCard(
                         label: 'Events',
-                        color: const Color(0xFFE74C3C),
+                        image: 'assets/images/eventhero.webp',
                         onTap: () => context.push(AppRoutes.events),
                       ),
                     ),
                   ]),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Row(children: [
                     Expanded(
-                      child: _FeatureCard(
-                        icon: Icons.emoji_events_rounded,
+                      child: _CategoryCard(
                         label: 'Challenges',
-                        color: const Color(0xFFF39C12),
+                        image: 'assets/images/challenges .webp',
                         onTap: () => context.push(AppRoutes.challenges),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
-                      child: _FeatureCard(
-                        icon: Icons.group_rounded,
+                      child: _CategoryCard(
+                        label: 'Family',
+                        image: 'assets/images/man-sitting-grass-his-mountain-bike.webp',
+                        onTap: () => context.push(AppRoutes.familyGroups),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _CategoryCard(
                         label: 'Social',
-                        color: const Color(0xFF3498DB),
+                        image: 'assets/images/bikes-rent-street (1).webp',
                         onTap: () => context.push(AppRoutes.social),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                  ]),
+                  const SizedBox(height: 10),
+                  Row(children: [
                     Expanded(
-                      child: _FeatureCard(
-                        icon: Icons.download_rounded,
+                      child: _CategoryCard(
+                        label: 'Messages',
+                        image: 'assets/images/medium-shot-people-travel-agency.webp',
+                        onTap: () => context.push(AppRoutes.messages),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _CategoryCard(
+                        label: 'Expat Hub',
+                        image: 'assets/images/paris-france-city-bicycles-bike-rental-bicycle-parking.webp',
+                        onTap: () => context.push(AppRoutes.expatHub),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _CategoryCard(
                         label: 'Offline Maps',
-                        color: const Color(0xFF2C3E50),
+                        image: 'assets/images/bike-repair-cable-maintenance-man-workshop-frame-building-professional-engineering-assessment-bicycle-transportation-with-mechanic-technician-startup-restoration.webp',
                         onTap: () => context.push(AppRoutes.offlineMaps),
                       ),
                     ),
@@ -593,7 +590,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     trailing: _userLocation != null
                         ? GestureDetector(
                             onTap: _loadNearby,
-                            child: const Icon(Icons.refresh_rounded,
+                            child: Icon(Icons.refresh_rounded,
                                 size: 18, color: _kPrimaryColor),
                           )
                         : null,
@@ -690,7 +687,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          const Icon(Icons.add_rounded,
+                          Icon(Icons.add_rounded,
                               color: Colors.white, size: 14),
                           const SizedBox(width: 4),
                           Text(l10n.reportHazardTitle,
@@ -739,19 +736,79 @@ class _CategoryCard extends StatelessWidget {
   const _CategoryCard({
     required this.label,
     required this.onTap,
+    this.image,
   });
   final String label;
   final VoidCallback onTap;
+  final String? image;
 
   @override
   Widget build(BuildContext context) {
+    if (image != null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: SizedBox(
+            height: 120,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  image!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: _kPrimaryColor.withValues(alpha: 0.15),
+                  ),
+                ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.65),
+                      ],
+                      stops: const [0.45, 1.0],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 12,
+                  left: 10,
+                  right: 10,
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black54,
+                          blurRadius: 4,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return GestureDetector(
       onTap: onTap,
       child: Container(
         height: 52,
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
         decoration: BoxDecoration(
-          color: _kCardBackground,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: const Color(0xFFE5E7E2),
@@ -768,8 +825,8 @@ class _CategoryCard extends StatelessWidget {
         child: Center(
           child: Text(
             label,
-            style: const TextStyle(
-              color: _kPrimaryText,
+            style: TextStyle(
+              color: context.colors.textPrimary,
               fontWeight: FontWeight.w600,
               fontSize: 11,
             ),
@@ -777,58 +834,6 @@ class _CategoryCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Feature Card ─────────────────────────────────────────────────────────────
-
-class _FeatureCard extends StatelessWidget {
-  const _FeatureCard({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 72,
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: color.withValues(alpha: 0.3),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w600,
-                fontSize: 10,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
         ),
       ),
     );
@@ -859,18 +864,18 @@ class _NearbySection extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-              color: _kBackground,
+              color: context.colors.background,
               borderRadius: BorderRadius.circular(14)),
           child: Row(children: [
-            const Icon(Icons.location_off_rounded,
-                color: _kSecondaryText, size: 20),
+            Icon(Icons.location_off_rounded,
+                color: context.colors.textSecondary, size: 20),
             const SizedBox(width: 12),
             Expanded(
                 child: Text(context.l10n.noNearbySubtitle,
                     style: AppTextStyles.bodySmall
-                        .copyWith(color: _kSecondaryText))),
-            const Icon(Icons.chevron_right_rounded,
-                color: _kSecondaryText, size: 18),
+                        .copyWith(color: context.colors.textSecondary))),
+            Icon(Icons.chevron_right_rounded,
+                color: context.colors.textSecondary, size: 18),
           ]),
         ),
       );
@@ -885,9 +890,9 @@ class _NearbySection extends StatelessWidget {
             width: 105,
             margin: const EdgeInsets.only(right: 10),
             decoration: BoxDecoration(
-                color: _kBackground,
+                color: context.colors.background,
                 borderRadius: BorderRadius.circular(12)),
-            child: const Center(
+            child: Center(
                 child: SizedBox(
                     width: 20,
                     height: 20,
@@ -928,7 +933,7 @@ class _NearbySection extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Icon(Icons.location_on_rounded, size: 14, color: Colors.white),
+                      child: Icon(Icons.location_on_rounded, size: 14, color: Colors.white),
                     ),
                     const SizedBox(height: 6),
                     Expanded(
@@ -973,7 +978,7 @@ class _SavedRouteCard extends StatelessWidget {
           decoration: BoxDecoration(
               color: AppColors.error.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12)),
-          child: const Icon(Icons.delete_rounded,
+          child: Icon(Icons.delete_rounded,
               color: AppColors.error, size: 20),
         ),
         onDismissed: (_) => onDelete(),
@@ -982,9 +987,9 @@ class _SavedRouteCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: _kCardBackground,
+              color: context.colors.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: _kSoftElements),
+              border: Border.all(color: context.colors.surfaceVariant),
             ),
             child: Row(children: [
               Container(
@@ -994,7 +999,7 @@ class _SavedRouteCard extends StatelessWidget {
                   color: _kPrimaryColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.bookmark_rounded,
+                child: Icon(Icons.bookmark_rounded,
                     color: _kPrimaryColor, size: 18),
               ),
               const SizedBox(width: 12),
@@ -1004,24 +1009,24 @@ class _SavedRouteCard extends StatelessWidget {
                       children: [
                     Text(route.name,
                         style: AppTextStyles.bodyMedium
-                            .copyWith(fontWeight: FontWeight.w600, color: _kPrimaryText),
+                            .copyWith(fontWeight: FontWeight.w600, color: context.colors.textPrimary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis),
                     if (route.destAddress.isNotEmpty)
                       Text(route.destAddress,
                           style: AppTextStyles.bodySmall.copyWith(
-                              color: _kSecondaryText),
+                              color: context.colors.textSecondary),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis),
                   ])),
           if (route.distanceMeters > 0) ...[
                 Text(route.distanceLabel,
                     style: AppTextStyles.bodySmall
-                        .copyWith(color: _kSecondaryText)),
+                        .copyWith(color: context.colors.textSecondary)),
                 const SizedBox(width: 8),
               ],
-              const Icon(Icons.chevron_right_rounded,
-                  color: _kSecondaryText, size: 18),
+              Icon(Icons.chevron_right_rounded,
+                  color: context.colors.textSecondary, size: 18),
             ]),
           ),
         ),
@@ -1040,7 +1045,7 @@ class _HazardsSection extends ConsumerWidget {
       stream: ref.read(crowdHazardServiceProvider).streamNearby(center),
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
-          return const Center(
+          return Center(
               child: Padding(
                   padding: EdgeInsets.all(16),
                   child: SizedBox(
@@ -1081,9 +1086,9 @@ class _HazardTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _kCardBackground,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _kSoftElements),
+        border: Border.all(color: context.colors.surfaceVariant),
       ),
       child: Row(children: [
         Container(
@@ -1093,7 +1098,7 @@ class _HazardTile extends StatelessWidget {
             color: Colors.orange.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Center(child: Text(emoji, style: const TextStyle(fontSize: 16))),
+          child: Center(child: Text(emoji, style: TextStyle(fontSize: 16))),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -1102,10 +1107,10 @@ class _HazardTile extends StatelessWidget {
                 children: [
               Text(label,
                   style: AppTextStyles.bodyMedium
-                      .copyWith(fontWeight: FontWeight.w600, color: _kPrimaryText)),
+                      .copyWith(fontWeight: FontWeight.w600, color: context.colors.textPrimary)),
               Text(agoLabel,
                   style: AppTextStyles.bodySmall
-                      .copyWith(color: _kSecondaryText)),
+                      .copyWith(color: context.colors.textSecondary)),
             ])),
       ]),
     );
@@ -1139,9 +1144,9 @@ class _EmptyCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _kCardBackground,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _kSoftElements),
+        border: Border.all(color: context.colors.surfaceVariant),
       ),
       child: Row(children: [
         Container(
@@ -1156,7 +1161,7 @@ class _EmptyCard extends StatelessWidget {
         Expanded(
             child: Text(text,
                 style: AppTextStyles.bodySmall
-                    .copyWith(color: _kSecondaryText))),
+                    .copyWith(color: context.colors.textSecondary))),
       ]),
     );
   }
@@ -1182,7 +1187,7 @@ class _NearbyFilterChip extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: active ? const Color(0xFF6F8F72) : _kCardBackground,
+          color: active ? const Color(0xFF6F8F72) : context.colors.surface,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: active ? const Color(0xFF6F8F72) : const Color(0xFFE5E7E2),
@@ -1199,7 +1204,7 @@ class _NearbyFilterChip extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            color: active ? Colors.white : _kPrimaryText,
+            color: active ? Colors.white : context.colors.textPrimary,
             fontWeight: active ? FontWeight.w600 : FontWeight.w500,
             fontSize: 13,
           ),
@@ -1278,7 +1283,7 @@ class _CykelNearbyProviders extends ConsumerWidget {
                     ),
                     const SizedBox(width: 4),
                     if (p.isVerified)
-                      const Icon(Icons.verified_rounded,
+                      Icon(Icons.verified_rounded,
                           size: 10, color: Colors.white),
                   ]),
                   const SizedBox(height: 4),

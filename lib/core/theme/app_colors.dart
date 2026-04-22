@@ -1,7 +1,7 @@
 /// CYKEL App — Brand Colors
 /// 
-/// "Premium Nordic Minimal" — Clean, bright Scandinavian design.
-/// Pure white background, soft grey cards, muted sage green accent.
+/// "Emerald Green Design System" — Modern, vibrant design with comprehensive light/dark mode support.
+/// Based on CSS design tokens with bright emerald green primary color.
 
 import 'package:flutter/material.dart';
 
@@ -26,81 +26,125 @@ class ThemeColors {
   Color get textHint => _isDark ? AppColors.textHintDark : AppColors.textHint;
   Color get border => _isDark ? AppColors.borderDark : AppColors.border;
   Color get divider => _isDark ? AppColors.dividerDark : AppColors.divider;
-  Color get primary => _isDark ? AppColors.primaryLight : AppColors.primary;
-  Color get cardBackground => _isDark ? AppColors.surfaceDark : AppColors.cardBackground;
+  Color get primary => _isDark ? AppColors.primaryDark : AppColors.primary;
+  Color get primaryForeground => _isDark ? AppColors.primaryForegroundDark : AppColors.primaryForeground;
+  Color get cardBackground => _isDark ? AppColors.cardDark : AppColors.cardBackground;
   Color get cardBorder => _isDark ? AppColors.borderDark : AppColors.cardBorder;
+  Color get ring => _isDark ? AppColors.ringDark : AppColors.ring;
+  Color get destructive => _isDark ? AppColors.destructiveDark : AppColors.destructive;
+  Color get muted => _isDark ? AppColors.mutedDark : AppColors.muted;
+  Color get mutedForeground => _isDark ? AppColors.mutedForegroundDark : AppColors.mutedForeground;
+  Color get accent => _isDark ? AppColors.accentDark : AppColors.accent;
 }
 
 class AppColors {
   AppColors._();
 
-  // ─── Brand ──────────────────────────────────────────────────────────
-  static const Color primary      = Color(0xFF7F9077); // Muted Sage Green
-  static const Color primaryDark  = Color(0xFF5E6F59); // Dark Sage Green (pressed / icons)
-  static const Color primaryLight = Color(0xFFA8B5A2); // Light Sage Green (chips / highlights)
+  // ─── Primary Colors (Emerald Green) ─────────────────────────────────────
+  static const Color primary              = Color(0xFF72E3AD); // Bright emerald green (light mode)
+  static const Color primaryForeground    = Color(0xFF001F10); // Text on primary (light)
+  static const Color primaryDark          = Color(0xFF006239); // Primary color in dark mode
+  static const Color primaryForegroundDark = Color(0xFFA9F6CC); // Text on primary (dark)
+  static const Color primaryLight         = Color(0xFF72E3AD); // Alias for compatibility
 
-  // Secondary / Accent — used for secondary filled buttons & map accents
-  static const Color accent       = Color(0xFF5E6F59); // Same as primaryDark
-  static const Color accentLight  = Color(0xFF7F9077); // Same as primary
-  static const Color accentDark   = Color(0xFF3D4D39); // Even darker sage
+  // ─── Background ─────────────────────────────────────────────────────────
+  static const Color background     = Color(0xFFFCFCFC); // Almost white (light)
+  static const Color foreground     = Color(0xFF171717); // Main text color (light)
+  static const Color backgroundDark = Color(0xFF121212); // True dark background (dark)
+  static const Color foregroundDark = Color(0xFFE2E8F0); // Main text color (dark)
 
-  // ─── Background (Premium White) ─────────────────────────────────────────
-  static const Color background    = Color(0xFFFFFFFF); // Pure White
-  static const Color surface       = Color(0xFFF5F5F5); // Light Grey Card
-  static const Color surfaceVariant = Color(0xFFEEEEEE); // Subtle border grey
+  // ─── Card / Surface ─────────────────────────────────────────────────────
+  static const Color cardBackground = Color(0xFFFCFCFC); // Card background (light)
+  static const Color cardForeground = Color(0xFF171717); // Card text (light)
+  static const Color surface        = Color(0xFFFCFCFC); // Surface (light)
+  static const Color cardDark       = Color(0xFF171717); // Card background (dark)
+  static const Color cardForegroundDark = Color(0xFFE2E8F0); // Card text (dark)
+  static const Color surfaceDark    = Color(0xFF171717); // Surface (dark)
+  static const Color cardBorder     = Color(0xFFDFDFDF); // Card border (light)
+  static const Color cardAccent     = Color(0xFFFCFCFC); // Card accent (light)
 
-  // ─── Premium Card Styling ───────────────────────────────────────────────
-  static const Color cardBackground = Color(0xFFF5F5F5); // Light grey cards
-  static const Color cardBorder     = Color(0xFFE8E8E8); // Subtle border
-  static const Color cardAccent     = Color(0xFFF8F8F8); // Even lighter accent
+  // ─── Popover ─────────────────────────────────────────────────────────────
+  static const Color popover            = Color(0xFFFCFCFC); // Popover background (light)
+  static const Color popoverForeground  = Color(0xFF171717); // Popover text (light)
+  static const Color popoverDark        = Color(0xFF171717); // Popover background (dark)
+  static const Color popoverForegroundDark = Color(0xFFE2E8F0); // Popover text (dark)
 
-  // ─── Text ──────────────────────────────────────────────────────────────
-  static const Color textPrimary   = Color(0xFF1A1A1A); // Near black for high contrast
-  static const Color textSecondary = Color(0xFF6B6B6B); // Mid gray
-  static const Color textHint      = Color(0xFF9E9E9E); // Placeholder gray
-  static const Color textOnPrimary = Color(0xFFFFFFFF); // White on sage green
-  static const Color textOnAccent  = Color(0xFFFFFFFF); // White on dark green
+  // ─── Secondary ──────────────────────────────────────────────────────────
+  static const Color secondary            = Color(0xFFEDEDED); // Secondary (light)
+  static const Color secondaryForeground  = Color(0xFF171717); // Text on secondary (light)
+  static const Color secondaryDark        = Color(0xFF1F1F1F); // Secondary (dark)
+  static const Color secondaryForegroundDark = Color(0xFFE2E8F0); // Text on secondary (dark)
 
-  // ─── Button Colors (Premium Dark) ───────────────────────────────────────
-  static const Color buttonPrimary   = Color(0xFF1A1A1A); // Near black
-  static const Color buttonSecondary = Color(0xFF2D2D2D); // Dark grey
-  static const Color buttonText      = Color(0xFFFFFFFF); // White text on buttons
+  // ─── Muted ──────────────────────────────────────────────────────────────
+  static const Color muted            = Color(0xFFEDEDED); // Muted background (light)
+  static const Color mutedForeground  = Color(0xFF545454); // Muted text (light)
+  static const Color mutedDark        = Color(0xFF1F1F1F); // Muted background (dark)
+  static const Color mutedForegroundDark = Color(0xFF9A9A9A); // Muted text (dark)
+  static const Color surfaceVariant   = Color(0xFFEDEDED); // Alias for muted
+  static const Color surfaceVariantDark = Color(0xFF1F1F1F); // Alias for mutedDark
 
-  // ─── Semantic ──────────────────────────────────────────────────────────
-  static const Color success      = Color(0xFF4FA36A);
-  static const Color successLight = Color(0xFFE8F5EC);
-  static const Color warning      = Color(0xFFE3B341);
-  static const Color warningLight = Color(0xFFFDF6E3);
-  static const Color error        = Color(0xFFD65C5C);
-  static const Color errorLight   = Color(0xFFFDF0F0);
-  static const Color info         = Color(0xFF5B8DB8);
-  static const Color infoLight    = Color(0xFFEDF4F9);
+  // ─── Accent ─────────────────────────────────────────────────────────────
+  static const Color accent            = Color(0xFFEDEDED); // Accent (light)
+  static const Color accentForeground  = Color(0xFF171717); // Text on accent (light)
+  static const Color accentDark        = Color(0xFF313131); // Accent (dark)
+  static const Color accentForegroundDark = Color(0xFFE2E8F0); // Text on accent (dark)
+  static const Color accentLight       = Color(0xFFEDEDED); // Alias for compatibility
 
-  // ─── Ride Condition Colors ──────────────────────────────────────────────────
-  static const Color conditionExcellent = Color(0xFF4FA36A); // Score 9–10
-  static const Color conditionGood      = Color(0xFF7F9077); // Score 7–8
-  static const Color conditionFair      = Color(0xFFE3B341); // Score 5–6
-  static const Color conditionPoor      = Color(0xFFD65C5C); // Score 1–4
+  // ─── Destructive / Error ────────────────────────────────────────────────
+  static const Color destructive            = Color(0xFFCA3214); // Destructive (light)
+  static const Color destructiveForeground  = Color(0xFFFEE9E6); // Text on destructive (light)
+  static const Color destructiveDark        = Color(0xFF541C15); // Destructive (dark)
+  static const Color error                  = Color(0xFFCA3214); // Error alias
+  static const Color errorLight             = Color(0xFFFEE9E6); // Light error background
 
-  // ─── Map Layer Colors ───────────────────────────────────────────────────────
-  static const Color layerCharging = Color(0xFF4FA36A);
-  static const Color layerService  = Color(0xFF5B8DB8);
-  static const Color layerShop     = Color(0xFF9B7DB8);
-  static const Color layerRental   = Color(0xFF7F9077);
+  // ─── Border / Input ─────────────────────────────────────────────────────
+  static const Color border      = Color(0xFFDFDFDF); // Border (light)
+  static const Color input       = Color(0xFFDFDFDF); // Input border (light)
+  static const Color borderDark  = Color(0xFF292929); // Border (dark)
+  static const Color inputDark   = Color(0xFF292929); // Input border (dark)
+  static const Color divider     = Color(0xFFDFDFDF); // Divider (light)
+  static const Color dividerDark = Color(0xFF292929); // Divider (dark)
 
-  // ─── Border / Divider ───────────────────────────────────────────────────────
-  static const Color border  = Color(0xFFE8E8E8);
-  static const Color divider = Color(0xFFF0F0F0);
+  // ─── Ring (Focus) ───────────────────────────────────────────────────────
+  static const Color ring     = Color(0xFF72E3AD); // Focus ring (light)
+  static const Color ringDark = Color(0xFF4ADE80); // Focus ring (dark)
 
-  // ─── Dark Mode Colors ──────────────────────────────────────────────────────
-  static const Color backgroundDark       = Color(0xFF1A1E18); // Dark sage background
-  static const Color surfaceDark          = Color(0xFF252B22); // Elevated surface
-  static const Color surfaceVariantDark   = Color(0xFF2F362A); // Slightly lighter
+  // ─── Semantic Colors ────────────────────────────────────────────────────
+  static const Color success      = Color(0xFF72E3AD); // Success (use primary emerald)
+  static const Color successLight = Color(0xFFE8F5EC); // Light success background
+  static const Color warning      = Color(0xFFF59E0B); // Warning (amber)
+  static const Color warningLight = Color(0xFFFDF6E3); // Light warning background
+  static const Color info         = Color(0xFF3B82F6); // Info (blue)
+  static const Color infoLight    = Color(0xFFEDF4F9); // Light info background
 
-  static const Color textPrimaryDark      = Color(0xFFE8EBE6); // Off-white
-  static const Color textSecondaryDark    = Color(0xFFA8B5A2); // Sage-tinted gray
-  static const Color textHintDark         = Color(0xFF6B7766); // Darker gray
+  // ─── Text Colors (Legacy Compatibility) ────────────────────────────────
+  static const Color textPrimary      = foreground;       // #171717 (light)
+  static const Color textSecondary    = mutedForeground;  // #545454 (light)
+  static const Color textHint         = mutedForeground;  // #545454 (light)
+  static const Color textOnPrimary    = primaryForeground; // #001F10 (light)
+  static const Color textOnAccent     = accentForeground; // #171717 (light)
+  
+  static const Color textPrimaryDark   = foregroundDark;       // #E2E8F0 (dark)
+  static const Color textSecondaryDark = mutedForegroundDark;  // #9A9A9A (dark)
+  static const Color textHintDark      = mutedForegroundDark;  // #9A9A9A (dark)
 
-  static const Color borderDark           = Color(0xFF3D4D39); // Sage-tinted border
-  static const Color dividerDark          = Color(0xFF3D4D39);
+  // ─── Button Colors ──────────────────────────────────────────────────────
+  static const Color buttonPrimary   = primary;    // Emerald green
+  static const Color buttonSecondary = secondary;  // Light gray
+  static const Color buttonText      = primaryForeground; // Dark text on emerald
+
+  // ─── Ride Condition Colors ──────────────────────────────────────────────
+  static const Color conditionExcellent = Color(0xFF72E3AD); // Score 9–10 (emerald)
+  static const Color conditionGood      = Color(0xFF4ADE80); // Score 7–8 (green)
+  static const Color conditionFair      = Color(0xFFF59E0B); // Score 5–6 (amber)
+  static const Color conditionPoor      = Color(0xFFCA3214); // Score 1–4 (red)
+
+  // ─── Map Layer Colors ───────────────────────────────────────────────────
+  static const Color layerCharging = Color(0xFF72E3AD); // Emerald
+  static const Color layerService  = Color(0xFF3B82F6); // Blue
+  static const Color layerShop     = Color(0xFF9B7DB8); // Purple
+  static const Color layerRental   = Color(0xFF4ADE80); // Green
+
+  // ─── Other ──────────────────────────────────────────────────────────────
+  static const Color shadow = Color(0xFFE8E8E8); // Shadow color
 }

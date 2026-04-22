@@ -9,11 +9,37 @@ import 'package:url_launcher/url_launcher.dart';
 import '../domain/expat_resource.dart';
 import '../application/expat_hub_providers.dart';
 
-class EmergencyContactsScreen extends ConsumerWidget {
+class EmergencyContactsScreen extends ConsumerStatefulWidget {
   const EmergencyContactsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EmergencyContactsScreen> createState() => _EmergencyContactsScreenState();
+}
+
+class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScreen> {
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<EmergencyContact> _filterContacts(List<EmergencyContact> contacts) {
+    if (_searchQuery.isEmpty) return contacts;
+    
+    final query = _searchQuery.toLowerCase();
+    return contacts.where((contact) {
+      return contact.name.toLowerCase().contains(query) ||
+             contact.phoneNumber.contains(query) ||
+             contact.type.displayName.toLowerCase().contains(query) ||
+             (contact.description?.toLowerCase().contains(query) ?? false);
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final contactsAsync = ref.watch(emergencyContactsProvider);
     final available247Async = ref.watch(available247ContactsProvider);
 
@@ -23,10 +49,51 @@ class EmergencyContactsScreen extends ConsumerWidget {
         backgroundColor: Colors.red[700],
         foregroundColor: Colors.white,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Column(
         children: [
-          // Warning banner
+          // Search bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: Colors.red[50],
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search emergency contacts...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // Warning banner
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -70,21 +137,24 @@ class EmergencyContactsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // 24/7 contacts
-          const Text(
-            '24/7 Available',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+          if (_searchQuery.isEmpty) ...[
+            const Text(
+              '24/7 Available',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
+          ],
           available247Async.when(
             data: (contacts) {
-              if (contacts.isEmpty) {
+              final filtered = _filterContacts(contacts);
+              if (filtered.isEmpty) {
                 return const SizedBox.shrink();
               }
               return Column(
-                children: contacts.map((contact) {
+                children: filtered.map((contact) {
                   return _ContactCard(contact: contact, highlighted: true);
                 }).toList(),
               );
@@ -95,23 +165,42 @@ class EmergencyContactsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // All contacts
-          const Text(
-            'All Contacts',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+          if (_searchQuery.isEmpty)
+            const Text(
+              'All Contacts',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
           const SizedBox(height: 12),
           contactsAsync.when(
             data: (contacts) {
-              if (contacts.isEmpty) {
-                return const Center(child: Text('No contacts available'));
+              final filtered = _filterContacts(contacts);
+              if (filtered.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      children: [
+                        Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No contacts found',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
               }
 
               // Group by type
               final grouped = <EmergencyType, List<EmergencyContact>>{};
-              for (final contact in contacts) {
+              for (final contact in filtered) {
                 grouped[contact.type] ??= [];
                 grouped[contact.type]!.add(contact);
               }
@@ -142,6 +231,9 @@ class EmergencyContactsScreen extends ConsumerWidget {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, stack) => Center(
               child: Text('Error loading contacts: $error'),
+            ),
+          ),
+              ],
             ),
           ),
         ],

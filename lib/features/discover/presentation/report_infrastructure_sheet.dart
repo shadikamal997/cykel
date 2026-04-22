@@ -54,7 +54,7 @@ class _ReportInfrastructureSheetState
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
+                  color: context.colors.surfaceVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -211,7 +211,7 @@ class _IssueChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(icon, style: const TextStyle(fontSize: 16)),
+            Text(icon, style: TextStyle(fontSize: 16)),
             const SizedBox(width: 8),
             Text(
               label,

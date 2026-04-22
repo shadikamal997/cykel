@@ -52,6 +52,7 @@ class LocationService {
       _col
           .where('providerId', isEqualTo: providerId)
           .orderBy('createdAt', descending: true)
+          .limit(100)  // Limit locations per provider
           .snapshots()
           .map((s) => s.docs.map(ProviderLocation.fromFirestore).toList());
 
@@ -59,6 +60,7 @@ class LocationService {
   Stream<List<ProviderLocation>> streamAllActive() => _col
       .where('isActive', isEqualTo: true)
       .orderBy('createdAt', descending: true)
+      .limit(500)  // Limit all locations - consider geographic filtering
       .snapshots()
       .map((s) => s.docs.map(ProviderLocation.fromFirestore).toList());
 
@@ -67,6 +69,7 @@ class LocationService {
       .where('providerType', isEqualTo: type.key)
       .where('isActive', isEqualTo: true)
       .orderBy('createdAt', descending: true)
+      .limit(200)  // Limit locations by type
       .snapshots()
       .map((s) => s.docs.map(ProviderLocation.fromFirestore).toList());
 

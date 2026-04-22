@@ -434,7 +434,7 @@ class RideNotifier extends StateNotifier<RideState> {
 
 final rideNotifierProvider =
     StateNotifierProvider<RideNotifier, RideState>((ref) {
-  final callback = ref.watch(aggregationCallbackProvider);
+  final callback = ref.watch(rideCompletionCallbackProvider);
   return RideNotifier(
     ref.read(rideRepositoryProvider),
     ref.read(locationServiceProvider),
@@ -445,6 +445,6 @@ final rideNotifierProvider =
 });
 
 /// Async provider that loads ride history from storage.
-final rideHistoryProvider = FutureProvider<List<Ride>>((ref) async {
+final rideHistoryProvider = FutureProvider.autoDispose<List<Ride>>((ref) async {
   return ref.watch(rideRepositoryProvider).getRides();
 });

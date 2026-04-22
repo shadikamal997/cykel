@@ -9,15 +9,22 @@
 ///
 /// After setup the app boots normally.
 
+import 'dart:async';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_performance/firebase_performance.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import 'firebase_options.dart';
 
 import 'services/notification_service.dart';
+import 'services/remote_config_service.dart';
 import 'core/security/app_check_service.dart';
 import 'app.dart';
 import 'core/theme/app_colors.dart';
@@ -25,6 +32,11 @@ import 'core/config/app_config.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Disable debug logging in release mode for better performance
+  if (kReleaseMode) {
+    debugPrint = (String? message, {int? wrapWidth}) {};
+  }
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -44,15 +56,49 @@ Future<void> main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     
+    // Initialize Firebase Performance Monitoring
+    final FirebasePerformance performance = FirebasePerformance.instance;
+    unawaited(performance.setPerformanceCollectionEnabled(true));
+    if (kDebugMode) {
+      debugPrint('✅ Firebase Performance Monitoring enabled');
+    }
+
+    // Initialize Firebase Analytics
+    final FirebaseAnalytics analytics = FirebaseAnalytics.instance;
+    await analytics.setAnalyticsCollectionEnabled(true);
+    if (kDebugMode) {
+      debugPrint('✅ Firebase Analytics enabled');
+    }
+
+    // Initialize Firebase Crashlytics
+    final FirebaseCrashlytics crashlytics = FirebaseCrashlytics.instance;
+    await crashlytics.setCrashlyticsCollectionEnabled(true);
+
+    // Pass all uncaught Flutter errors to Crashlytics
+    FlutterError.onError = crashlytics.recordFlutterError;
+
+    // Pass all uncaught async errors to Crashlytics
+    PlatformDispatcher.instance.onError = (error, stack) {
+      crashlytics.recordError(error, stack, fatal: true);
+      return true;
+    };
+
+    if (kDebugMode) {
+      debugPrint('✅ Firebase Crashlytics enabled');
+    }
+
     // Initialize App Check for security
-    // Use debug mode for development, production mode for release
     if (kDebugMode) {
       await AppCheckService.initializeDebug();
     } else {
       await AppCheckService.initialize();
     }
-    
-    await NotificationService.instance.init();
+
+    // Initialize Remote Config for feature flags
+    await RemoteConfigService.instance.initialize();
+
+    // Notification init is non-critical for startup — run after app is visible
+    unawaited(NotificationService.instance.init());
     firebaseReady = true;
   } catch (e) {
     debugPrint('❌ Firebase initialization failed: $e');
@@ -103,7 +149,7 @@ class _FirebaseSetupScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 const Text(
                   'The Digital OS for Urban Cycling',
-                  style: TextStyle(color: Color(0xFFB0C4DE), fontSize: 16),
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 48),
@@ -169,7 +215,7 @@ class _FirebaseSetupScreen extends StatelessWidget {
                   ),
                   child: Text(cmd,
                       style: const TextStyle(
-                          color: Color(0xFF88D8B0),
+                          color: AppColors.success,
                           fontSize: 11,
                           fontFamily: 'monospace')),
                 ),

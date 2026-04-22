@@ -488,6 +488,12 @@ abstract class AppLocalizations {
   /// **'Nearby'**
   String get sectionNearby;
 
+  /// No description provided for @cykelFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'CYKEL Features'**
+  String get cykelFeatures;
+
   /// No description provided for @conditionScore.
   ///
   /// In en, this message translates to:
@@ -647,7 +653,7 @@ abstract class AppLocalizations {
   /// No description provided for @myBikes.
   ///
   /// In en, this message translates to:
-  /// **'My bikes'**
+  /// **'My Bikes'**
   String get myBikes;
 
   /// No description provided for @notificationSettings.
@@ -1015,6 +1021,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap Start Ride to record your first journey'**
   String get noRidesSubtitle;
+
+  /// No description provided for @noRidesToday.
+  ///
+  /// In en, this message translates to:
+  /// **'No rides today yet'**
+  String get noRidesToday;
+
+  /// No description provided for @noRidesTodaySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start your first ride'**
+  String get noRidesTodaySubtitle;
+
+  /// No description provided for @noQuickRoutesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No quick routes yet'**
+  String get noQuickRoutesYet;
+
+  /// No description provided for @noQuickRoutesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set your home and work locations'**
+  String get noQuickRoutesSubtitle;
+
+  /// No description provided for @startTrackingRides.
+  ///
+  /// In en, this message translates to:
+  /// **'Start tracking your rides'**
+  String get startTrackingRides;
+
+  /// No description provided for @startTrackingRidesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your cycling stats will appear here'**
+  String get startTrackingRidesSubtitle;
 
   /// No description provided for @avgSpeed.
   ///
@@ -2791,6 +2833,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Weather Alerts'**
   String get weatherAlerts;
+
+  /// No description provided for @lowSeverity.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get lowSeverity;
+
+  /// No description provided for @mediumSeverity.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get mediumSeverity;
+
+  /// No description provided for @highSeverity.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get highSeverity;
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @noNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications'**
+  String get noNotifications;
+
+  /// No description provided for @noNotificationsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all caught up! Notifications will appear here.'**
+  String get noNotificationsDesc;
+
+  /// No description provided for @markAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all read'**
+  String get markAllRead;
+
+  /// No description provided for @justNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get justNow;
+
+  /// No description provided for @minutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} minutes ago'**
+  String minutesAgo(int count);
+
+  /// No description provided for @hoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} hours ago'**
+  String hoursAgo(int count);
+
+  /// No description provided for @daysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days ago'**
+  String daysAgo(int count);
 
   /// No description provided for @weatherUnavailable.
   ///
@@ -6848,6 +6956,72 @@ abstract class AppLocalizations {
   /// **'Est. deduction: {amount} DKK'**
   String estimatedDeduction(String amount);
 
+  /// No description provided for @estimatedTaxSavings.
+  ///
+  /// In en, this message translates to:
+  /// **'Est. tax savings: ~{amount} DKK'**
+  String estimatedTaxSavings(String amount);
+
+  /// No description provided for @taxDeductionInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax Deduction Info'**
+  String get taxDeductionInfo;
+
+  /// No description provided for @yearToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Year-to-Date'**
+  String get yearToDate;
+
+  /// No description provided for @howItWorks.
+  ///
+  /// In en, this message translates to:
+  /// **'How It Works'**
+  String get howItWorks;
+
+  /// No description provided for @rateBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate Breakdown'**
+  String get rateBreakdown;
+
+  /// No description provided for @exportForTaxFiling.
+  ///
+  /// In en, this message translates to:
+  /// **'Export for Tax Filing'**
+  String get exportForTaxFiling;
+
+  /// No description provided for @learnMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn More'**
+  String get learnMore;
+
+  /// No description provided for @noCommuteTripsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No Commute Trips Yet'**
+  String get noCommuteTripsYet;
+
+  /// No description provided for @setHomeWorkAddresses.
+  ///
+  /// In en, this message translates to:
+  /// **'Set your home and work addresses to start tracking commute tax deductions'**
+  String get setHomeWorkAddresses;
+
+  /// No description provided for @configure.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure'**
+  String get configure;
+
+  /// No description provided for @failedToLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load'**
+  String get failedToLoad;
+
   /// No description provided for @hazardThunderstorm.
   ///
   /// In en, this message translates to:
@@ -8366,6 +8540,864 @@ abstract class AppLocalizations {
   /// **'All Time'**
   String get periodAllTime;
 
+  /// No description provided for @buddyFindRidingBuddies.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Riding Buddies'**
+  String get buddyFindRidingBuddies;
+
+  /// No description provided for @buddyTabForYou.
+  ///
+  /// In en, this message translates to:
+  /// **'For You'**
+  String get buddyTabForYou;
+
+  /// No description provided for @buddyTabRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get buddyTabRequests;
+
+  /// No description provided for @buddyTabMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches'**
+  String get buddyTabMatches;
+
+  /// No description provided for @buddyFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get buddyFilters;
+
+  /// No description provided for @buddyRidingLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Riding Level'**
+  String get buddyRidingLevel;
+
+  /// No description provided for @buddyAllLevels.
+  ///
+  /// In en, this message translates to:
+  /// **'All Levels'**
+  String get buddyAllLevels;
+
+  /// No description provided for @buddyInterests.
+  ///
+  /// In en, this message translates to:
+  /// **'Interests'**
+  String get buddyInterests;
+
+  /// No description provided for @buddyCreateProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Your Buddy Profile'**
+  String get buddyCreateProfile;
+
+  /// No description provided for @buddyCreateProfileDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up your riding profile to find compatible cycling partners'**
+  String get buddyCreateProfileDesc;
+
+  /// No description provided for @buddyCreateProfileButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Profile'**
+  String get buddyCreateProfileButton;
+
+  /// No description provided for @buddyNoMatchesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No Matches Found'**
+  String get buddyNoMatchesFound;
+
+  /// No description provided for @buddyNoMatchesFoundDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Try adjusting your preferences or check back later'**
+  String get buddyNoMatchesFoundDesc;
+
+  /// No description provided for @buddyNoPendingRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No Pending Requests'**
+  String get buddyNoPendingRequests;
+
+  /// No description provided for @buddyNoPendingRequestsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Match requests will appear here'**
+  String get buddyNoPendingRequestsDesc;
+
+  /// No description provided for @buddyNoMatchesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No Matches Yet'**
+  String get buddyNoMatchesYet;
+
+  /// No description provided for @buddyConnectInForYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Start connecting with riders in the \"For You\" tab'**
+  String get buddyConnectInForYou;
+
+  /// No description provided for @buddyAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get buddyAbout;
+
+  /// No description provided for @buddyStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Stats'**
+  String get buddyStats;
+
+  /// No description provided for @buddyAvailability.
+  ///
+  /// In en, this message translates to:
+  /// **'Availability'**
+  String get buddyAvailability;
+
+  /// No description provided for @buddyLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'Languages'**
+  String get buddyLanguages;
+
+  /// No description provided for @buddyClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get buddyClose;
+
+  /// No description provided for @buddySendRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Request'**
+  String get buddySendRequest;
+
+  /// No description provided for @buddyMatchRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Match request sent to {name}!'**
+  String buddyMatchRequestSent(String name);
+
+  /// No description provided for @buddyDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get buddyDecline;
+
+  /// No description provided for @buddyAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get buddyAccept;
+
+  /// No description provided for @buddyMatchAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Match accepted!'**
+  String get buddyMatchAccepted;
+
+  /// No description provided for @buddyRequestDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Request declined'**
+  String get buddyRequestDeclined;
+
+  /// No description provided for @buddyChatComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat coming soon'**
+  String get buddyChatComingSoon;
+
+  /// No description provided for @rentalSectionBasicInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic Information'**
+  String get rentalSectionBasicInfo;
+
+  /// No description provided for @rentalSectionDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details (Optional)'**
+  String get rentalSectionDetails;
+
+  /// No description provided for @rentalSectionPricing.
+  ///
+  /// In en, this message translates to:
+  /// **'Pricing'**
+  String get rentalSectionPricing;
+
+  /// No description provided for @rentalSectionFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'Features'**
+  String get rentalSectionFeatures;
+
+  /// No description provided for @rentalSectionLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get rentalSectionLocation;
+
+  /// No description provided for @rentalSectionAvailability.
+  ///
+  /// In en, this message translates to:
+  /// **'Availability'**
+  String get rentalSectionAvailability;
+
+  /// No description provided for @rentalSectionAdditionalInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional Information'**
+  String get rentalSectionAdditionalInfo;
+
+  /// No description provided for @rentalSectionPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get rentalSectionPhotos;
+
+  /// No description provided for @rentalAddPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Photos'**
+  String get rentalAddPhotos;
+
+  /// No description provided for @rentalNoPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'No photos added yet'**
+  String get rentalNoPhotos;
+
+  /// No description provided for @rentalAvailableFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Available From'**
+  String get rentalAvailableFrom;
+
+  /// No description provided for @rentalAvailableTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Available To'**
+  String get rentalAvailableTo;
+
+  /// No description provided for @rentalNoStartDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No start date (available immediately)'**
+  String get rentalNoStartDate;
+
+  /// No description provided for @rentalNoEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No end date (available indefinitely)'**
+  String get rentalNoEndDate;
+
+  /// No description provided for @rentalSelectDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select start and end dates/times'**
+  String get rentalSelectDates;
+
+  /// No description provided for @rentalLocationSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Location set to Copenhagen (picker pending)'**
+  String get rentalLocationSet;
+
+  /// No description provided for @rentalSelectLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a pickup location'**
+  String get rentalSelectLocation;
+
+  /// No description provided for @rentalErrorSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Error saving listing: {error}'**
+  String rentalErrorSaving(String error);
+
+  /// No description provided for @rentalDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get rentalDescription;
+
+  /// No description provided for @rentalDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get rentalDetails;
+
+  /// No description provided for @rentalTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Rental Terms'**
+  String get rentalTerms;
+
+  /// No description provided for @rentalReviews.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews ({count})'**
+  String rentalReviews(int count);
+
+  /// No description provided for @rentalConfirmRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Rental Request'**
+  String get rentalConfirmRequest;
+
+  /// No description provided for @rentalBikeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Bike: {title}'**
+  String rentalBikeLabel(String title);
+
+  /// No description provided for @rentalRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Rental request sent! Owner will be notified.'**
+  String get rentalRequestSent;
+
+  /// No description provided for @rentalListingNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Listing not found'**
+  String get rentalListingNotFound;
+
+  /// No description provided for @rentalRequestButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Rental'**
+  String get rentalRequestButton;
+
+  /// No description provided for @rentalRentABike.
+  ///
+  /// In en, this message translates to:
+  /// **'Rent a Bike'**
+  String get rentalRentABike;
+
+  /// No description provided for @rentalListYourBike.
+  ///
+  /// In en, this message translates to:
+  /// **'List Your Bike'**
+  String get rentalListYourBike;
+
+  /// No description provided for @rentalClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get rentalClear;
+
+  /// No description provided for @rentalApplyFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Filters'**
+  String get rentalApplyFilters;
+
+  /// No description provided for @rentalFilterBikeType.
+  ///
+  /// In en, this message translates to:
+  /// **'Bike Type'**
+  String get rentalFilterBikeType;
+
+  /// No description provided for @rentalFilterSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get rentalFilterSize;
+
+  /// No description provided for @rentalFilterMaxPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum Price'**
+  String get rentalFilterMaxPrice;
+
+  /// No description provided for @rentalFilterFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'Features'**
+  String get rentalFilterFeatures;
+
+  /// No description provided for @rentalFilterHelmet.
+  ///
+  /// In en, this message translates to:
+  /// **'Helmet included'**
+  String get rentalFilterHelmet;
+
+  /// No description provided for @rentalFilterLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock included'**
+  String get rentalFilterLock;
+
+  /// No description provided for @rentalFilterFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get rentalFilterFrom;
+
+  /// No description provided for @rentalEndAfterStart.
+  ///
+  /// In en, this message translates to:
+  /// **'End time must be after start time'**
+  String get rentalEndAfterStart;
+
+  /// No description provided for @eventsApplyFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Filter'**
+  String get eventsApplyFilter;
+
+  /// No description provided for @eventsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading events'**
+  String get eventsError;
+
+  /// No description provided for @chatDeleteConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Conversation'**
+  String get chatDeleteConversation;
+
+  /// No description provided for @chatMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get chatMessages;
+
+  /// No description provided for @chatErrorLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading conversations'**
+  String get chatErrorLoading;
+
+  /// No description provided for @chatErrorLoadingMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading messages: {error}'**
+  String chatErrorLoadingMessages(String error);
+
+  /// No description provided for @chatSendPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Photo'**
+  String get chatSendPhoto;
+
+  /// No description provided for @chatShareLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Location'**
+  String get chatShareLocation;
+
+  /// No description provided for @chatDeleteConversationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Conversation'**
+  String get chatDeleteConversationTitle;
+
+  /// No description provided for @chatLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get chatLoading;
+
+  /// No description provided for @routesCreateRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Route'**
+  String get routesCreateRoute;
+
+  /// No description provided for @routesCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get routesCreate;
+
+  /// No description provided for @routesOptimizeRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Optimize Route'**
+  String get routesOptimizeRoute;
+
+  /// No description provided for @routesMinTwoWaypoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Route must have at least 2 waypoints'**
+  String get routesMinTwoWaypoints;
+
+  /// No description provided for @routesEnterName.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a route name'**
+  String get routesEnterName;
+
+  /// No description provided for @routesCreatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Route created successfully!'**
+  String get routesCreatedSuccess;
+
+  /// No description provided for @routesErrorCreating.
+  ///
+  /// In en, this message translates to:
+  /// **'Error creating route: {error}'**
+  String routesErrorCreating(String error);
+
+  /// No description provided for @routesRoundTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Round Trip'**
+  String get routesRoundTrip;
+
+  /// No description provided for @routesRoundTripDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Route returns to start'**
+  String get routesRoundTripDesc;
+
+  /// No description provided for @routesCalculateElevation.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculate Elevation'**
+  String get routesCalculateElevation;
+
+  /// No description provided for @routesCalculateElevationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Include elevation profile'**
+  String get routesCalculateElevationDesc;
+
+  /// No description provided for @routesFetchWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetch Weather'**
+  String get routesFetchWeather;
+
+  /// No description provided for @routesFetchWeatherDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Get current weather data'**
+  String get routesFetchWeatherDesc;
+
+  /// No description provided for @routesAddTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Tag'**
+  String get routesAddTag;
+
+  /// No description provided for @routesEditWaypoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Waypoint'**
+  String get routesEditWaypoint;
+
+  /// No description provided for @routesMyRoutes.
+  ///
+  /// In en, this message translates to:
+  /// **'My Routes'**
+  String get routesMyRoutes;
+
+  /// No description provided for @routesErrorLoadingRoutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading routes: {error}'**
+  String routesErrorLoadingRoutes(String error);
+
+  /// No description provided for @routesRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get routesRetry;
+
+  /// No description provided for @routesFilterByTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by Tag'**
+  String get routesFilterByTag;
+
+  /// No description provided for @routesAllRoutes.
+  ///
+  /// In en, this message translates to:
+  /// **'All Routes'**
+  String get routesAllRoutes;
+
+  /// No description provided for @routesDeleteRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Route'**
+  String get routesDeleteRoute;
+
+  /// No description provided for @routesDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this route?'**
+  String get routesDeleteConfirm;
+
+  /// No description provided for @routesEditRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Route'**
+  String get routesEditRoute;
+
+  /// No description provided for @routesRouteNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Route not found'**
+  String get routesRouteNotFound;
+
+  /// No description provided for @routesNoElevationData.
+  ///
+  /// In en, this message translates to:
+  /// **'No elevation data available'**
+  String get routesNoElevationData;
+
+  /// No description provided for @routesNoWeatherData.
+  ///
+  /// In en, this message translates to:
+  /// **'No weather data available'**
+  String get routesNoWeatherData;
+
+  /// No description provided for @routesFailedLoadWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load weather'**
+  String get routesFailedLoadWeather;
+
+  /// No description provided for @routesNoRecommendations.
+  ///
+  /// In en, this message translates to:
+  /// **'No recommendations available'**
+  String get routesNoRecommendations;
+
+  /// No description provided for @routesFailedLoadRecommendations.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load recommendations'**
+  String get routesFailedLoadRecommendations;
+
+  /// No description provided for @familyMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Family Map'**
+  String get familyMap;
+
+  /// No description provided for @familyNoAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'No family account found'**
+  String get familyNoAccount;
+
+  /// No description provided for @familySendSOSAlert.
+  ///
+  /// In en, this message translates to:
+  /// **'Send SOS Alert?'**
+  String get familySendSOSAlert;
+
+  /// No description provided for @familySendSOS.
+  ///
+  /// In en, this message translates to:
+  /// **'Send SOS'**
+  String get familySendSOS;
+
+  /// No description provided for @familySOSSent.
+  ///
+  /// In en, this message translates to:
+  /// **'SOS alert sent to your family!'**
+  String get familySOSSent;
+
+  /// No description provided for @familySOSFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send SOS: {error}'**
+  String familySOSFailed(String error);
+
+  /// No description provided for @familyCheckout.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout'**
+  String get familyCheckout;
+
+  /// No description provided for @familyAddPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Payment Method'**
+  String get familyAddPayment;
+
+  /// No description provided for @familyPaymentError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load payment methods'**
+  String get familyPaymentError;
+
+  /// No description provided for @familyGetStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get familyGetStarted;
+
+  /// No description provided for @familyNoRidesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No rides yet'**
+  String get familyNoRidesYet;
+
+  /// No description provided for @familyNoRecentAlerts.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent alerts'**
+  String get familyNoRecentAlerts;
+
+  /// No description provided for @familyAchievements.
+  ///
+  /// In en, this message translates to:
+  /// **'Achievements'**
+  String get familyAchievements;
+
+  /// No description provided for @familyCreateChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Create New Challenge'**
+  String get familyCreateChallenge;
+
+  /// No description provided for @familyChallengeCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge created!'**
+  String get familyChallengeCreated;
+
+  /// No description provided for @expatSafetyEquipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety Equipment'**
+  String get expatSafetyEquipment;
+
+  /// No description provided for @expatNoGuideAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No {type} guide available'**
+  String expatNoGuideAvailable(String type);
+
+  /// No description provided for @expatErrorLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading guide: {error}'**
+  String expatErrorLoading(String error);
+
+  /// No description provided for @expatCyclingLaws.
+  ///
+  /// In en, this message translates to:
+  /// **'Cycling Laws'**
+  String get expatCyclingLaws;
+
+  /// No description provided for @expatCultureEtiquette.
+  ///
+  /// In en, this message translates to:
+  /// **'Culture & Etiquette'**
+  String get expatCultureEtiquette;
+
+  /// No description provided for @expatCommute.
+  ///
+  /// In en, this message translates to:
+  /// **'Commute'**
+  String get expatCommute;
+
+  /// No description provided for @expatNoRoutesAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No routes available'**
+  String get expatNoRoutesAvailable;
+
+  /// No description provided for @expatBikeShops.
+  ///
+  /// In en, this message translates to:
+  /// **'Bike Shops'**
+  String get expatBikeShops;
+
+  /// No description provided for @expatAllShops.
+  ///
+  /// In en, this message translates to:
+  /// **'All Shops'**
+  String get expatAllShops;
+
+  /// No description provided for @expatExpatFriendly.
+  ///
+  /// In en, this message translates to:
+  /// **'Expat-Friendly Only'**
+  String get expatExpatFriendly;
+
+  /// No description provided for @expatRepairServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Repair Services'**
+  String get expatRepairServices;
+
+  /// No description provided for @expatSales.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales'**
+  String get expatSales;
+
+  /// No description provided for @expatNoShopsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No shops found'**
+  String get expatNoShopsFound;
+
+  /// No description provided for @expatCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Call'**
+  String get expatCall;
+
+  /// No description provided for @expatWebsite.
+  ///
+  /// In en, this message translates to:
+  /// **'Website'**
+  String get expatWebsite;
+
+  /// No description provided for @commonShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show All'**
+  String get commonShowAll;
+
+  /// No description provided for @commonClearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear All'**
+  String get commonClearAll;
+
+  /// No description provided for @commonOpenNowOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Open now only'**
+  String get commonOpenNowOnly;
+
+  /// No description provided for @commonStartHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Here'**
+  String get commonStartHere;
+
+  /// No description provided for @commonGoHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Go Here'**
+  String get commonGoHere;
+
+  /// No description provided for @commonHoldSOS.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold the SOS button for 2 seconds'**
+  String get commonHoldSOS;
+
   /// No description provided for @bikeMaintenanceTitle.
   ///
   /// In en, this message translates to:
@@ -9757,6 +10789,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View on Map'**
   String get viewOnMap;
+
+  /// No description provided for @myRentals.
+  ///
+  /// In en, this message translates to:
+  /// **'My Rentals'**
+  String get myRentals;
+
+  /// No description provided for @renting.
+  ///
+  /// In en, this message translates to:
+  /// **'Renting'**
+  String get renting;
+
+  /// No description provided for @listings.
+  ///
+  /// In en, this message translates to:
+  /// **'Listings'**
+  String get listings;
+
+  /// No description provided for @noListingsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No listings yet'**
+  String get noListingsYet;
+
+  /// No description provided for @listBikeToEarn.
+  ///
+  /// In en, this message translates to:
+  /// **'List your bike to start earning!'**
+  String get listBikeToEarn;
+
+  /// No description provided for @createListing.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Listing'**
+  String get createListing;
+
+  /// No description provided for @listingNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Listing not found'**
+  String get listingNotFound;
+
+  /// No description provided for @errorLoadingListing.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading listing'**
+  String get errorLoadingListing;
+
+  /// No description provided for @declineRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline Request'**
+  String get declineRequest;
+
+  /// No description provided for @declineRequestConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to decline this request?'**
+  String get declineRequestConfirm;
+
+  /// No description provided for @approveRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve Request'**
+  String get approveRequest;
+
+  /// No description provided for @requestApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Request approved! Renter has been notified.'**
+  String get requestApproved;
+
+  /// No description provided for @requestDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Request declined'**
+  String get requestDeclined;
+
+  /// No description provided for @deleteListing.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Listing'**
+  String get deleteListing;
+
+  /// No description provided for @deleteListingQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this listing?'**
+  String get deleteListingQuestion;
+
+  /// No description provided for @errorOccurred.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String errorOccurred(String error);
+
+  /// No description provided for @safeZones.
+  ///
+  /// In en, this message translates to:
+  /// **'Safe Zones'**
+  String get safeZones;
+
+  /// No description provided for @noFamilyAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'No family account found'**
+  String get noFamilyAccount;
+
+  /// No description provided for @addZone.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Zone'**
+  String get addZone;
+
+  /// No description provided for @deleteSafeZone.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Safe Zone?'**
+  String get deleteSafeZone;
+
+  /// No description provided for @deleteSafeZoneConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently remove this safe zone.'**
+  String get deleteSafeZoneConfirm;
+
+  /// No description provided for @zoneDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted \"{zoneName}\"'**
+  String zoneDeleted(String zoneName);
+
+  /// No description provided for @aboutSafeZones.
+  ///
+  /// In en, this message translates to:
+  /// **'About Safe Zones'**
+  String get aboutSafeZones;
+
+  /// No description provided for @gotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get gotIt;
+
+  /// No description provided for @addFirstZone.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Your First Zone'**
+  String get addFirstZone;
+
+  /// No description provided for @approve.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get approve;
+
+  /// No description provided for @createNewListing.
+  ///
+  /// In en, this message translates to:
+  /// **'Create New Listing'**
+  String get createNewListing;
+
+  /// No description provided for @loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loading;
+
+  /// No description provided for @remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get remove;
 }
 
 class _AppLocalizationsDelegate

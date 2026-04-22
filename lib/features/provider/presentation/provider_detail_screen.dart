@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/widgets/cached_image.dart';
+
 import '../../../core/router/app_router.dart';
 import '../../../core/providers/pending_route_provider.dart';
 import '../../../core/l10n/l10n.dart';
@@ -13,6 +15,7 @@ import '../../../services/location_service.dart';
 import '../../discover/data/places_service.dart';
 import '../domain/provider_enums.dart';
 import '../domain/provider_model.dart';
+import '../data/provider_service.dart';
 
 // ─── Design Colors ────────────────────────────────────────────────────────────
 const _kPrimaryColor = Color(0xFF4A7C59);
@@ -23,7 +26,7 @@ const _kCardBackground = Color(0xFFF4F5F2);
 const _kSoftElements = Color(0xFFE9ECE6);
 const _kVerifiedGreen = Color(0xFF10B981);
 
-class ProviderDetailScreen extends ConsumerWidget {
+class ProviderDetailScreen extends ConsumerStatefulWidget {
   const ProviderDetailScreen({
     super.key,
     required this.provider,
@@ -32,7 +35,21 @@ class ProviderDetailScreen extends ConsumerWidget {
   final CykelProvider provider;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProviderDetailScreen> createState() => _ProviderDetailScreenState();
+}
+
+class _ProviderDetailScreenState extends ConsumerState<ProviderDetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Track profile view when screen opens
+    Future.microtask(() {
+      ref.read(providerServiceProvider).incrementProfileView(widget.provider.id);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _kBackground,
       body: CustomScrollView(
@@ -52,13 +69,13 @@ class ProviderDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 _buildAddressSection(context),
 
-                if (provider.openingHours.isNotEmpty) ...[
+                if (widget.provider.openingHours.isNotEmpty) ...[
                   const SizedBox(height: 24),
                   _buildOpeningHours(context),
                 ],
 
-                if (provider.shopDescription != null &&
-                    provider.shopDescription!.isNotEmpty) ...[
+                if (widget.provider.shopDescription != null &&
+                    widget.provider.shopDescription!.isNotEmpty) ...[
                   const SizedBox(height: 24),
                   _buildDescription(context),
                 ],
@@ -66,7 +83,7 @@ class ProviderDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 _buildTypeSpecificInfo(context),
 
-                if (provider.galleryUrls.isNotEmpty) ...[
+                if (widget.provider.galleryUrls.isNotEmpty) ...[
                   const SizedBox(height: 24),
                   _buildGallery(context),
                 ],
@@ -104,11 +121,10 @@ class ProviderDetailScreen extends ConsumerWidget {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            if (provider.coverPhotoUrl != null)
-              Image.network(
-                provider.coverPhotoUrl!,
+            if (widget.provider.coverPhotoUrl != null)
+              CachedImage(
+                imageUrl: widget.provider.coverPhotoUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => _defaultCoverGradient(),
               )
             else
               _defaultCoverGradient(),
@@ -124,7 +140,7 @@ class ProviderDetailScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            if (provider.logoUrl != null)
+            if (widget.provider.logoUrl != null)
               Positioned(
                 left: 20,
                 bottom: 20,
@@ -145,14 +161,9 @@ class ProviderDetailScreen extends ConsumerWidget {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      provider.logoUrl!,
+                    child: CachedImage(
+                      imageUrl: widget.provider.logoUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => Icon(
-                        _getProviderIcon(),
-                        color: _kPrimaryColor,
-                        size: 40,
-                      ),
                     ),
                   ),
                 ),
@@ -178,20 +189,21 @@ class ProviderDetailScreen extends ConsumerWidget {
     );
   }
 
-  IconData _getProviderIcon() {
-    return switch (provider.providerType) {
-      ProviderType.bikeShop => Icons.pedal_bike_rounded,
-      ProviderType.repairShop => Icons.build_circle_rounded,
-      ProviderType.chargingLocation => Icons.ev_station_rounded,
-      _ => Icons.store_rounded,
-    };
-  }
+  // Unused - keeping for potential future use
+  // IconData _getProviderIcon() {
+  //   return switch (widget.provider.providerType) {
+  //     ProviderType.bikeShop => Icons.pedal_bike_rounded,
+  //     ProviderType.repairShop => Icons.build_circle_rounded,
+  //     ProviderType.chargingLocation => Icons.ev_station_rounded,
+  //     _ => Icons.store_rounded,
+  //   };
+  // }
 
   // ── Header ────────────────────────────────────────────────────────────────────
 
   Widget _buildHeader(BuildContext context) {
     final isVerified =
-        provider.verificationStatus == VerificationStatus.approved;
+        widget.provider.verificationStatus == VerificationStatus.approved;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -202,7 +214,7 @@ class ProviderDetailScreen extends ConsumerWidget {
             children: [
               Expanded(
                 child: Text(
-                  provider.businessName,
+                  widget.provider.businessName,
                   style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w700,
@@ -248,13 +260,13 @@ class ProviderDetailScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
-          if (provider.reviewCount > 0)
+          if (widget.provider.reviewCount > 0)
             Row(
               children: [
                 const Icon(Icons.star_rounded, color: Colors.amber, size: 20),
                 const SizedBox(width: 4),
                 Text(
-                  provider.rating.toStringAsFixed(1),
+                  widget.provider.rating.toStringAsFixed(1),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -263,7 +275,7 @@ class ProviderDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '(${provider.reviewCount} reviews)',
+                  '(${widget.provider.reviewCount} reviews)',
                   style: const TextStyle(
                     fontSize: 14,
                     color: _kSecondaryText,
@@ -271,8 +283,8 @@ class ProviderDetailScreen extends ConsumerWidget {
                 ),
               ],
             ),
-          if (provider.specialNotice != null &&
-              provider.specialNotice!.isNotEmpty) ...[
+          if (widget.provider.specialNotice != null &&
+              widget.provider.specialNotice!.isNotEmpty) ...[
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
@@ -288,7 +300,7 @@ class ProviderDetailScreen extends ConsumerWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      provider.specialNotice!,
+                      widget.provider.specialNotice!,
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.amber.shade900,
@@ -305,7 +317,7 @@ class ProviderDetailScreen extends ConsumerWidget {
   }
 
   String _getProviderTypeLabel() {
-    return switch (provider.providerType) {
+    return switch (widget.provider.providerType) {
       ProviderType.bikeShop => 'Bike Shop',
       ProviderType.repairShop => 'Repair Shop',
       ProviderType.chargingLocation => 'E-Bike Charging Station',
@@ -331,9 +343,9 @@ class ProviderDetailScreen extends ConsumerWidget {
             _CompactActionButton(
               icon: Icons.phone_rounded,
               label: 'Call',
-              onTap: () => _makePhoneCall(provider.phone),
+              onTap: () => _makePhoneCall(widget.provider.phone),
             ),
-            if (provider.website != null) ...  [
+            if (widget.provider.website != null) ...  [
               Container(
                 width: 1,
                 height: 40,
@@ -342,7 +354,7 @@ class ProviderDetailScreen extends ConsumerWidget {
               _CompactActionButton(
                 icon: Icons.language_rounded,
                 label: 'Website',
-                onTap: () => _openWebsite(provider.website!),
+                onTap: () => _openWebsite(widget.provider.website!),
               ),
             ],
             Container(
@@ -382,7 +394,7 @@ class ProviderDetailScreen extends ConsumerWidget {
 
   void _openDirections(BuildContext context, WidgetRef ref) {
     // Guard against invalid coordinates (0,0 = Gulf of Guinea, routing will fail)
-    if (provider.latitude == 0.0 && provider.longitude == 0.0) {
+    if (widget.provider.latitude == 0.0 && widget.provider.longitude == 0.0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Location not available for this provider'),
@@ -391,12 +403,15 @@ class ProviderDetailScreen extends ConsumerWidget {
       );
       return;
     }
+    // Track navigation request
+    ref.read(providerServiceProvider).incrementNavigationRequest(widget.provider.id);
+    
     ref.read(pendingRouteProvider.notifier).state = PlaceResult(
-      placeId: 'cykel_${provider.id}',
-      text: provider.businessName,
-      subtitle: '${provider.streetAddress}, ${provider.city}',
-      lat: provider.latitude,
-      lng: provider.longitude,
+      placeId: 'cykel_${widget.provider.id}',
+      text: widget.provider.businessName,
+      subtitle: '${widget.provider.streetAddress}, ${widget.provider.city}',
+      lat: widget.provider.latitude,
+      lng: widget.provider.longitude,
     );
     context.go(AppRoutes.map);
   }
@@ -442,7 +457,7 @@ class ProviderDetailScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        provider.streetAddress,
+                        widget.provider.streetAddress,
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -451,7 +466,7 @@ class ProviderDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${provider.postalCode} ${provider.city}',
+                        '${widget.provider.postalCode} ${widget.provider.city}',
                         style: const TextStyle(
                           fontSize: 14,
                           color: _kSecondaryText,
@@ -472,7 +487,7 @@ class ProviderDetailScreen extends ConsumerWidget {
 
   Widget _buildOpeningHours(BuildContext context) {
     final today = _getTodayKey();
-    final todayHours = provider.openingHours[today];
+    final todayHours = widget.provider.openingHours[today];
     final isOpen = _isCurrentlyOpen(todayHours);
 
     return Padding(
@@ -533,7 +548,7 @@ class ProviderDetailScreen extends ConsumerWidget {
 
     final rows = <Widget>[];
     for (var i = 0; i < days.length; i++) {
-      final hours = provider.openingHours[days[i]];
+      final hours = widget.provider.openingHours[days[i]];
       final isToday = days[i] == _getTodayKey();
 
       if (i > 0) rows.add(const SizedBox(height: 8));
@@ -611,7 +626,7 @@ class ProviderDetailScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            provider.shopDescription!,
+            widget.provider.shopDescription!,
             style: const TextStyle(
               fontSize: 15,
               height: 1.6,
@@ -626,7 +641,7 @@ class ProviderDetailScreen extends ConsumerWidget {
   // ── Type-Specific Info ────────────────────────────────────────────────────────
 
   Widget _buildTypeSpecificInfo(BuildContext context) {
-    return switch (provider.providerType) {
+    return switch (widget.provider.providerType) {
       ProviderType.repairShop => _buildRepairShopInfo(context),
       ProviderType.bikeShop => _buildBikeShopInfo(context),
       ProviderType.chargingLocation => _buildChargingLocationInfo(context),
@@ -635,9 +650,9 @@ class ProviderDetailScreen extends ConsumerWidget {
   }
 
   Widget _buildRepairShopInfo(BuildContext context) {
-    if (provider.servicesOffered.isEmpty &&
-        !provider.mobileRepair &&
-        !provider.acceptsWalkIns) {
+    if (widget.provider.servicesOffered.isEmpty &&
+        !widget.provider.mobileRepair &&
+        !widget.provider.acceptsWalkIns) {
       return const SizedBox.shrink();
     }
 
@@ -646,7 +661,7 @@ class ProviderDetailScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (provider.servicesOffered.isNotEmpty) ...[
+          if (widget.provider.servicesOffered.isNotEmpty) ...[
             const Text(
               'Services Offered',
               style: TextStyle(
@@ -659,7 +674,7 @@ class ProviderDetailScreen extends ConsumerWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: provider.servicesOffered.map((service) {
+              children: widget.provider.servicesOffered.map((service) {
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
@@ -680,14 +695,14 @@ class ProviderDetailScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
           ],
-          if (provider.mobileRepair)
+          if (widget.provider.mobileRepair)
             const _InfoChip(
               icon: Icons.directions_car_rounded,
               label: 'Mobile Repair Available',
             ),
-          if (provider.mobileRepair && provider.acceptsWalkIns)
+          if (widget.provider.mobileRepair && widget.provider.acceptsWalkIns)
             const SizedBox(height: 8),
-          if (provider.acceptsWalkIns)
+          if (widget.provider.acceptsWalkIns)
             const _InfoChip(
               icon: Icons.person_pin_rounded,
               label: 'Walk-ins Accepted',
@@ -698,7 +713,7 @@ class ProviderDetailScreen extends ConsumerWidget {
   }
 
   Widget _buildBikeShopInfo(BuildContext context) {
-    if (provider.productsAvailable.isEmpty) return const SizedBox.shrink();
+    if (widget.provider.productsAvailable.isEmpty) return const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -717,7 +732,7 @@ class ProviderDetailScreen extends ConsumerWidget {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: provider.productsAvailable.map((product) {
+            children: widget.provider.productsAvailable.map((product) {
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
@@ -772,49 +787,49 @@ class ProviderDetailScreen extends ConsumerWidget {
             ),
             child: Column(
               children: [
-                if (provider.numberOfPorts != null)
+                if (widget.provider.numberOfPorts != null)
                   _ModernInfoRow(
                     icon: Icons.power_rounded,
                     label: 'Charging Ports',
-                    value: '${provider.numberOfPorts} available',
+                    value: '${widget.provider.numberOfPorts} available',
                   ),
-                if (provider.numberOfPorts != null && provider.chargingType != null)
+                if (widget.provider.numberOfPorts != null && widget.provider.chargingType != null)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
                     child: Divider(color: _kSoftElements, height: 1),
                   ),
-                if (provider.chargingType != null)
+                if (widget.provider.chargingType != null)
                   _ModernInfoRow(
                     icon: Icons.bolt_rounded,
                     label: 'Charger Type',
-                    value: _getChargingTypeLabel(provider.chargingType!),
+                    value: _getChargingTypeLabel(widget.provider.chargingType!),
                   ),
-                if (provider.chargingType != null && provider.maxChargingDurationMinutes != null)
+                if (widget.provider.chargingType != null && widget.provider.maxChargingDurationMinutes != null)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
                     child: Divider(color: _kSoftElements, height: 1),
                   ),
-                if (provider.maxChargingDurationMinutes != null)
+                if (widget.provider.maxChargingDurationMinutes != null)
                   _ModernInfoRow(
                     icon: Icons.timer_rounded,
                     label: 'Max Duration',
-                    value: '${provider.maxChargingDurationMinutes} minutes',
+                    value: '${widget.provider.maxChargingDurationMinutes} minutes',
                   ),
               ],
             ),
           ),
-          if (provider.indoorCharging || provider.weatherProtected) ... [
+          if (widget.provider.indoorCharging || widget.provider.weatherProtected) ... [
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                if (provider.indoorCharging)
+                if (widget.provider.indoorCharging)
                   const _FeatureBadge(
                     icon: Icons.roofing_rounded,
                     label: 'Indoor Charging',
                   ),
-                if (provider.weatherProtected)
+                if (widget.provider.weatherProtected)
                   const _FeatureBadge(
                     icon: Icons.umbrella_rounded,
                     label: 'Weather Protected',
@@ -850,25 +865,18 @@ class ProviderDetailScreen extends ConsumerWidget {
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             scrollDirection: Axis.horizontal,
-            itemCount: provider.galleryUrls.length,
+            itemCount: widget.provider.galleryUrls.length,
             itemBuilder: (context, index) {
               return Padding(
                 padding: EdgeInsets.only(
-                    right: index < provider.galleryUrls.length - 1 ? 12 : 0),
+                    right: index < widget.provider.galleryUrls.length - 1 ? 12 : 0),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    provider.galleryUrls[index],
+                  child: CachedImage(
+                    imageUrl: widget.provider.galleryUrls[index],
                     width: 120,
                     height: 120,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
-                      width: 120,
-                      height: 120,
-                      color: _kCardBackground,
-                      child: const Icon(Icons.broken_image_rounded,
-                          color: _kSecondaryText),
-                    ),
                   ),
                 ),
               );

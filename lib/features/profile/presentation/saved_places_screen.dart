@@ -331,11 +331,11 @@ class _CustomPlaceCard extends StatelessWidget {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.10),
+            color: (context.colors.textPrimary).withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(Icons.place_outlined,
-              size: 18, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+              size: 18, color: context.colors.textPrimary),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -355,7 +355,7 @@ class _CustomPlaceCard extends StatelessWidget {
         IconButton(
           tooltip: l10n.delete,
           icon: Icon(Icons.delete_outline_rounded,
-              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, size: 20),
+              color: context.colors.textPrimary, size: 20),
           onPressed: onDelete,
         ),
       ]),
@@ -460,7 +460,7 @@ class _AddPlaceSheetState extends ConsumerState<_AddPlaceSheet> {
                   .copyWith(color: context.colors.textSecondary),
               prefixIcon: _selected != null
                   ? Icon(Icons.check_circle_rounded,
-                      size: 18, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)
+                      size: 18, color: context.colors.textPrimary)
                   : Icon(Icons.search_rounded,
                       size: 18, color: context.colors.textHint),
               suffixIcon: _searching
@@ -482,7 +482,7 @@ class _AddPlaceSheetState extends ConsumerState<_AddPlaceSheet> {
               focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
-                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, width: 1.5)),
+                      color: context.colors.textPrimary, width: 1.5)),
             ),
           ),
 
@@ -508,7 +508,7 @@ class _AddPlaceSheetState extends ConsumerState<_AddPlaceSheet> {
                     return ListTile(
                       dense: true,
                       leading: Icon(Icons.place_rounded,
-                          color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, size: 18),
+                          color: context.colors.textPrimary, size: 18),
                       title: Text(r.text,
                           style: AppTextStyles.bodyMedium,
                           maxLines: 2,
@@ -546,10 +546,10 @@ class _AddPlaceSheetState extends ConsumerState<_AddPlaceSheet> {
                       Navigator.pop(context);
                     },
               style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
                 disabledBackgroundColor:
-                    (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.35),
+                    (context.colors.textPrimary).withValues(alpha: 0.35),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -599,7 +599,7 @@ class _Field extends StatelessWidget {
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide:
-                BorderSide(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, width: 1.5)),
+                BorderSide(color: context.colors.textPrimary, width: 1.5)),
       ),
     );
   }

@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/widgets/cached_image.dart';
+
 import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -228,9 +230,9 @@ class _EditLocationScreenState extends ConsumerState<EditLocationScreen> {
     };
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         title: Text(
           _isEditing ? l10n.editLocationTitle : l10n.addLocationTitle,
           style: AppTextStyles.headline3,
@@ -413,19 +415,18 @@ class _EditLocationScreenState extends ConsumerState<EditLocationScreen> {
                 children: [
                   ..._existingPhotos.asMap().entries.map((e) =>
                       _PhotoTile(
-                        child: Image.network(e.value,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => const Icon(
-                                Icons.broken_image_outlined,
-                                color: AppColors.textSecondary)),
+                        child: CachedImage(
+                          imageUrl: e.value,
+                          fit: BoxFit.cover,
+                        ),
                         onRemove: () => _removeExisting(e.key),
                       )),
                   ..._newPhotos.asMap().entries.map((e) => _PhotoTile(
                         child: Image.asset(e.value.path,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => const Icon(
+                            errorBuilder: (_, _, _) => Icon(
                                 Icons.image_outlined,
-                                color: AppColors.textSecondary)),
+                                color: context.colors.textSecondary)),
                         onRemove: () => _removeNew(e.key),
                       )),
                 ],
@@ -546,9 +547,9 @@ class _DayRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: context.colors.border),
         ),
         child: Row(
           children: [
@@ -629,7 +630,7 @@ class _TimeChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: context.colors.border),
         ),
         child: Text(label, style: AppTextStyles.bodySmall),
       ),
@@ -657,7 +658,7 @@ class _PhotoTile extends StatelessWidget {
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: context.colors.border),
             ),
             child: child,
           ),

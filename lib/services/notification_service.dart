@@ -2,11 +2,13 @@
 /// Handles push notification setup, token persistence, and routing.
 
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
   NotificationService._();
@@ -14,6 +16,7 @@ class NotificationService {
   static final NotificationService instance = NotificationService._();
 
   final _messaging = FirebaseMessaging.instance;
+  final _localNotifications = FlutterLocalNotificationsPlugin();
 
   /// Stream subscriptions to cancel on dispose
   StreamSubscription<String>? _tokenRefreshSub;
@@ -30,6 +33,140 @@ class NotificationService {
   final navigationEvents =
       StreamController<RemoteMessage>.broadcast();
 
+  // ─── Notification Channels (Phase 1) ─────────────────────────────────────
+
+  static const _rentalChannel = AndroidNotificationChannel(
+    'rental_updates',
+    'Rental Updates',
+    description: 'Rental requests, approvals, and reminders',
+    importance: Importance.high,
+    playSound: true,
+    enableVibration: true,
+  );
+
+  static const _eventChannel = AndroidNotificationChannel(
+    'events',
+    'Event Updates',
+    description: 'Event cancellations and start reminders',
+    importance: Importance.high,
+    playSound: true,
+    enableVibration: true,
+  );
+
+  static const _theftChannel = AndroidNotificationChannel(
+    'theft_alerts',
+    'Theft Alerts',
+    description: 'Community alerts for stolen bikes',
+    importance: Importance.max,
+    playSound: true,
+    enableVibration: true,
+    showBadge: true,
+  );
+
+  static const _hazardChannel = AndroidNotificationChannel(
+    'hazard_warnings',
+    'Hazard Warnings',
+    description: 'Road hazards on your saved routes',
+    importance: Importance.max,
+    playSound: true,
+    enableVibration: true,
+    showBadge: true,
+  );
+
+  static const _securityChannel = AndroidNotificationChannel(
+    'account_security',
+    'Security Alerts',
+    description: 'Login from new devices and security events',
+    importance: Importance.max,
+    playSound: true,
+    enableVibration: true,
+    showBadge: true,
+  );
+
+  static const _subscriptionChannel = AndroidNotificationChannel(
+    'subscription_alerts',
+    'Subscription Alerts',
+    description: 'Expiring subscriptions and renewals',
+    importance: Importance.defaultImportance,
+    playSound: true,
+    enableVibration: false,
+  );
+
+  // Phase 2: Engagement channels
+  static const _socialChannel = AndroidNotificationChannel(
+    'social_updates',
+    'Social Updates',
+    description: 'Follows, friend requests, and shared rides',
+    importance: Importance.high,
+    playSound: true,
+    enableVibration: true,
+  );
+
+  static const _gamificationChannel = AndroidNotificationChannel(
+    'gamification',
+    'Achievements & Progress',
+    description: 'Badges, achievements, and leaderboard updates',
+    importance: Importance.defaultImportance,
+    playSound: true,
+    enableVibration: false,
+  );
+
+  // Phase 3: Polish channels
+  static const _communityChannel = AndroidNotificationChannel(
+    'community_updates',
+    'Community & Groups',
+    description: 'Group ride invitations and buddy matches',
+    importance: Importance.high,
+    playSound: true,
+    enableVibration: true,
+  );
+
+  static const _systemChannel = AndroidNotificationChannel(
+    'system_updates',
+    'System & Maintenance',
+    description: 'App updates, maintenance notices, and announcements',
+    importance: Importance.defaultImportance,
+    playSound: true,
+    enableVibration: false,
+  );
+
+  // Phase 4: Enhanced experience channels
+  static const _weatherChannel = AndroidNotificationChannel(
+    'weather_alerts',
+    'Weather & Conditions',
+    description: 'Weather conditions for planned rides',
+    importance: Importance.defaultImportance,
+    playSound: true,
+    enableVibration: false,
+  );
+
+  static const _statsChannel = AndroidNotificationChannel(
+    'ride_stats',
+    'Statistics & Progress',
+    description: 'Weekly and monthly ride summaries',
+    importance: Importance.low,
+    playSound: false,
+    enableVibration: false,
+  );
+
+  static const _localEventsChannel = AndroidNotificationChannel(
+    'local_events',
+    'Local Events',
+    description: 'Nearby cycling events and meetups',
+    importance: Importance.defaultImportance,
+    playSound: true,
+    enableVibration: false,
+  );
+
+  static const _milestonesChannel = AndroidNotificationChannel(
+    'milestones',
+    'Celebrations',
+    description: 'Distance, carbon savings, and streak celebrations',
+    importance: Importance.defaultImportance,
+    playSound: true,
+    enableVibration: true,
+  );
+
   // ─── Init ─────────────────────────────────────────────────────────────────
 
   /// Request permission and wire up FCM listeners.
@@ -40,6 +177,29 @@ class NotificationService {
       badge: true,
       sound: true,
     );
+
+    // ── Create notification channels (Android only) ──────────────────────
+    if (Platform.isAndroid) {
+      final androidPlugin = _localNotifications.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+
+      await androidPlugin?.createNotificationChannel(_rentalChannel);
+      await androidPlugin?.createNotificationChannel(_eventChannel);
+      await androidPlugin?.createNotificationChannel(_theftChannel);
+      await androidPlugin?.createNotificationChannel(_hazardChannel);
+      await androidPlugin?.createNotificationChannel(_securityChannel);
+      await androidPlugin?.createNotificationChannel(_subscriptionChannel);
+      await androidPlugin?.createNotificationChannel(_socialChannel);
+      await androidPlugin?.createNotificationChannel(_gamificationChannel);
+      await androidPlugin?.createNotificationChannel(_communityChannel);
+      await androidPlugin?.createNotificationChannel(_systemChannel);
+      await androidPlugin?.createNotificationChannel(_weatherChannel);
+      await androidPlugin?.createNotificationChannel(_statsChannel);
+      await androidPlugin?.createNotificationChannel(_localEventsChannel);
+      await androidPlugin?.createNotificationChannel(_milestonesChannel);
+
+      debugPrint('[FCM] Created 14 notification channels');
+    }
 
     // ── Save token to Firestore ───────────────────────────────────────────
     final token = await _messaging.getToken();

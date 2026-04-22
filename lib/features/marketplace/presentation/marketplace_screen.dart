@@ -6,7 +6,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/widgets/optimized_image.dart';
+import '../../../core/widgets/app_image.dart';
+import '../../../core/widgets/cached_image.dart';
 
 import '../../../core/l10n/l10n.dart';
 import '../../../core/router/app_router.dart';
@@ -18,12 +19,12 @@ import '../domain/marketplace_listing.dart';
 import '../providers/marketplace_providers.dart';
 
 // ─── Design Colors ─────────────────────────────────────────────────────────────
-const _kPrimaryColor = Color(0xFF4A7C59);
-const _kPrimaryText = Color(0xFF1A1A1A);
-const _kSecondaryText = Color(0xFF6B6B6B);
-const _kBackground = Color(0xFFFFFFFF);
-const _kCardBackground = Color(0xFFF4F5F2);
-const _kSoftElements = Color(0xFFE9ECE6);
+const _kPrimaryColor = AppColors.primary;
+const _kPrimaryText = AppColors.textPrimary;
+const _kSecondaryText = AppColors.textSecondary;
+const _kBackground = AppColors.background;
+const _kCardBackground = AppColors.surface;
+const _kSoftElements = AppColors.surfaceVariant;
 
 class MarketplaceScreen extends ConsumerStatefulWidget {
   const MarketplaceScreen({super.key});
@@ -73,11 +74,11 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
         threads.fold<int>(0, (s, t) => s + t.unreadCount);
 
     return Scaffold(
-      backgroundColor: _kBackground,
+      backgroundColor: context.colors.background,
       body: Column(children: [
         // ── Header ─────────────────────────────────────────────────────────
         Container(
-          color: _kBackground,
+          color: context.colors.background,
           padding: EdgeInsets.fromLTRB(16, topPad + 12, 16, 0),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -256,9 +257,34 @@ class _BrowseTab extends ConsumerWidget {
         child: async.when(
           loading: () =>
               const Center(child: CircularProgressIndicator()),
-          error: (e, _) =>
-              Center(child: Text('$e')),
+          error: (e, stack) {
+            debugPrint('🔴 MARKETPLACE ERROR: $e');
+            debugPrint('🔴 Stack: $stack');
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Marketplace Error',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '$e',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
           data: (listings) {
+            debugPrint('🟢 MARKETPLACE: Loaded ${listings.length} listings');
             if (listings.isEmpty) {
               return Center(
                   child: Text(l10n.listingNoResults,
@@ -275,17 +301,19 @@ class _BrowseTab extends ConsumerWidget {
                 mainAxisSpacing: 10,
               ),
               itemCount: listings.length,
-              itemBuilder: (_, i) => _ListingCard(
-                listing: listings[i],
-                isSaved: savedIds.contains(listings[i].id),
-                currentUserId: user?.uid,
-                onTap: () => context.push(
-                    '${AppRoutes.marketplace}/listing/${listings[i].id}',
-                    extra: listings[i]),
-                onToggleSave: user == null
-                    ? null
-                    : () => _toggleSave(ref, user.uid,
-                        listings[i].id, savedIds.contains(listings[i].id)),
+              itemBuilder: (_, i) => RepaintBoundary(
+                child: _ListingCard(
+                  listing: listings[i],
+                  isSaved: savedIds.contains(listings[i].id),
+                  currentUserId: user?.uid,
+                  onTap: () => context.push(
+                      '${AppRoutes.marketplace}/listing/${listings[i].id}',
+                      extra: listings[i]),
+                  onToggleSave: user == null
+                      ? null
+                      : () => _toggleSave(ref, user.uid,
+                          listings[i].id, savedIds.contains(listings[i].id)),
+                ),
               ),
             );
           },
@@ -329,6 +357,7 @@ class _SavedTab extends ConsumerWidget {
               text: l10n.listingSavedEmpty);
         }
         return ListView.builder(
+          key: const PageStorageKey('saved_listings'),
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
           itemCount: listings.length,
           itemBuilder: (_, i) => Padding(
@@ -377,6 +406,7 @@ class _MyListingsTab extends ConsumerWidget {
               text: l10n.listingMyListingsEmpty);
         }
         return ListView.builder(
+          key: const PageStorageKey('my_listings'),
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
           itemCount: listings.length,
           itemBuilder: (_, i) {
@@ -418,6 +448,7 @@ class _MessagesTab extends ConsumerWidget {
               text: l10n.listingNoMessages);
         }
         return ListView.builder(
+          key: const PageStorageKey('marketplace_messages'),
           padding: const EdgeInsets.fromLTRB(0, 8, 0, 120),
           itemCount: threads.length,
           itemBuilder: (_, i) {
@@ -428,15 +459,11 @@ class _MessagesTab extends ConsumerWidget {
             return ListTile(
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              leading: CircleAvatar(
-                backgroundColor: _kPrimaryColor.withValues(alpha: 0.12),
-                backgroundImage: t.listingImageUrl != null
-                    ? NetworkImage(t.listingImageUrl!)
-                    : null,
-                child: t.listingImageUrl == null
-                    ? const Icon(Icons.pedal_bike_rounded,
-                        color: _kPrimaryColor, size: 18)
-                    : null,
+              leading: AppAvatar(
+                url: t.listingImageUrl,
+                thumbnailUrl: MarketplaceListing.getThumbnailUrl(t.listingImageUrl),
+                size: 40,
+                fallbackIcon: Icons.pedal_bike_rounded,
               ),
               title: Text(otherName,
                   style: AppTextStyles.bodyMedium
@@ -616,12 +643,11 @@ class _ListingCard extends StatelessWidget {
                   child: AspectRatio(
                     aspectRatio: 1.1,
                     child: listing.imageUrls.isNotEmpty
-                        ? OptimizedNetworkImage(
+                        ? CachedImage(
                             imageUrl: listing.imageUrls.first,
                             fit: BoxFit.cover,
                             borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(14)),
-                            errorWidget: _PlaceholderImage(listing.category),
                           )
                         : _PlaceholderImage(listing.category),
                   ),
@@ -747,31 +773,33 @@ class _ListingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: _kBackground,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 6,
-                offset: const Offset(0, 2))
-          ],
-        ),
-        child: Row(children: [
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: _kBackground,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2))
+            ],
+          ),
+          child: Row(children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: SizedBox(
               width: 72,
               height: 72,
               child: listing.imageUrls.isNotEmpty
-                  ? Image.network(listing.imageUrls.first,
+                  ? CachedImage(
+                      imageUrl: listing.imageUrls.first,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stack) =>
-                          _PlaceholderImage(listing.category))
+                      width: 72,
+                      height: 72)
                   : _PlaceholderImage(listing.category),
             ),
           ),
@@ -812,6 +840,7 @@ class _ListingRow extends StatelessWidget {
           if (trailing != null) trailing!,
         ]),
       ),
+      ),
     );
   }
 }
@@ -833,7 +862,7 @@ class _MyListingMenu extends ConsumerWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
       ),
-      color: const Color(0xFFF8F9FA),
+      color: AppColors.surface,
       elevation: 4,
       shadowColor: Colors.black.withValues(alpha: 0.08),
       offset: const Offset(0, 8),
@@ -848,7 +877,7 @@ class _MyListingMenu extends ConsumerWidget {
                 const Icon(
                   Icons.edit_outlined,
                   size: 22,
-                  color: Color(0xFF4A5568),
+                  color: AppColors.mutedForeground,
                 ),
                 const SizedBox(width: 14),
                 Text(
@@ -856,7 +885,7 @@ class _MyListingMenu extends ConsumerWidget {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF4A5568),
+                    color: AppColors.mutedForeground,
                     letterSpacing: -0.2,
                   ),
                 ),
@@ -872,7 +901,7 @@ class _MyListingMenu extends ConsumerWidget {
                 const Icon(
                   Icons.check_circle_outline,
                   size: 22,
-                  color: Color(0xFF4A5568),
+                  color: AppColors.mutedForeground,
                 ),
                 const SizedBox(width: 14),
                 Text(
@@ -880,7 +909,7 @@ class _MyListingMenu extends ConsumerWidget {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF4A5568),
+                    color: AppColors.mutedForeground,
                     letterSpacing: -0.2,
                   ),
                 ),
@@ -896,7 +925,7 @@ class _MyListingMenu extends ConsumerWidget {
               const Icon(
                 Icons.delete_outline,
                 size: 22,
-                color: Color(0xFFE53E3E),
+                color: AppColors.error,
               ),
               const SizedBox(width: 14),
               Text(
@@ -904,7 +933,7 @@ class _MyListingMenu extends ConsumerWidget {
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFFE53E3E),
+                  color: AppColors.error,
                   letterSpacing: -0.2,
                 ),
               ),

@@ -121,7 +121,7 @@ final daylightServiceProvider =
 
 /// Current daylight status - refreshes every minute and uses user location.
 /// Falls back to Copenhagen if location unavailable.
-final daylightInfoProvider = StreamProvider<DaylightInfo>((ref) async* {
+final daylightInfoProvider = StreamProvider.autoDispose<DaylightInfo>((ref) async* {
   // Copenhagen coordinates as fallback
   const fallbackLat = 55.6761;
   const fallbackLng = 12.5683;

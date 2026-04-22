@@ -42,7 +42,7 @@ class FamilyAccount {
   final String id;
   final String name;
   final String ownerId;
-  final String subscriptionId;
+  final String? subscriptionId; // Nullable - free family accounts don't have a subscription
   final List<FamilyMember> members;
   final int maxMembers;
   final DateTime createdAt;
@@ -53,7 +53,7 @@ class FamilyAccount {
     required this.id,
     required this.name,
     required this.ownerId,
-    required this.subscriptionId,
+    this.subscriptionId,
     required this.members,
     required this.maxMembers,
     required this.createdAt,
@@ -87,7 +87,7 @@ class FamilyAccount {
       id: doc.id,
       name: data['name'] as String,
       ownerId: data['ownerId'] as String,
-      subscriptionId: data['subscriptionId'] as String,
+      subscriptionId: data['subscriptionId'] as String?,
       members: membersData
           .map((m) => FamilyMember.fromMap(m as Map<String, dynamic>))
           .toList(),
@@ -106,6 +106,7 @@ class FamilyAccount {
       'ownerId': ownerId,
       'subscriptionId': subscriptionId,
       'members': members.map((m) => m.toMap()).toList(),
+      'memberIds': members.map((m) => m.userId).toList(),
       'maxMembers': maxMembers,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,

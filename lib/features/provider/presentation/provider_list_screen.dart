@@ -8,6 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../../core/widgets/cached_image.dart';
+
 import '../../../core/l10n/l10n.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -22,7 +24,7 @@ const _kPrimaryPressed = Color(0xFF3D6B4A);
 const _kPrimaryText = Color(0xFF1A1A1A);
 const _kSecondaryText = Color(0xFF6B6B6B);
 const _kBackground = Color(0xFFFFFFFF);
-const _kCardBackground = Color(0xFFF4F5F2);
+// const _kCardBackground = Color(0xFFF4F5F2); // Unused
 
 // ─── User Location Provider ───────────────────────────────────────────────────
 final _userPositionProvider = FutureProvider<LatLng?>((ref) async {
@@ -142,10 +144,12 @@ class ProviderListScreen extends ConsumerWidget {
                       provider.longitude,
                     )
                   : null;
-              return _ProviderCard(
-                provider: provider,
-                distance: distance,
-                onTap: () => _openProviderDetail(context, ref, provider),
+              return RepaintBoundary(
+                child: _ProviderCard(
+                  provider: provider,
+                  distance: distance,
+                  onTap: () => _openProviderDetail(context, ref, provider),
+                ),
               );
             },
           );
@@ -242,10 +246,9 @@ class _ProviderCard extends StatelessWidget {
             // Background image or gradient
             if (provider.coverPhotoUrl != null &&
                 provider.coverPhotoUrl!.isNotEmpty)
-              Image.network(
-                provider.coverPhotoUrl!,
+              CachedImage(
+                imageUrl: provider.coverPhotoUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => _buildGradientBackground(),
               )
             else
               _buildGradientBackground(),
@@ -456,17 +459,9 @@ class _ProviderCard extends StatelessWidget {
                     ],
                   ),
                   clipBehavior: Clip.antiAlias,
-                  child: Image.network(
-                    provider.logoUrl!,
+                  child: CachedImage(
+                    imageUrl: provider.logoUrl!,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
-                      color: _kCardBackground,
-                      child: Icon(
-                        _getTypeIcon(provider.providerType),
-                        color: _kPrimaryColor,
-                        size: 20,
-                      ),
-                    ),
                   ),
                 ),
               ),

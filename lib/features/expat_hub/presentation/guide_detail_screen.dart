@@ -66,9 +66,11 @@ class _GuideDetailScreenState extends ConsumerState<GuideDetailScreen> {
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: () {
-              Share.share(
-                'Check out this guide: ${guide.title}\n\n${guide.summary}',
-                subject: guide.title,
+              SharePlus.instance.share(
+                ShareParams(
+                  text: 'Check out this guide: ${guide.title}\n\n${guide.summary}',
+                  subject: guide.title,
+                ),
               );
             },
           ),

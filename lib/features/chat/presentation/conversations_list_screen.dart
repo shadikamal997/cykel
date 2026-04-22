@@ -3,8 +3,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/app_image.dart';
+import '../../auth/domain/app_user.dart';
 import '../application/chat_providers.dart';
 import '../domain/conversation.dart';
 import 'chat_screen.dart';
@@ -40,17 +43,17 @@ class _ConversationsListScreenState extends ConsumerState<ConversationsListScree
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Conversation'),
+        title: Text(context.l10n.chatDeleteConversation),
         content: const Text('Are you sure you want to delete this conversation? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Delete'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -68,7 +71,7 @@ class _ConversationsListScreenState extends ConsumerState<ConversationsListScree
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Messages'),
+        title: Text(context.l10n.chatMessages),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_square),
@@ -135,10 +138,12 @@ class _ConversationsListScreenState extends ConsumerState<ConversationsListScree
                   itemCount: filteredConversations.length,
                   itemBuilder: (context, index) {
                     final conversation = filteredConversations[index];
-                    return _ConversationTile(
-                      conversation: conversation,
-                      onTap: () => _onConversationTap(conversation),
-                      onDelete: () => _onDeleteConversation(conversation),
+                    return RepaintBoundary(
+                      child: _ConversationTile(
+                        conversation: conversation,
+                        onTap: () => _onConversationTap(conversation),
+                        onDelete: () => _onDeleteConversation(conversation),
+                      ),
                     );
                   },
                 );
@@ -285,23 +290,18 @@ class _Avatar extends ConsumerWidget {
 
     if (conversation.type == ConversationType.group &&
         conversation.groupImageUrl != null) {
-      return CircleAvatar(
-        radius: 24,
-        backgroundImage: NetworkImage(conversation.groupImageUrl!),
+      return AppAvatar(
+        url: conversation.groupImageUrl,
+        thumbnailUrl: AppUser.getThumbnailUrl(conversation.groupImageUrl),
+        size: 48,
+        fallbackText: '👥',
       );
     }
 
-    return CircleAvatar(
-      radius: 24,
-      backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-      child: Text(
-        conversation.type == ConversationType.group ? '👥' : initial,
-        style: TextStyle(
-          fontSize: conversation.type == ConversationType.group ? 20 : 18,
-          fontWeight: FontWeight.bold,
-          color: AppColors.primary,
-        ),
-      ),
+    return AppAvatar(
+      url: null,
+      size: 48,
+      fallbackText: conversation.type == ConversationType.group ? '👥' : initial,
     );
   }
 }

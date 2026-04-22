@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_image.dart';
+import '../../auth/domain/app_user.dart';
 import '../application/family_pricing_providers.dart';
 import '../domain/family_account.dart';
 
@@ -33,6 +39,7 @@ class FamilyManagementScreen extends ConsumerWidget {
               pendingInvitations: pendingInvitations.valueOrNull ?? [],
               onAcceptInvitation: (id) => _acceptInvitation(context, ref, id),
               onDeclineInvitation: (id) => _declineInvitation(ref, id),
+              onCreateFamily: () => _createFamilyAccount(context, ref),
             );
           }
           return _FamilyAccountView(
@@ -203,15 +210,50 @@ class FamilyManagementScreen extends ConsumerWidget {
 
                   try {
                     final service = ref.read(familyPricingServiceProvider);
-                    await service.inviteFamilyMember(
+                    final invitation = await service.inviteFamilyMember(
                       familyAccountId: familyAccountId,
                       inviteeEmail: email,
                       role: selectedRole,
                     );
                     if (sheetContext.mounted) {
                       Navigator.pop(sheetContext);
+                      // Show success confirmation (email is sent automatically by Cloud Function)
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Invitation sent to $email')),
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              const Icon(Icons.check_circle, color: Colors.white),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Invitation sent!',
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    Text('Email sent to $email'),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          backgroundColor: AppColors.success,
+                          duration: const Duration(seconds: 4),
+                          action: SnackBarAction(
+                            label: 'Share Code',
+                            textColor: Colors.white,
+                            onPressed: () {
+                              _showInviteSuccessDialog(
+                                context,
+                                email,
+                                invitation.inviteCode ?? '',
+                                invitation.familyName,
+                              );
+                            },
+                          ),
+                        ),
                       );
                     }
                   } catch (e) {
@@ -243,6 +285,120 @@ class FamilyManagementScreen extends ConsumerWidget {
     );
   }
 
+  void _showInviteSuccessDialog(
+    BuildContext context,
+    String email,
+    String inviteCode,
+    String familyName,
+  ) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check, color: AppColors.success),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(child: Text('Invitation Created!')),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Share this invite code with $email:',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.primary),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    inviteCode,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 4,
+                      color: AppColors.primary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: inviteCode));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Code copied!')),
+                      );
+                    },
+                    icon: const Icon(Icons.copy, size: 16),
+                    label: const Text('Copy Code'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'The invitee can enter this code in their CYKEL app to join your family.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: context.colors.textSecondary,
+                  ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Close'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              final shareText = '''
+🚴 You're invited to join "$familyName" on CYKEL!
+
+Use this invite code: $inviteCode
+
+1. Download CYKEL app (if you don't have it)
+2. Go to Family → Join Family
+3. Enter the code: $inviteCode
+
+See you on the road! 🚲''';
+              SharePlus.instance.share(
+                ShareParams(
+                  text: shareText,
+                  subject: 'CYKEL Family Invitation',
+                ),
+              );
+            },
+            icon: const Icon(Icons.share),
+            label: const Text('Share'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.buttonPrimary,
+              foregroundColor: AppColors.buttonText,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _acceptInvitation(
       BuildContext context, WidgetRef ref, String invitationId) async {
     try {
@@ -260,6 +416,11 @@ class FamilyManagementScreen extends ConsumerWidget {
         );
       }
     }
+  }
+
+  void _createFamilyAccount(BuildContext context, WidgetRef ref) {
+    // Navigate to the family setup wizard
+    context.push(AppRoutes.familySetup);
   }
 
   Future<void> _declineInvitation(WidgetRef ref, String invitationId) async {
@@ -315,11 +476,13 @@ class _NoFamilyAccountView extends StatelessWidget {
   final List<FamilyInvitation> pendingInvitations;
   final ValueChanged<String> onAcceptInvitation;
   final ValueChanged<String> onDeclineInvitation;
+  final VoidCallback onCreateFamily;
 
   const _NoFamilyAccountView({
     required this.pendingInvitations,
     required this.onAcceptInvitation,
     required this.onDeclineInvitation,
+    required this.onCreateFamily,
   });
 
   @override
@@ -346,21 +509,38 @@ class _NoFamilyAccountView extends StatelessWidget {
           ],
 
           // No family account info
-          const Icon(Icons.family_restroom, size: 80, color: AppColors.textHint),
+          const Icon(Icons.family_restroom, size: 80, color: AppColors.primary),
           const SizedBox(height: 16),
           Text(
-            'No Family Account',
+            'Create Your Family',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Upgrade to a Family or Premium plan to share your subscription with up to 6-8 family members.',
+            'Create a family account to share routes, track rides together, and keep your family connected while cycling.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: onCreateFamily,
+              icon: const Icon(Icons.add),
+              label: const Text('Create Family Account'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: 24),
           const _FamilyBenefitsCard(),
@@ -421,7 +601,7 @@ class _FamilyAccountView extends StatelessWidget {
                 Text(
                   '${account.memberCount} of ${account.maxMembers} members',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                 ),
                 const SizedBox(height: 12),
@@ -453,6 +633,43 @@ class _FamilyAccountView extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 16),
+
+          // Quick Actions
+          Row(
+            children: [
+              Expanded(
+                child: _QuickActionButton(
+                  icon: Icons.map,
+                  label: 'Live Map',
+                  color: Colors.green,
+                  onTap: () => context.push(AppRoutes.familyMap),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _QuickActionButton(
+                  icon: Icons.dashboard,
+                  label: 'Dashboard',
+                  color: AppColors.primary,
+                  onTap: () => context.push(AppRoutes.familyDashboard),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _QuickActionButton(
+                  icon: Icons.location_on,
+                  label: 'Safe Zones',
+                  color: Colors.orange,
+                  onTap: () => context.push(AppRoutes.familySafeZones),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
 
@@ -549,17 +766,11 @@ class _MemberCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: isOwner ? AppColors.primary : AppColors.surface,
-            backgroundImage:
-                member.photoUrl != null ? NetworkImage(member.photoUrl!) : null,
-            child: member.photoUrl == null
-                ? Icon(
-                    Icons.person,
-                    color: isOwner ? Colors.white : AppColors.textSecondary,
-                  )
-                : null,
+          AppAvatar(
+            url: member.photoUrl,
+            thumbnailUrl: AppUser.getThumbnailUrl(member.photoUrl),
+            size: 44,
+            fallbackIcon: Icons.person,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -654,7 +865,7 @@ class _InvitationCard extends StatelessWidget {
                     Text(
                       'Invited by ${invitation.invitedByName} as ${invitation.assignedRole.displayName}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                     ),
                   ],
@@ -697,12 +908,14 @@ class _FamilyBenefitsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final benefits = [
-      ('👨‍👩‍👧‍👦', 'Share with up to 6 members'),
-      ('📱', 'Family dashboard'),
-      ('🗺️', 'Share routes & favorites'),
-      ('🔒', 'Child safety features'),
-      ('📊', 'Per-member statistics'),
-      ('💰', 'Save vs individual plans'),
+      ('👨‍👩‍👧‍👦', 'Up to 8 family members'),
+      ('🗺️', 'Real-time location tracking'),
+      ('📍', 'Always know where your kids are'),
+      ('🚴', 'Family group rides'),
+      ('🆘', 'SOS panic button & crash detection'),
+      ('🏆', 'Family achievements & challenges'),
+      ('📊', 'Admin dashboard & statistics'),
+      ('🔒', 'Child safety controls'),
     ];
 
     return Container(
@@ -716,7 +929,7 @@ class _FamilyBenefitsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Why Family Plan?',
+            'Family Features',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -728,11 +941,56 @@ class _FamilyBenefitsCard extends StatelessWidget {
                   children: [
                     Text(b.$1, style: const TextStyle(fontSize: 20)),
                     const SizedBox(width: 12),
-                    Text(b.$2),
+                    Expanded(child: Text(b.$2)),
                   ],
                 ),
               )),
         ],
+      ),
+    );
+  }
+}
+
+/// Quick action button for family actions
+class _QuickActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -20,6 +20,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../domain/ride.dart';
 import '../../profile/data/gdpr_provider.dart';
+import '../../profile/data/user_profile_provider.dart';
+import '../../../services/commuter_tax_service.dart';
 
 const _kCollection = 'aggregated_rides';
 
@@ -84,4 +86,40 @@ final aggregationCallbackProvider =
   if (!enabled) return null;
   final svc = ref.read(mobilityAggregationServiceProvider);
   return (ride) => svc.aggregate(ride);
+});
+
+/// Combined callback for ride completion: aggregation + commuter tax detection
+/// This is the main callback used by RideNotifier after saving a ride.
+final rideCompletionCallbackProvider =
+    Provider<Future<void> Function(Ride)?>((ref) {
+  // Get both callbacks
+  final aggregationCallback = ref.watch(aggregationCallbackProvider);
+  final commuterTaxService = ref.watch(commuterTaxServiceProvider);
+  final userProfile = ref.watch(userProfileProvider);
+  
+  // Return combined callback that does both operations
+  return (ride) async {
+    // 1. Mobility aggregation (if consent given)
+    if (aggregationCallback != null) {
+      try {
+        await aggregationCallback(ride);
+      } catch (e) {
+        debugPrint('[RideCompletion] Aggregation failed: $e');
+      }
+    }
+    
+    // 2. Commuter tax detection (always, local-only)
+    try {
+      final commute = await commuterTaxService.detectAndRecord(
+        ride: ride,
+        homeLocation: userProfile.homeLocation,
+        workLocation: userProfile.workLocation,
+      );
+      if (commute != null) {
+        debugPrint('[CommuterTax] Detected ${ commute.direction.name} commute: ${commute.distanceKm.toStringAsFixed(1)} km');
+      }
+    } catch (e) {
+      debugPrint('[RideCompletion] Commuter tax detection failed: $e');
+    }
+  };
 });

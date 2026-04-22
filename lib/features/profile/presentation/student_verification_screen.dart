@@ -133,10 +133,10 @@ class _StudentVerificationScreenState
     final l10n = context.l10n;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
         title: Text(l10n.studentVerificationTitle),
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
       ),
@@ -250,10 +250,10 @@ class _StudentVerificationScreenState
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant.withValues(alpha: 0.3),
+                  color: context.colors.surfaceVariant.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppColors.surfaceVariant,
+                    color: context.colors.surfaceVariant,
                   ),
                 ),
                 child: Column(
@@ -261,16 +261,16 @@ class _StudentVerificationScreenState
                   children: [
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.info_outline,
                           size: 20,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           'Accepted Domains',
                           style: AppTextStyles.labelMedium.copyWith(
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                         ),
                       ],
@@ -366,7 +366,7 @@ class _StudentVerificationScreenState
                 child: Text(
                   'Verification is valid for 1 year.\nYou\'ll need to re-verify annually.',
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -425,7 +425,7 @@ class _BenefitTile extends StatelessWidget {
                 Text(
                   subtitle,
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ],

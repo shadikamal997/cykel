@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import '../services/consent_manager.dart';
+import '../theme/app_colors.dart';
 
 class GDPRConsentDialog extends StatefulWidget {
   final ConsentManager consentManager;
@@ -45,12 +46,12 @@ class _GDPRConsentDialogState extends State<GDPRConsentDialog> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4A7C59).withValues(alpha: 0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
                     Icons.privacy_tip_outlined,
-                    color: Color(0xFF4A7C59),
+                    color: AppColors.primary,
                     size: 24,
                   ),
                 ),
@@ -64,7 +65,7 @@ class _GDPRConsentDialogState extends State<GDPRConsentDialog> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                          color: isDark ? Colors.white : AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -72,7 +73,7 @@ class _GDPRConsentDialogState extends State<GDPRConsentDialog> {
                         'Choose how we use your data',
                         style: TextStyle(
                           fontSize: 14,
-                          color: isDark ? const Color(0xFFA0AEC0) : const Color(0xFF6B6B6B),
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -88,7 +89,7 @@ class _GDPRConsentDialogState extends State<GDPRConsentDialog> {
               style: TextStyle(
                 fontSize: 14,
                 height: 1.5,
-                color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF4A5568),
+                color: isDark ? AppColors.muted : AppColors.mutedForeground,
               ),
             ),
             const SizedBox(height: 20),
@@ -143,7 +144,7 @@ class _GDPRConsentDialogState extends State<GDPRConsentDialog> {
                   'Read our Privacy Policy',
                   style: TextStyle(
                     fontSize: 13,
-                    color: isDark ? const Color(0xFF63B3ED) : const Color(0xFF4A7C59),
+                    color: isDark ? AppColors.primaryDark : AppColors.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -175,7 +176,7 @@ class _GDPRConsentDialogState extends State<GDPRConsentDialog> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       side: BorderSide(
-                        color: isDark ? const Color(0xFF4A5568) : const Color(0xFFE2E8F0),
+                        color: isDark ? AppColors.mutedForeground : AppColors.muted,
                       ),
                     ),
                     child: Text(
@@ -183,7 +184,7 @@ class _GDPRConsentDialogState extends State<GDPRConsentDialog> {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                        color: isDark ? Colors.white : AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -204,7 +205,7 @@ class _GDPRConsentDialogState extends State<GDPRConsentDialog> {
                       }
                     },
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF4A7C59),
+                      backgroundColor: AppColors.primary,
                       minimumSize: const Size.fromHeight(48),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -240,10 +241,10 @@ class _GDPRConsentDialogState extends State<GDPRConsentDialog> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2D3748) : const Color(0xFFF7FAFC),
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? const Color(0xFF4A5568) : const Color(0xFFE2E8F0),
+          color: isDark ? AppColors.mutedForeground : AppColors.muted,
         ),
       ),
       child: Row(
@@ -252,7 +253,7 @@ class _GDPRConsentDialogState extends State<GDPRConsentDialog> {
           Icon(
             icon,
             size: 24,
-            color: const Color(0xFF4A7C59),
+            color: AppColors.primary,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -267,7 +268,7 @@ class _GDPRConsentDialogState extends State<GDPRConsentDialog> {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                          color: isDark ? Colors.white : AppColors.textPrimary,
                         ),
                       ),
                     ),
@@ -278,7 +279,7 @@ class _GDPRConsentDialogState extends State<GDPRConsentDialog> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF4A7C59).withValues(alpha: 0.1),
+                          color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Text(
@@ -286,7 +287,7 @@ class _GDPRConsentDialogState extends State<GDPRConsentDialog> {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF4A7C59),
+                            color: AppColors.primary,
                           ),
                         ),
                       ),
@@ -298,7 +299,7 @@ class _GDPRConsentDialogState extends State<GDPRConsentDialog> {
                   style: TextStyle(
                     fontSize: 13,
                     height: 1.4,
-                    color: isDark ? const Color(0xFFA0AEC0) : const Color(0xFF6B6B6B),
+                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -308,7 +309,7 @@ class _GDPRConsentDialogState extends State<GDPRConsentDialog> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: const Color(0xFF4A7C59),
+            activeTrackColor: AppColors.primary,
           ),
         ],
       ),

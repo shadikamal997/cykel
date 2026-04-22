@@ -438,26 +438,158 @@ class FamilyPricingService {
 
     return _firestore
         .collection('familyAccounts')
-        .where('members', arrayContainsAny: [
-          {'userId': userId}
-        ])
+        .where('ownerId', isEqualTo: userId)
         .limit(1)
         .snapshots()
         .asyncMap((snapshot) async {
-      // Firestore array-contains-any with maps is limited,
-      // so we query by ownerId and also check member arrays
-      if (snapshot.docs.isEmpty) {
-        // Try querying by ownerId
-        final ownerSnapshot = await _firestore
-            .collection('familyAccounts')
-            .where('ownerId', isEqualTo: userId)
-            .limit(1)
-            .get();
-        if (ownerSnapshot.docs.isEmpty) return null;
-        return FamilyAccount.fromFirestore(ownerSnapshot.docs.first);
+      if (snapshot.docs.isNotEmpty) {
+        return FamilyAccount.fromFirestore(snapshot.docs.first);
       }
-      return FamilyAccount.fromFirestore(snapshot.docs.first);
+      // User might be a member (not the owner) — check memberIds array
+      final memberSnapshot = await _firestore
+          .collection('familyAccounts')
+          .where('memberIds', arrayContains: userId)
+          .limit(1)
+          .get();
+      if (memberSnapshot.docs.isNotEmpty) {
+        return FamilyAccount.fromFirestore(memberSnapshot.docs.first);
+      }
+      return null;
     });
+  }
+
+  /// Create a family account (free for all users)
+  /// This allows users to create and manage family accounts without premium subscription
+  Future<FamilyAccount> createFamilyAccount({String? name}) async {
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not authenticated');
+    final user = _auth.currentUser;
+
+    // Check if user already has a family account
+    final existingAccount = await _firestore
+        .collection('familyAccounts')
+        .where('ownerId', isEqualTo: userId)
+        .limit(1)
+        .get();
+    
+    if (existingAccount.docs.isNotEmpty) {
+      throw Exception('You already own a family account');
+    }
+
+    final docRef = _firestore.collection('familyAccounts').doc();
+    final account = FamilyAccount(
+      id: docRef.id,
+      name: name ?? '${user?.displayName ?? "My"} Family',
+      ownerId: userId,
+      subscriptionId: null, // Free family account - no subscription required
+      members: [
+        FamilyMember(
+          userId: userId,
+          displayName: user?.displayName ?? 'Account Owner',
+          email: user?.email,
+          photoUrl: user?.photoURL,
+          role: FamilyRole.owner,
+          joinedAt: DateTime.now(),
+        ),
+      ],
+      maxMembers: 6, // Free tier allows up to 6 members
+      createdAt: DateTime.now(),
+    );
+
+    await docRef.set(account.toFirestore());
+    return account;
+  }
+
+  /// Create an extended family account with members and settings
+  /// This is the full-featured family creation used by the setup wizard
+  Future<String> createExtendedFamilyAccount({
+    required String name,
+    required List<Map<String, dynamic>> members,
+    Map<String, dynamic>? emergencyContact,
+    Map<String, dynamic>? homeAddress,
+  }) async {
+    final userId = _currentUserId;
+    if (userId == null) throw Exception('User not authenticated');
+    final user = _auth.currentUser;
+
+    // Check if user already has a family account
+    final existingAccount = await _firestore
+        .collection('familyAccounts')
+        .where('ownerId', isEqualTo: userId)
+        .limit(1)
+        .get();
+    
+    if (existingAccount.docs.isNotEmpty) {
+      throw Exception('You already own a family account');
+    }
+
+    final docRef = _firestore.collection('familyAccounts').doc();
+    final now = DateTime.now();
+
+    // Create the family account document
+    final familyData = <String, dynamic>{
+      'name': name,
+      'ownerId': userId,
+      'subscriptionId': null, // Free family account
+      'maxMembers': 8,
+      'createdAt': Timestamp.fromDate(now),
+      'updatedAt': Timestamp.fromDate(now),
+      // Owner as first member
+      'members': [
+        {
+          'id': userId,
+          'userId': userId,
+          'firstName': user?.displayName?.split(' ').first ?? 'Owner',
+          'lastName': user?.displayName?.split(' ').length == 2
+              ? user?.displayName?.split(' ').last
+              : null,
+          'email': user?.email,
+          'photoUrl': user?.photoURL,
+          'memberType': 'linked',
+          'relationship': 'self',
+          'dateOfBirth': Timestamp.fromDate(DateTime(1990, 1, 1)), // Placeholder
+          'permissions': {
+            'locationSharing': true,
+            'visibleToAdults': true,
+            'canSeeFamily': true,
+            'canAccessDashboard': true,
+            'canStartRides': true,
+            'receiveRideNotifications': true,
+          },
+          'createdAt': Timestamp.fromDate(now),
+          'isActive': true,
+        },
+        ...members, // Additional members from the wizard
+      ],
+    };
+
+    // Add emergency contact if provided
+    if (emergencyContact != null) {
+      familyData['emergencyContact'] = emergencyContact;
+    }
+
+    // Add home address if provided
+    if (homeAddress != null) {
+      familyData['homeAddress'] = homeAddress;
+    }
+
+    await docRef.set(familyData);
+
+    // Send invitations to members with email
+    for (final member in members) {
+      final email = member['email'] as String?;
+      final memberType = member['memberType'] as String?;
+      
+      if (email != null && email.isNotEmpty && memberType == 'pending') {
+        await inviteFamilyMember(
+          familyAccountId: docRef.id,
+          inviteeEmail: email,
+          role: FamilyRole.member,
+        );
+      }
+    }
+
+    return docRef.id;
   }
 
   /// Get family account by ID

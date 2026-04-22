@@ -20,12 +20,12 @@ import 'co2_summary_card.dart';
 import 'route_replay_screen.dart';
 
 // ─── Design Colors ─────────────────────────────────────────────────────────────
-const _kPrimaryColor = Color(0xFF4A7C59);
-const _kPrimaryText = Color(0xFF1A1A1A);
-const _kSecondaryText = Color(0xFF6B6B6B);
-const _kBackground = Color(0xFFFFFFFF);
-const _kCardBackground = Color(0xFFF4F5F2);
-const _kSoftElements = Color(0xFFE9ECE6);
+const _kPrimaryColor = AppColors.primary;
+const _kPrimaryText = AppColors.textPrimary;
+const _kSecondaryText = AppColors.textSecondary;
+const _kBackground = AppColors.background;
+const _kCardBackground = AppColors.surface;
+const _kSoftElements = AppColors.surfaceVariant;
 
 class ActivityScreen extends ConsumerStatefulWidget {
   const ActivityScreen({super.key});
@@ -83,11 +83,11 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
     final state  = ref.watch(rideNotifierProvider);
 
     return Scaffold(
-      backgroundColor: _kBackground,
+      backgroundColor: context.colors.background,
       body: Column(
         children: [
           Container(
-            color: _kBackground,
+            color: context.colors.background,
             padding: EdgeInsets.fromLTRB(20, topPad + 16, 20, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -173,8 +173,8 @@ class _RideTabState extends ConsumerState<_RideTab> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: state.isRiding
-                    ? [const Color(0xFF4A7C59), const Color(0xFF3D6B4A)]
-                    : [const Color(0xFFE8F5E9), const Color(0xFFC8E6C9)],
+                    ? [AppColors.primary, AppColors.primaryDark]
+                    : [AppColors.successLight, AppColors.successLight],
               ),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [

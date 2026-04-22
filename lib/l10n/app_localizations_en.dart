@@ -213,6 +213,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sectionNearby => 'Nearby';
 
   @override
+  String get cykelFeatures => 'CYKEL Features';
+
+  @override
   String conditionScore(String score) {
     return '$score/10';
   }
@@ -301,7 +304,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get savedPlaces => 'Saved places';
 
   @override
-  String get myBikes => 'My bikes';
+  String get myBikes => 'My Bikes';
 
   @override
   String get notificationSettings => 'Notifications';
@@ -490,6 +493,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noRidesSubtitle => 'Tap Start Ride to record your first journey';
+
+  @override
+  String get noRidesToday => 'No rides today yet';
+
+  @override
+  String get noRidesTodaySubtitle => 'Start your first ride';
+
+  @override
+  String get noQuickRoutesYet => 'No quick routes yet';
+
+  @override
+  String get noQuickRoutesSubtitle => 'Set your home and work locations';
+
+  @override
+  String get startTrackingRides => 'Start tracking your rides';
+
+  @override
+  String get startTrackingRidesSubtitle =>
+      'Your cycling stats will appear here';
 
   @override
   String get avgSpeed => 'Avg Speed';
@@ -1457,6 +1479,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get weatherAlerts => 'Weather Alerts';
+
+  @override
+  String get lowSeverity => 'Low';
+
+  @override
+  String get mediumSeverity => 'Medium';
+
+  @override
+  String get highSeverity => 'High';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get noNotifications => 'No notifications';
+
+  @override
+  String get noNotificationsDesc =>
+      'You\'re all caught up! Notifications will appear here.';
+
+  @override
+  String get markAllRead => 'Mark all read';
+
+  @override
+  String get justNow => 'Just now';
+
+  @override
+  String minutesAgo(int count) {
+    return '$count minutes ago';
+  }
+
+  @override
+  String hoursAgo(int count) {
+    return '$count hours ago';
+  }
+
+  @override
+  String daysAgo(int count) {
+    return '$count days ago';
+  }
 
   @override
   String get weatherUnavailable => 'Weather Unavailable';
@@ -3613,6 +3675,42 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String estimatedTaxSavings(String amount) {
+    return 'Est. tax savings: ~$amount DKK';
+  }
+
+  @override
+  String get taxDeductionInfo => 'Tax Deduction Info';
+
+  @override
+  String get yearToDate => 'Year-to-Date';
+
+  @override
+  String get howItWorks => 'How It Works';
+
+  @override
+  String get rateBreakdown => 'Rate Breakdown';
+
+  @override
+  String get exportForTaxFiling => 'Export for Tax Filing';
+
+  @override
+  String get learnMore => 'Learn More';
+
+  @override
+  String get noCommuteTripsYet => 'No Commute Trips Yet';
+
+  @override
+  String get setHomeWorkAddresses =>
+      'Set your home and work addresses to start tracking commute tax deductions';
+
+  @override
+  String get configure => 'Configure';
+
+  @override
+  String get failedToLoad => 'Failed to load';
+
+  @override
   String get hazardThunderstorm => 'Thunderstorm';
 
   @override
@@ -4419,6 +4517,461 @@ class AppLocalizationsEn extends AppLocalizations {
   String get periodAllTime => 'All Time';
 
   @override
+  String get buddyFindRidingBuddies => 'Find Riding Buddies';
+
+  @override
+  String get buddyTabForYou => 'For You';
+
+  @override
+  String get buddyTabRequests => 'Requests';
+
+  @override
+  String get buddyTabMatches => 'Matches';
+
+  @override
+  String get buddyFilters => 'Filters';
+
+  @override
+  String get buddyRidingLevel => 'Riding Level';
+
+  @override
+  String get buddyAllLevels => 'All Levels';
+
+  @override
+  String get buddyInterests => 'Interests';
+
+  @override
+  String get buddyCreateProfile => 'Create Your Buddy Profile';
+
+  @override
+  String get buddyCreateProfileDesc =>
+      'Set up your riding profile to find compatible cycling partners';
+
+  @override
+  String get buddyCreateProfileButton => 'Create Profile';
+
+  @override
+  String get buddyNoMatchesFound => 'No Matches Found';
+
+  @override
+  String get buddyNoMatchesFoundDesc =>
+      'Try adjusting your preferences or check back later';
+
+  @override
+  String get buddyNoPendingRequests => 'No Pending Requests';
+
+  @override
+  String get buddyNoPendingRequestsDesc => 'Match requests will appear here';
+
+  @override
+  String get buddyNoMatchesYet => 'No Matches Yet';
+
+  @override
+  String get buddyConnectInForYou =>
+      'Start connecting with riders in the \"For You\" tab';
+
+  @override
+  String get buddyAbout => 'About';
+
+  @override
+  String get buddyStats => 'Stats';
+
+  @override
+  String get buddyAvailability => 'Availability';
+
+  @override
+  String get buddyLanguages => 'Languages';
+
+  @override
+  String get buddyClose => 'Close';
+
+  @override
+  String get buddySendRequest => 'Send Request';
+
+  @override
+  String buddyMatchRequestSent(String name) {
+    return 'Match request sent to $name!';
+  }
+
+  @override
+  String get buddyDecline => 'Decline';
+
+  @override
+  String get buddyAccept => 'Accept';
+
+  @override
+  String get buddyMatchAccepted => 'Match accepted!';
+
+  @override
+  String get buddyRequestDeclined => 'Request declined';
+
+  @override
+  String get buddyChatComingSoon => 'Chat coming soon';
+
+  @override
+  String get rentalSectionBasicInfo => 'Basic Information';
+
+  @override
+  String get rentalSectionDetails => 'Details (Optional)';
+
+  @override
+  String get rentalSectionPricing => 'Pricing';
+
+  @override
+  String get rentalSectionFeatures => 'Features';
+
+  @override
+  String get rentalSectionLocation => 'Location';
+
+  @override
+  String get rentalSectionAvailability => 'Availability';
+
+  @override
+  String get rentalSectionAdditionalInfo => 'Additional Information';
+
+  @override
+  String get rentalSectionPhotos => 'Photos';
+
+  @override
+  String get rentalAddPhotos => 'Add Photos';
+
+  @override
+  String get rentalNoPhotos => 'No photos added yet';
+
+  @override
+  String get rentalAvailableFrom => 'Available From';
+
+  @override
+  String get rentalAvailableTo => 'Available To';
+
+  @override
+  String get rentalNoStartDate => 'No start date (available immediately)';
+
+  @override
+  String get rentalNoEndDate => 'No end date (available indefinitely)';
+
+  @override
+  String get rentalSelectDates => 'Please select start and end dates/times';
+
+  @override
+  String get rentalLocationSet => 'Location set to Copenhagen (picker pending)';
+
+  @override
+  String get rentalSelectLocation => 'Please select a pickup location';
+
+  @override
+  String rentalErrorSaving(String error) {
+    return 'Error saving listing: $error';
+  }
+
+  @override
+  String get rentalDescription => 'Description';
+
+  @override
+  String get rentalDetails => 'Details';
+
+  @override
+  String get rentalTerms => 'Rental Terms';
+
+  @override
+  String rentalReviews(int count) {
+    return 'Reviews ($count)';
+  }
+
+  @override
+  String get rentalConfirmRequest => 'Confirm Rental Request';
+
+  @override
+  String rentalBikeLabel(String title) {
+    return 'Bike: $title';
+  }
+
+  @override
+  String get rentalRequestSent =>
+      'Rental request sent! Owner will be notified.';
+
+  @override
+  String get rentalListingNotFound => 'Listing not found';
+
+  @override
+  String get rentalRequestButton => 'Request Rental';
+
+  @override
+  String get rentalRentABike => 'Rent a Bike';
+
+  @override
+  String get rentalListYourBike => 'List Your Bike';
+
+  @override
+  String get rentalClear => 'Clear';
+
+  @override
+  String get rentalApplyFilters => 'Apply Filters';
+
+  @override
+  String get rentalFilterBikeType => 'Bike Type';
+
+  @override
+  String get rentalFilterSize => 'Size';
+
+  @override
+  String get rentalFilterMaxPrice => 'Maximum Price';
+
+  @override
+  String get rentalFilterFeatures => 'Features';
+
+  @override
+  String get rentalFilterHelmet => 'Helmet included';
+
+  @override
+  String get rentalFilterLock => 'Lock included';
+
+  @override
+  String get rentalFilterFrom => 'From';
+
+  @override
+  String get rentalEndAfterStart => 'End time must be after start time';
+
+  @override
+  String get eventsApplyFilter => 'Apply Filter';
+
+  @override
+  String get eventsError => 'Error loading events';
+
+  @override
+  String get chatDeleteConversation => 'Delete Conversation';
+
+  @override
+  String get chatMessages => 'Messages';
+
+  @override
+  String get chatErrorLoading => 'Error loading conversations';
+
+  @override
+  String chatErrorLoadingMessages(String error) {
+    return 'Error loading messages: $error';
+  }
+
+  @override
+  String get chatSendPhoto => 'Send Photo';
+
+  @override
+  String get chatShareLocation => 'Share Location';
+
+  @override
+  String get chatDeleteConversationTitle => 'Delete Conversation';
+
+  @override
+  String get chatLoading => 'Loading...';
+
+  @override
+  String get routesCreateRoute => 'Create Route';
+
+  @override
+  String get routesCreate => 'Create';
+
+  @override
+  String get routesOptimizeRoute => 'Optimize Route';
+
+  @override
+  String get routesMinTwoWaypoints => 'Route must have at least 2 waypoints';
+
+  @override
+  String get routesEnterName => 'Please enter a route name';
+
+  @override
+  String get routesCreatedSuccess => 'Route created successfully!';
+
+  @override
+  String routesErrorCreating(String error) {
+    return 'Error creating route: $error';
+  }
+
+  @override
+  String get routesRoundTrip => 'Round Trip';
+
+  @override
+  String get routesRoundTripDesc => 'Route returns to start';
+
+  @override
+  String get routesCalculateElevation => 'Calculate Elevation';
+
+  @override
+  String get routesCalculateElevationDesc => 'Include elevation profile';
+
+  @override
+  String get routesFetchWeather => 'Fetch Weather';
+
+  @override
+  String get routesFetchWeatherDesc => 'Get current weather data';
+
+  @override
+  String get routesAddTag => 'Add Tag';
+
+  @override
+  String get routesEditWaypoint => 'Edit Waypoint';
+
+  @override
+  String get routesMyRoutes => 'My Routes';
+
+  @override
+  String routesErrorLoadingRoutes(String error) {
+    return 'Error loading routes: $error';
+  }
+
+  @override
+  String get routesRetry => 'Retry';
+
+  @override
+  String get routesFilterByTag => 'Filter by Tag';
+
+  @override
+  String get routesAllRoutes => 'All Routes';
+
+  @override
+  String get routesDeleteRoute => 'Delete Route';
+
+  @override
+  String get routesDeleteConfirm =>
+      'Are you sure you want to delete this route?';
+
+  @override
+  String get routesEditRoute => 'Edit Route';
+
+  @override
+  String get routesRouteNotFound => 'Route not found';
+
+  @override
+  String get routesNoElevationData => 'No elevation data available';
+
+  @override
+  String get routesNoWeatherData => 'No weather data available';
+
+  @override
+  String get routesFailedLoadWeather => 'Failed to load weather';
+
+  @override
+  String get routesNoRecommendations => 'No recommendations available';
+
+  @override
+  String get routesFailedLoadRecommendations =>
+      'Failed to load recommendations';
+
+  @override
+  String get familyMap => 'Family Map';
+
+  @override
+  String get familyNoAccount => 'No family account found';
+
+  @override
+  String get familySendSOSAlert => 'Send SOS Alert?';
+
+  @override
+  String get familySendSOS => 'Send SOS';
+
+  @override
+  String get familySOSSent => 'SOS alert sent to your family!';
+
+  @override
+  String familySOSFailed(String error) {
+    return 'Failed to send SOS: $error';
+  }
+
+  @override
+  String get familyCheckout => 'Checkout';
+
+  @override
+  String get familyAddPayment => 'Add Payment Method';
+
+  @override
+  String get familyPaymentError => 'Could not load payment methods';
+
+  @override
+  String get familyGetStarted => 'Get Started';
+
+  @override
+  String get familyNoRidesYet => 'No rides yet';
+
+  @override
+  String get familyNoRecentAlerts => 'No recent alerts';
+
+  @override
+  String get familyAchievements => 'Achievements';
+
+  @override
+  String get familyCreateChallenge => 'Create New Challenge';
+
+  @override
+  String get familyChallengeCreated => 'Challenge created!';
+
+  @override
+  String get expatSafetyEquipment => 'Safety Equipment';
+
+  @override
+  String expatNoGuideAvailable(String type) {
+    return 'No $type guide available';
+  }
+
+  @override
+  String expatErrorLoading(String error) {
+    return 'Error loading guide: $error';
+  }
+
+  @override
+  String get expatCyclingLaws => 'Cycling Laws';
+
+  @override
+  String get expatCultureEtiquette => 'Culture & Etiquette';
+
+  @override
+  String get expatCommute => 'Commute';
+
+  @override
+  String get expatNoRoutesAvailable => 'No routes available';
+
+  @override
+  String get expatBikeShops => 'Bike Shops';
+
+  @override
+  String get expatAllShops => 'All Shops';
+
+  @override
+  String get expatExpatFriendly => 'Expat-Friendly Only';
+
+  @override
+  String get expatRepairServices => 'Repair Services';
+
+  @override
+  String get expatSales => 'Sales';
+
+  @override
+  String get expatNoShopsFound => 'No shops found';
+
+  @override
+  String get expatCall => 'Call';
+
+  @override
+  String get expatWebsite => 'Website';
+
+  @override
+  String get commonShowAll => 'Show All';
+
+  @override
+  String get commonClearAll => 'Clear All';
+
+  @override
+  String get commonOpenNowOnly => 'Open now only';
+
+  @override
+  String get commonStartHere => 'Start Here';
+
+  @override
+  String get commonGoHere => 'Go Here';
+
+  @override
+  String get commonHoldSOS => 'Hold the SOS button for 2 seconds';
+
+  @override
   String get bikeMaintenanceTitle => 'Maintenance';
 
   @override
@@ -5180,4 +5733,98 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get viewOnMap => 'View on Map';
+
+  @override
+  String get myRentals => 'My Rentals';
+
+  @override
+  String get renting => 'Renting';
+
+  @override
+  String get listings => 'Listings';
+
+  @override
+  String get noListingsYet => 'No listings yet';
+
+  @override
+  String get listBikeToEarn => 'List your bike to start earning!';
+
+  @override
+  String get createListing => 'Create Listing';
+
+  @override
+  String get listingNotFound => 'Listing not found';
+
+  @override
+  String get errorLoadingListing => 'Error loading listing';
+
+  @override
+  String get declineRequest => 'Decline Request';
+
+  @override
+  String get declineRequestConfirm =>
+      'Are you sure you want to decline this request?';
+
+  @override
+  String get approveRequest => 'Approve Request';
+
+  @override
+  String get requestApproved => 'Request approved! Renter has been notified.';
+
+  @override
+  String get requestDeclined => 'Request declined';
+
+  @override
+  String get deleteListing => 'Delete Listing';
+
+  @override
+  String get deleteListingQuestion =>
+      'Are you sure you want to delete this listing?';
+
+  @override
+  String errorOccurred(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get safeZones => 'Safe Zones';
+
+  @override
+  String get noFamilyAccount => 'No family account found';
+
+  @override
+  String get addZone => 'Add Zone';
+
+  @override
+  String get deleteSafeZone => 'Delete Safe Zone?';
+
+  @override
+  String get deleteSafeZoneConfirm =>
+      'This will permanently remove this safe zone.';
+
+  @override
+  String zoneDeleted(String zoneName) {
+    return 'Deleted \"$zoneName\"';
+  }
+
+  @override
+  String get aboutSafeZones => 'About Safe Zones';
+
+  @override
+  String get gotIt => 'Got it';
+
+  @override
+  String get addFirstZone => 'Add Your First Zone';
+
+  @override
+  String get approve => 'Approve';
+
+  @override
+  String get createNewListing => 'Create New Listing';
+
+  @override
+  String get loading => 'Loading...';
+
+  @override
+  String get remove => 'Remove';
 }

@@ -4,12 +4,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/widgets/optimized_image.dart';
+import '../../../core/widgets/cached_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../data/chat_service.dart';
 import '../data/marketplace_service.dart';
@@ -17,10 +18,10 @@ import '../domain/chat_message.dart';
 import '../providers/marketplace_providers.dart';
 
 // ─── Design Colors ─────────────────────────────────────────────────────────────
-const _kPrimaryText = Color(0xFF1A1A1A);
-const _kSecondaryText = Color(0xFF6B6B6B);
-const _kBackground = Color(0xFFFFFFFF);
-const _kSoftElements = Color(0xFFE9ECE6);
+const _kPrimaryText = AppColors.textPrimary;
+const _kSecondaryText = AppColors.textSecondary;
+const _kBackground = AppColors.background;
+const _kSoftElements = AppColors.surfaceVariant;
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key, required this.threadId, this.thread});
@@ -204,7 +205,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
               ),
-              color: const Color(0xFFF8F9FA),
+              color: AppColors.surface,
               elevation: 4,
               shadowColor: Colors.black.withValues(alpha: 0.08),
               offset: const Offset(0, 8),
@@ -218,7 +219,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       const Icon(
                         Icons.check_circle_outline,
                         size: 22,
-                        color: Color(0xFF4A5568),
+                        color: AppColors.mutedForeground,
                       ),
                       const SizedBox(width: 14),
                       Text(
@@ -226,7 +227,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF4A5568),
+                          color: AppColors.mutedForeground,
                           letterSpacing: -0.2,
                         ),
                       ),
@@ -442,13 +443,12 @@ class _ListingBanner extends StatelessWidget {
         ),
         child: Row(children: [
           if (thread.listingImageUrl != null)
-            OptimizedNetworkImage(
+            CachedImage(
               imageUrl: thread.listingImageUrl!,
               width: 44,
               height: 44,
               fit: BoxFit.cover,
               borderRadius: BorderRadius.circular(8),
-              errorWidget: const SizedBox(width: 44, height: 44),
             )
           else
             Container(
@@ -521,15 +521,11 @@ class _Bubble extends StatelessWidget {
             if (message.isImage)
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
-                child: Image.network(
-                  message.imageUrl!,
+                child: CachedImage(
+                  imageUrl: message.imageUrl!,
                   width: 200,
                   height: 200,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const Icon(
-                      Icons.broken_image_rounded,
-                      size: 48,
-                      color: _kSecondaryText),
                 ),
               ),
             if (message.text.isNotEmpty)

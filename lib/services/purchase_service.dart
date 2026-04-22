@@ -36,12 +36,28 @@ class SubscriptionStatus {
     this.isActive = false,
     this.expiresAt,
     this.productId,
+    this.isTrial = false,
+    this.trialStartedAt,
+    this.trialEndsAt,
+    this.hasUsedTrial = false,
   });
 
   final SubscriptionPlan plan;
   final bool isActive;
   final DateTime? expiresAt;
   final String? productId;
+  
+  /// Whether the current subscription is in trial period
+  final bool isTrial;
+  
+  /// When the trial period started
+  final DateTime? trialStartedAt;
+  
+  /// When the trial period ends
+  final DateTime? trialEndsAt;
+  
+  /// Whether the user has ever used a trial (prevents re-trials)
+  final bool hasUsedTrial;
 
   /// Whether user has any paid premium tier (including student, annual, family).
   bool get isPremium =>
@@ -50,6 +66,22 @@ class SubscriptionStatus {
           plan == SubscriptionPlan.annual ||
           plan == SubscriptionPlan.family) &&
       isActive;
+  
+  /// Whether the trial is currently active and not expired
+  bool get isTrialActive {
+    if (!isTrial || trialEndsAt == null) return false;
+    return DateTime.now().isBefore(trialEndsAt!);
+  }
+  
+  /// Whether the user has access to premium features (paid or trial)
+  bool get hasPremiumAccess => isPremium || isTrialActive;
+  
+  /// Remaining days in trial period
+  int? get trialDaysRemaining {
+    if (!isTrial || trialEndsAt == null) return null;
+    final remaining = trialEndsAt!.difference(DateTime.now()).inDays;
+    return remaining > 0 ? remaining : 0;
+  }
 
   /// Legacy check for standard premium tier only.
   bool get isStandardPremium => plan == SubscriptionPlan.premium && isActive;
@@ -81,6 +113,10 @@ class SubscriptionStatus {
       isActive: data['active'] as bool? ?? false,
       expiresAt: (data['expiresAt'] as Timestamp?)?.toDate(),
       productId: data['productId'] as String?,
+      isTrial: data['isTrial'] as bool? ?? false,
+      trialStartedAt: (data['trialStartedAt'] as Timestamp?)?.toDate(),
+      trialEndsAt: (data['trialEndsAt'] as Timestamp?)?.toDate(),
+      hasUsedTrial: data['hasUsedTrial'] as bool? ?? false,
     );
   }
 
@@ -90,6 +126,12 @@ class SubscriptionStatus {
         'expiresAt':
             expiresAt != null ? Timestamp.fromDate(expiresAt!) : null,
         'productId': productId,
+        'isTrial': isTrial,
+        'trialStartedAt':
+            trialStartedAt != null ? Timestamp.fromDate(trialStartedAt!) : null,
+        'trialEndsAt':
+            trialEndsAt != null ? Timestamp.fromDate(trialEndsAt!) : null,
+        'hasUsedTrial': hasUsedTrial,
       };
 }
 
@@ -234,6 +276,89 @@ class PurchaseService {
   /// Restore previous purchases (e.g. after reinstall or device transfer).
   Future<void> restorePurchases() async {
     await _iap.restorePurchases();
+  }
+
+  // ── Trial Period Management ────────────────────────────────────────────
+
+  /// Start a 7-day free trial for the current user
+  /// Returns true if trial started successfully, false if already used
+  Future<bool> startTrial() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return false;
+
+    final userDoc = _firestore.collection(AppConstants.colUsers).doc(uid);
+    final snapshot = await userDoc.get();
+    
+    // Check if user has already used their trial
+    if (snapshot.exists) {
+      final data = snapshot.data();
+      final subscription = data?['subscription'] as Map<String, dynamic>?;
+      if (subscription?['hasUsedTrial'] == true) {
+        debugPrint('[PurchaseService] User has already used their trial');
+        return false;
+      }
+    }
+
+    // Start 7-day trial
+    final now = DateTime.now();
+    final trialEnd = now.add(const Duration(days: 7));
+    
+    try {
+      await userDoc.set({
+        'subscription': {
+          'plan': SubscriptionPlan.premium.name,
+          'active': true,
+          'isTrial': true,
+          'trialStartedAt': Timestamp.fromDate(now),
+          'trialEndsAt': Timestamp.fromDate(trialEnd),
+          'hasUsedTrial': true,
+          'expiresAt': Timestamp.fromDate(trialEnd),
+          'productId': null,
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+      }, SetOptions(merge: true));
+      
+      debugPrint('[PurchaseService] ✅ Started 7-day trial until $trialEnd');
+      return true;
+    } catch (e) {
+      debugPrint('[PurchaseService] ❌ Failed to start trial: $e');
+      return false;
+    }
+  }
+
+  /// Check if trial has expired and update subscription status
+  Future<void> checkTrialExpiry() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+
+    final userDoc = _firestore.collection(AppConstants.colUsers).doc(uid);
+    final snapshot = await userDoc.get();
+    
+    if (!snapshot.exists) return;
+    
+    final data = snapshot.data();
+    final subscription = data?['subscription'] as Map<String, dynamic>?;
+    if (subscription == null) return;
+    
+    final isTrial = subscription['isTrial'] as bool? ?? false;
+    final trialEndsAt = (subscription['trialEndsAt'] as Timestamp?)?.toDate();
+    
+    if (isTrial && trialEndsAt != null && DateTime.now().isAfter(trialEndsAt)) {
+      // Trial has expired, revert to free tier
+      try {
+        await userDoc.update({
+          'subscription.plan': SubscriptionPlan.free.name,
+          'subscription.active': false,
+          'subscription.isTrial': false,
+          'subscription.expiresAt': null,
+          'subscription.updatedAt': FieldValue.serverTimestamp(),
+        });
+        
+        debugPrint('[PurchaseService] ⏰ Trial expired, reverted to free tier');
+      } catch (e) {
+        debugPrint('[PurchaseService] ❌ Failed to update expired trial: $e');
+      }
+    }
   }
 
   // ── Handle purchase updates ────────────────────────────────────────────

@@ -3,14 +3,18 @@
 
 import 'package:flutter/material.dart' hide TimeOfDay, RouteSettings;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../core/l10n/l10n.dart';
+import '../../../core/providers/pending_route_provider.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../services/location_service.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../bike_share/domain/bike_share_station.dart';
+import '../../discover/data/places_service.dart';
 import '../data/route_suggestion_provider.dart';
 import '../domain/route_suggestion.dart';
 
@@ -221,9 +225,17 @@ class _SuggestionCardState extends State<_SuggestionCard> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),
-      child: InkWell(
+      child: Consumer(
+        builder: (context, ref, child) => InkWell(
         onTap: () {
-          // TODO: Navigate to route
+          ref.read(pendingRouteProvider.notifier).state = PlaceResult(
+            placeId: 'suggestion_${suggestion.id}',
+            text: suggestion.name,
+            subtitle: suggestion.endAddress ?? '',
+            lat: suggestion.endLocation.latitude,
+            lng: suggestion.endLocation.longitude,
+          );
+          context.go(AppRoutes.map);
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -590,6 +602,7 @@ class _SuggestionCardState extends State<_SuggestionCard> {
           ),
         ),
       ),
+    ),
     );
   }
 

@@ -155,9 +155,9 @@ class _ProviderSettingsScreenState
     _init(provider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         title: Text(l10n.settingsTitle, style: AppTextStyles.headline3),
       ),
       body: _busy
@@ -173,19 +173,19 @@ class _ProviderSettingsScreenState
                           style: AppTextStyles.bodyMedium),
                       subtitle: Text(l10n.activeStatusDesc,
                           style: AppTextStyles.bodySmall
-                              .copyWith(color: AppColors.textSecondary)),
+                              .copyWith(color: context.colors.textSecondary)),
                       value: provider.isActive,
                       activeTrackColor: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.5),
                       contentPadding: EdgeInsets.zero,
                       onChanged: (_) => _toggleActive(provider),
                     ),
-                    const Divider(color: AppColors.border),
+                    Divider(color: context.colors.border),
                     SwitchListTile.adaptive(
                       title: Text(l10n.temporarilyClosedLabel,
                           style: AppTextStyles.bodyMedium),
                       subtitle: Text(l10n.temporarilyClosedDesc,
                           style: AppTextStyles.bodySmall
-                              .copyWith(color: AppColors.textSecondary)),
+                              .copyWith(color: context.colors.textSecondary)),
                       value: provider.temporarilyClosed,
                       activeTrackColor: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.5),
                       contentPadding: EdgeInsets.zero,
@@ -280,9 +280,9 @@ class _SettingsCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -84,10 +84,25 @@ class DenmarkConstants {
   static const double idealMaxTemp = 25.0;     // Comfortable maximum
 
   // --- Tax Deduction (Denmark 2026) ---
-  /// Danish commuter tax deduction kicks in after 24 km per day (round trip)
+  /// Danish commuter tax deduction (befordringsfradrag) kicks in after 24 km per day (round trip)
   static const double taxDeductionMinKmPerDay = 24.0;
-  /// Deduction rate per km over the threshold (DKK)
-  static const double taxDeductionRateKm = 2.25;  // DKK per km (2026 rate)
+  
+  /// Standard deduction rate for 24-120 km per day (DKK/km)
+  static const double taxDeductionStandardRate = 1.98;  // DKK per km (2026 rate)
+  
+  /// Higher distance deduction rate for above 120 km per day (DKK/km)
+  static const double taxDeductionHigherRate = 0.99;  // DKK per km (2026 rate)
+  
+  /// Threshold where lower rate kicks in (km per day)
+  static const double taxDeductionHigherThreshold = 120.0;
+  
+  /// Maximum work days per year for tax calculation
+  static const int taxMaxWorkDaysPerYear = 230;
+  
+  /// Estimated average marginal tax rate in Denmark (for savings calculation)
+  /// Used to convert deductions to actual tax savings
+  /// Typical range: 37-55%, using 42% as reasonable average
+  static const double averageMarginalTaxRate = 0.42;
 
   // --- Supported Characters ---
   /// Danish special characters

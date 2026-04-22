@@ -5,59 +5,59 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/l10n/l10n.dart';
 import '../domain/expat_resource.dart';
 import '../application/expat_hub_providers.dart';
 
-class BikeShopsScreen extends ConsumerWidget {
+class BikeShopsScreen extends ConsumerStatefulWidget {
   const BikeShopsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BikeShopsScreen> createState() => _BikeShopsScreenState();
+}
+
+class _BikeShopsScreenState extends ConsumerState<BikeShopsScreen> {
+  String _filter = 'all';
+
+  @override
+  Widget build(BuildContext context) {
     final shopsAsync = ref.watch(bikeShopsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bike Shops'),
+        title: Text(context.l10n.expatBikeShops),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.filter_list),
-            onSelected: (value) {
-              // TODO: Handle filter selection
-            },
+            onSelected: (value) => setState(() => _filter = value),
             itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'all',
-                child: Text('All Shops'),
-              ),
-              const PopupMenuItem(
-                value: 'expat',
-                child: Text('Expat-Friendly Only'),
-              ),
-              const PopupMenuItem(
-                value: 'repair',
-                child: Text('Repair Services'),
-              ),
-              const PopupMenuItem(
-                value: 'sales',
-                child: Text('Sales'),
-              ),
+              PopupMenuItem(value: 'all', child: Text(context.l10n.expatAllShops)),
+              PopupMenuItem(value: 'expat', child: Text(context.l10n.expatExpatFriendly)),
+              PopupMenuItem(value: 'repair', child: Text(context.l10n.expatRepairServices)),
+              PopupMenuItem(value: 'sales', child: Text(context.l10n.expatSales)),
             ],
           ),
         ],
       ),
       body: shopsAsync.when(
         data: (shops) {
-          if (shops.isEmpty) {
-            return const Center(child: Text('No shops found'));
+          final filtered = _filter == 'all' ? shops : shops.where((s) {
+            if (_filter == 'expat') return s.isExpatFriendly;
+            if (_filter == 'repair') return s.services.contains(ShopService.repair);
+            if (_filter == 'sales') return s.services.contains(ShopService.sales);
+            return true;
+          }).toList();
+
+          if (filtered.isEmpty) {
+            return Center(child: Text(context.l10n.expatNoShopsFound));
           }
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: shops.length,
-            itemBuilder: (context, index) {
-              final shop = shops[index];
-              return _ShopCard(shop: shop);
-            },
+            itemCount: filtered.length,
+            itemBuilder: (context, index) => RepaintBoundary(
+              child: _ShopCard(shop: filtered[index]),
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -181,7 +181,7 @@ class _ShopCard extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: () => _launchPhone(shop.phone!),
                       icon: const Icon(Icons.phone, size: 16),
-                      label: const Text('Call'),
+                      label: Text(context.l10n.expatCall),
                     ),
                   ),
                 if (shop.phone != null && shop.website != null)
@@ -191,7 +191,7 @@ class _ShopCard extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: () => _launchUrl(shop.website!),
                       icon: const Icon(Icons.language, size: 16),
-                      label: const Text('Website'),
+                      label: Text(context.l10n.expatWebsite),
                     ),
                   ),
               ],

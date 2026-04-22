@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/l10n/l10n.dart';
 import '../domain/bike_listing.dart';
 import '../domain/rental_agreement.dart';
 import '../application/bike_rental_providers.dart';
@@ -39,13 +40,13 @@ class _MyRentalsScreenState extends ConsumerState<MyRentalsScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Rentals'),
+        title: Text(context.l10n.myRentals),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Renting', icon: Icon(Icons.pedal_bike)),
-            Tab(text: 'My Bikes', icon: Icon(Icons.two_wheeler)),
-            Tab(text: 'Listings', icon: Icon(Icons.list)),
+          tabs: [
+            Tab(text: context.l10n.renting, icon: const Icon(Icons.pedal_bike)),
+            Tab(text: context.l10n.myBikes, icon: const Icon(Icons.two_wheeler)),
+            Tab(text: context.l10n.listings, icon: const Icon(Icons.list)),
           ],
         ),
       ),
@@ -101,7 +102,7 @@ class _AsRenterTab extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Text('Error: $error'),
+          error: (error, stack) => Text(context.l10n.errorOccurred(error.toString())),
         ),
         const SizedBox(height: 24),
 
@@ -134,7 +135,7 @@ class _AsRenterTab extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Text('Error: $error'),
+          error: (error, stack) => Text(context.l10n.errorOccurred(error.toString())),
         ),
         const SizedBox(height: 24),
 
@@ -164,7 +165,7 @@ class _AsRenterTab extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Text('Error: $error'),
+          error: (error, stack) => Text(context.l10n.errorOccurred(error.toString())),
         ),
       ],
     );
@@ -245,7 +246,7 @@ class _AsOwnerTab extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Text('Error: $error'),
+          error: (error, stack) => Text(context.l10n.errorOccurred(error.toString())),
         ),
         const SizedBox(height: 24),
 
@@ -278,7 +279,7 @@ class _AsOwnerTab extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Text('Error: $error'),
+          error: (error, stack) => Text(context.l10n.errorOccurred(error.toString())),
         ),
         const SizedBox(height: 24),
 
@@ -308,7 +309,7 @@ class _AsOwnerTab extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Text('Error: $error'),
+          error: (error, stack) => Text(context.l10n.errorOccurred(error.toString())),
         ),
       ],
     );
@@ -369,9 +370,9 @@ class _MyListingsTab extends ConsumerWidget {
               children: [
                 Icon(Icons.pedal_bike, size: 80, color: Colors.grey[400]),
                 const SizedBox(height: 16),
-                const Text('No listings yet'),
+                Text(context.l10n.noListingsYet),
                 const SizedBox(height: 8),
-                const Text('List your bike to start earning!'),
+                Text(context.l10n.listBikeToEarn),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
                   onPressed: () {
@@ -383,7 +384,7 @@ class _MyListingsTab extends ConsumerWidget {
                     );
                   },
                   icon: const Icon(Icons.add),
-                  label: const Text('Create Listing'),
+                  label: Text(context.l10n.createListing),
                 ),
               ],
             ),
@@ -404,7 +405,7 @@ class _MyListingsTab extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Error: $error')),
+      error: (error, stack) => Center(child: Text(context.l10n.errorOccurred(error.toString()))),
     );
   }
 
@@ -449,7 +450,7 @@ class _MyListingsTab extends ConsumerWidget {
                 );
               },
               icon: const Icon(Icons.add),
-              label: const Text('Create New Listing'),
+              label: Text(context.l10n.createNewListing),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size.fromHeight(48),
               ),
@@ -566,14 +567,14 @@ class _RentalRequestCard extends ConsumerWidget {
             const SizedBox(height: 12),
             listingAsync.when(
               data: (listing) {
-                if (listing == null) return const Text('Listing not found');
+                if (listing == null) return Text(context.l10n.listingNotFound);
                 return Text(
                   listing.title,
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 );
               },
-              loading: () => const Text('Loading...'),
-              error: (_, _) => const Text('Error loading listing'),
+              loading: () => Text(context.l10n.loading),
+              error: (_, _) => Text(context.l10n.errorLoadingListing),
             ),
             const SizedBox(height: 8),
             Text(
@@ -630,14 +631,14 @@ class _OwnerRequestCard extends ConsumerWidget {
           children: [
             listingAsync.when(
               data: (listing) {
-                if (listing == null) return const Text('Listing not found');
+                if (listing == null) return Text(context.l10n.listingNotFound);
                 return Text(
                   listing.title,
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 );
               },
-              loading: () => const Text('Loading...'),
-              error: (_, _) => const Text('Error loading listing'),
+              loading: () => Text(context.l10n.loading),
+              error: (_, _) => Text(context.l10n.errorLoadingListing),
             ),
             const SizedBox(height: 8),
             Text(
@@ -674,16 +675,16 @@ class _OwnerRequestCard extends ConsumerWidget {
                       final confirmed = await showDialog<bool>(
                         context: context,
                         builder: (context) => AlertDialog(
-                          title: const Text('Decline Request'),
-                          content: const Text('Are you sure you want to decline this request?'),
+                          title: Text(context.l10n.declineRequest),
+                          content: Text(context.l10n.declineRequestConfirm),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Cancel'),
+                              child: Text(context.l10n.cancel),
                             ),
                             ElevatedButton(
                               onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Decline'),
+                              child: Text(context.l10n.decline),
                             ),
                           ],
                         ),
@@ -693,7 +694,7 @@ class _OwnerRequestCard extends ConsumerWidget {
                         await service.declineRentalRequest(request.id, 'Not available');
                       }
                     },
-                    child: const Text('Decline'),
+                    child: Text(context.l10n.decline),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -704,18 +705,18 @@ class _OwnerRequestCard extends ConsumerWidget {
                       final confirmed = await showDialog<bool>(
                         context: context,
                         builder: (context) => AlertDialog(
-                          title: const Text('Approve Request'),
+                          title: Text(context.l10n.approveRequest),
                           content: const Text(
                             'Are you sure you want to approve this rental request?',
                           ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Cancel'),
+                              child: Text(context.l10n.cancel),
                             ),
                             ElevatedButton(
                               onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Approve'),
+                              child: Text(context.l10n.approve),
                             ),
                           ],
                         ),
@@ -725,15 +726,15 @@ class _OwnerRequestCard extends ConsumerWidget {
                         await service.approveRentalRequest(request.id);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Request approved! Renter has been notified.'),
+                            SnackBar(
+                              content: Text(context.l10n.requestApproved),
                               backgroundColor: Colors.green,
                             ),
                           );
                         }
                       }
                     },
-                    child: const Text('Approve'),
+                    child: Text(context.l10n.approve),
                   ),
                 ),
               ],
@@ -791,14 +792,14 @@ class _RentalAgreementCard extends ConsumerWidget {
             const SizedBox(height: 12),
             listingAsync.when(
               data: (listing) {
-                if (listing == null) return const Text('Listing not found');
+                if (listing == null) return Text(context.l10n.listingNotFound);
                 return Text(
                   listing.title,
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 );
               },
-              loading: () => const Text('Loading...'),
-              error: (_, _) => const Text('Error loading listing'),
+              loading: () => Text(context.l10n.loading),
+              error: (_, _) => Text(context.l10n.errorLoadingListing),
             ),
             const SizedBox(height: 8),
             Text(
@@ -948,7 +949,7 @@ class _ListingCard extends ConsumerWidget {
                         );
                       },
                       icon: const Icon(Icons.edit),
-                      label: const Text('Edit'),
+                      label: Text(context.l10n.edit),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -958,21 +959,21 @@ class _ListingCard extends ConsumerWidget {
                         final confirmed = await showDialog<bool>(
                           context: context,
                           builder: (context) => AlertDialog(
-                            title: const Text('Delete Listing'),
-                            content: const Text(
-                              'Are you sure you want to delete this listing? This action cannot be undone.',
+                            title: Text(context.l10n.deleteListing),
+                            content: Text(
+                              context.l10n.deleteListingQuestion,
                             ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context, false),
-                                child: const Text('Cancel'),
+                                child: Text(context.l10n.cancel),
                               ),
                               ElevatedButton(
                                 onPressed: () => Navigator.pop(context, true),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.red,
                                 ),
-                                child: const Text('Delete'),
+                                child: Text(context.l10n.delete),
                               ),
                             ],
                           ),
@@ -982,8 +983,8 @@ class _ListingCard extends ConsumerWidget {
                           await service.deleteListing(listing.id);
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Listing deleted'),
+                              SnackBar(
+                                content: Text(context.l10n.listingDeleted),
                                 backgroundColor: Colors.red,
                               ),
                             );
@@ -991,7 +992,7 @@ class _ListingCard extends ConsumerWidget {
                         }
                       },
                       icon: const Icon(Icons.delete),
-                      label: const Text('Delete'),
+                      label: Text(context.l10n.delete),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red,
                       ),

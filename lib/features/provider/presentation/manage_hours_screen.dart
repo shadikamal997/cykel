@@ -105,9 +105,9 @@ class _ManageHoursScreenState extends ConsumerState<ManageHoursScreen> {
     };
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         title: Text(l10n.manageHoursTitle, style: AppTextStyles.headline3),
       ),
       body: ListView(
@@ -118,7 +118,7 @@ class _ManageHoursScreenState extends ConsumerState<ManageHoursScreen> {
             icon: const Icon(Icons.copy_all_rounded, size: 18),
             label: Text(l10n.copyToAllDays),
             style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+              foregroundColor: context.colors.textPrimary,
               alignment: Alignment.centerLeft,
               padding: EdgeInsets.zero,
             ),
@@ -142,8 +142,8 @@ class _ManageHoursScreenState extends ConsumerState<ManageHoursScreen> {
           child: FilledButton(
             onPressed: _saving ? null : () => _save(provider),
             style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-              foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
               elevation: 0,
               minimumSize: const Size.fromHeight(52),
               shape: RoundedRectangleBorder(
@@ -208,9 +208,9 @@ class _DayRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: context.colors.border),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
@@ -227,7 +227,7 @@ class _DayRow extends StatelessWidget {
                 children: [
                   Checkbox(
                     value: dayHours.closed,
-                    activeColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                    activeColor: context.colors.textPrimary,
                     visualDensity: VisualDensity.compact,
                     onChanged: (v) => onChanged(DayHours(
                       open: dayHours.open,
@@ -292,7 +292,7 @@ class _TimeButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: context.colors.border),
         ),
         child: Text(label, style: AppTextStyles.bodyMedium),
       ),

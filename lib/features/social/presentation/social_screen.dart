@@ -7,7 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../core/widgets/optimized_image.dart';
+import '../../../core/widgets/app_image.dart';
+import '../../auth/domain/app_user.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../data/social_provider.dart';
 import '../domain/social.dart';
@@ -41,10 +42,10 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
     final pendingCount = incomingRequests.valueOrNull?.length ?? 0;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
         title: Text(context.l10n.community),
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         actions: [
@@ -107,7 +108,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
   void _showFriendRequests(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -119,7 +120,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
   void _showSearchUsers(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -243,30 +244,21 @@ class _FriendTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.1),
-        child: friend.photoUrl != null
-            ? OptimizedAvatarImage(
-                imageUrl: friend.photoUrl!,
-                radius: 20,
-              )
-            : Text(
-                friend.displayName.isNotEmpty
-                    ? friend.displayName[0].toUpperCase()
-                    : '?',
-                style: const TextStyle(
-                  color: AppColors.textOnPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+      leading: AppAvatar(
+        url: friend.photoUrl,
+        thumbnailUrl: AppUser.getThumbnailUrl(friend.photoUrl),
+        size: 40,
+        fallbackText: friend.displayName.isNotEmpty
+            ? friend.displayName[0].toUpperCase()
+            : '?',
       ),
       title: Text(friend.displayName, style: AppTextStyles.bodyMedium),
       subtitle: Text(
         context.l10n.socialTotalKm(friend.totalKm.toStringAsFixed(1)),
-        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+        style: AppTextStyles.caption.copyWith(color: context.colors.textSecondary),
       ),
       trailing: PopupMenuButton<String>(
-        icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
+        icon: Icon(Icons.more_vert, color: context.colors.textSecondary),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
         ),
@@ -371,9 +363,9 @@ class _SharedRideCard extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -384,24 +376,13 @@ class _SharedRideCard extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.1),
-                    child: ride.ownerPhotoUrl != null
-                        ? OptimizedAvatarImage(
-                            imageUrl: ride.ownerPhotoUrl!,
-                            radius: 16,
-                          )
-                        : Text(
-                            ride.ownerDisplayName.isNotEmpty
-                                ? ride.ownerDisplayName[0].toUpperCase()
-                                : '?',
-                            style: const TextStyle(
-                              color: AppColors.textOnPrimary,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
+                  AppAvatar(
+                    url: ride.ownerPhotoUrl,
+                    thumbnailUrl: AppUser.getThumbnailUrl(ride.ownerPhotoUrl),
+                    size: 32,
+                    fallbackText: ride.ownerDisplayName.isNotEmpty
+                        ? ride.ownerDisplayName[0].toUpperCase()
+                        : '?',
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -417,7 +398,7 @@ class _SharedRideCard extends ConsumerWidget {
                         Text(
                           _timeAgo(context, ride.sharedAt),
                           style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                         ),
                       ],
@@ -456,7 +437,7 @@ class _SharedRideCard extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Row(
                 children: [
-                  const Icon(Icons.place, size: 14, color: AppColors.textSecondary),
+                  Icon(Icons.place, size: 14, color: context.colors.textSecondary),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
@@ -464,7 +445,7 @@ class _SharedRideCard extends ConsumerWidget {
                           .where((s) => s != null)
                           .join(' → '),
                       style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -487,8 +468,8 @@ class _SharedRideCard extends ConsumerWidget {
           // Actions
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppColors.border)),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: context.colors.border)),
             ),
             child: Row(
               children: [
@@ -503,14 +484,14 @@ class _SharedRideCard extends ConsumerWidget {
                 Text(
                   '${ride.likes.length}',
                   style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
                 const SizedBox(width: 16),
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.chat_bubble_outline,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                     size: 20,
                   ),
                   onPressed: () => _showComments(context),
@@ -518,15 +499,15 @@ class _SharedRideCard extends ConsumerWidget {
                 Text(
                   '${ride.commentsCount}',
                   style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
                 const Spacer(),
                 if (isOwnRide)
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.delete_outline,
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                       size: 20,
                     ),
                     onPressed: () => _deleteRide(context, ref),
@@ -556,7 +537,7 @@ class _SharedRideCard extends ConsumerWidget {
   void _showComments(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -635,7 +616,7 @@ class _FriendRequestsSheet extends ConsumerWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.textSecondary.withValues(alpha: 0.3),
+                    color: context.colors.textSecondary.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -653,7 +634,7 @@ class _FriendRequestsSheet extends ConsumerWidget {
                     Text(
                       context.l10n.socialReceived,
                       style: AppTextStyles.labelMedium.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -682,7 +663,7 @@ class _FriendRequestsSheet extends ConsumerWidget {
                     Text(
                       context.l10n.socialSent,
                       style: AppTextStyles.labelMedium.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -727,22 +708,16 @@ class _RequestTile extends ConsumerWidget {
     final photoUrl = isIncoming ? request.fromPhotoUrl : request.toPhotoUrl;
 
     return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.1),
-        child: photoUrl != null
-            ? OptimizedAvatarImage(imageUrl: photoUrl, radius: 20)
-            : Text(
-                displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-                style: TextStyle(
-                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+      leading: AppAvatar(
+        url: photoUrl,
+        thumbnailUrl: AppUser.getThumbnailUrl(photoUrl),
+        size: 40,
+        fallbackText: displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
       ),
       title: Text(displayName, style: AppTextStyles.bodyMedium),
       subtitle: Text(
         _timeAgo(context, request.sentAt),
-        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+        style: AppTextStyles.caption.copyWith(color: context.colors.textSecondary),
       ),
       trailing: isIncoming
           ? Row(
@@ -758,7 +733,7 @@ class _RequestTile extends ConsumerWidget {
                 ),
               ],
             )
-          : const Icon(Icons.schedule, color: AppColors.textSecondary),
+          : Icon(Icons.schedule, color: context.colors.textSecondary),
     );
   }
 
@@ -850,7 +825,7 @@ class _SearchUsersSheetState extends ConsumerState<_SearchUsersSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.textSecondary.withValues(alpha: 0.3),
+                color: context.colors.textSecondary.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -907,29 +882,23 @@ class _SearchResultTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.1),
-        child: result.photoUrl != null
-            ? OptimizedAvatarImage(imageUrl: result.photoUrl!, radius: 20)
-            : Text(
-                result.displayName.isNotEmpty
-                    ? result.displayName[0].toUpperCase()
-                    : '?',
-                style: TextStyle(
-                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+      leading: AppAvatar(
+        url: result.photoUrl,
+        thumbnailUrl: AppUser.getThumbnailUrl(result.photoUrl),
+        size: 40,
+        fallbackText: result.displayName.isNotEmpty
+            ? result.displayName[0].toUpperCase()
+            : '?',
       ),
       title: Text(result.displayName, style: AppTextStyles.bodyMedium),
       subtitle: Text(
         context.l10n.socialTotalKm(result.totalKm.toStringAsFixed(1)),
-        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+        style: AppTextStyles.caption.copyWith(color: context.colors.textSecondary),
       ),
       trailing: result.isFriend
           ? Icon(Icons.check, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)
           : result.hasPendingRequest
-              ? const Icon(Icons.schedule, color: AppColors.textSecondary)
+              ? Icon(Icons.schedule, color: context.colors.textSecondary)
               : ElevatedButton(
                   onPressed: () => _sendRequest(context, ref),
                   style: ElevatedButton.styleFrom(
@@ -1041,7 +1010,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.textSecondary.withValues(alpha: 0.3),
+                    color: context.colors.textSecondary.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1122,24 +1091,13 @@ class _CommentTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.1),
-            child: comment.authorPhotoUrl != null
-                ? OptimizedAvatarImage(
-                    imageUrl: comment.authorPhotoUrl!,
-                    radius: 16,
-                  )
-                : Text(
-                    comment.authorDisplayName.isNotEmpty
-                        ? comment.authorDisplayName[0].toUpperCase()
-                        : '?',
-                    style: const TextStyle(
-                      color: AppColors.textOnPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
+          AppAvatar(
+            url: comment.authorPhotoUrl,
+            thumbnailUrl: AppUser.getThumbnailUrl(comment.authorPhotoUrl),
+            size: 32,
+            fallbackText: comment.authorDisplayName.isNotEmpty
+                ? comment.authorDisplayName[0].toUpperCase()
+                : '?',
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -1158,7 +1116,7 @@ class _CommentTile extends StatelessWidget {
                     Text(
                       _timeAgo(context, comment.createdAt),
                       style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ],
@@ -1209,7 +1167,7 @@ class _EmptyState extends StatelessWidget {
             Text(
               subtitle,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),

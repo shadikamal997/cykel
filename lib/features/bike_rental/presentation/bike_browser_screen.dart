@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../../core/l10n/l10n.dart';
+import '../../../core/widgets/cached_image.dart';
+
 import '../domain/bike_listing.dart';
 import '../application/bike_rental_providers.dart';
 import 'bike_detail_screen.dart';
@@ -119,7 +122,7 @@ class _BikeBrowserScreenState extends ConsumerState<BikeBrowserScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Rent a Bike'),
+        title: Text(context.l10n.rentalRentABike),
         actions: [
           IconButton(
             icon: Icon(_viewMode == ViewMode.list ? Icons.map : Icons.list),
@@ -210,7 +213,7 @@ class _BikeBrowserScreenState extends ConsumerState<BikeBrowserScreen> {
                   ),
                   TextButton(
                     onPressed: _clearFilters,
-                    child: const Text('Clear'),
+                    child: Text(context.l10n.rentalClear),
                   ),
                 ],
               ),
@@ -261,7 +264,7 @@ class _BikeBrowserScreenState extends ConsumerState<BikeBrowserScreen> {
           );
         },
         icon: const Icon(Icons.add),
-        label: const Text('List Your Bike'),
+        label: Text(context.l10n.rentalListYourBike),
       ),
     );
   }
@@ -361,14 +364,11 @@ class _BikeListingCard extends StatelessWidget {
           children: [
             // Photo
             if (listing.hasPhotos)
-              Image.network(
-                listing.photoUrls.first,
+              CachedImage(
+                imageUrl: listing.photoUrls.first,
                 height: 200,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return _buildPlaceholder();
-                },
               )
             else
               _buildPlaceholder(),
@@ -620,7 +620,7 @@ class _FilterDialogState extends State<_FilterDialog> {
               const SizedBox(height: 24),
 
               // Bike Type
-              const Text('Bike Type', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(context.l10n.rentalFilterBikeType, style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -647,7 +647,7 @@ class _FilterDialogState extends State<_FilterDialog> {
               const SizedBox(height: 24),
 
               // Size
-              const Text('Size', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(context.l10n.rentalFilterSize, style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -673,7 +673,7 @@ class _FilterDialogState extends State<_FilterDialog> {
               const SizedBox(height: 24),
 
               // Price
-              const Text('Maximum Price', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(context.l10n.rentalFilterMaxPrice, style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -713,9 +713,9 @@ class _FilterDialogState extends State<_FilterDialog> {
               const SizedBox(height: 24),
 
               // Features
-              const Text('Features', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(context.l10n.rentalFilterFeatures, style: const TextStyle(fontWeight: FontWeight.bold)),
               CheckboxListTile(
-                title: const Text('Helmet included'),
+                title: Text(context.l10n.rentalFilterHelmet),
                 value: _helmet,
                 onChanged: (value) {
                   setState(() => _helmet = value ?? false);
@@ -723,7 +723,7 @@ class _FilterDialogState extends State<_FilterDialog> {
                 contentPadding: EdgeInsets.zero,
               ),
               CheckboxListTile(
-                title: const Text('Lock included'),
+                title: Text(context.l10n.rentalFilterLock),
                 value: _lock,
                 onChanged: (value) {
                   setState(() => _lock = value ?? false);
@@ -792,7 +792,7 @@ class _FilterDialogState extends State<_FilterDialog> {
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
                 ),
-                child: const Text('Apply Filters'),
+                child: Text(context.l10n.rentalApplyFilters),
               ),
             ],
           ),

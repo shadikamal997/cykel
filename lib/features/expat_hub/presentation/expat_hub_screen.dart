@@ -1,8 +1,11 @@
 /// CYKEL — Expat Hub Main Screen
 /// Landing page for expat resources and guides
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/widgets/cached_image.dart';
 
 import '../domain/expat_resource.dart';
 import '../application/expat_hub_providers.dart';
@@ -34,13 +37,10 @@ class _ExpatHubScreenState extends ConsumerState<ExpatHubScreen> {
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
-              // TODO: Navigate to search screen
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.translate),
-            onPressed: () {
-              // TODO: Show language selector
+              showSearch(
+                context: context,
+                delegate: _ExpatSearchDelegate(),
+              );
             },
           ),
         ],
@@ -476,14 +476,11 @@ class _FeaturedGuideCard extends StatelessWidget {
             children: [
               // Cover image
               if (guide.coverImageUrl != null)
-                Image.network(
-                  guide.coverImageUrl!,
+                CachedImage(
+                  imageUrl: guide.coverImageUrl!,
                   height: 100,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return _buildPlaceholder();
-                  },
                 )
               else
                 _buildPlaceholder(),
@@ -623,6 +620,63 @@ class _QuickTipCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ExpatSearchDelegate extends SearchDelegate<String> {
+  @override
+  List<Widget> buildActions(BuildContext context) => [
+        IconButton(
+          icon: const Icon(Icons.clear),
+          onPressed: () => query = '',
+        ),
+      ];
+
+  @override
+  Widget buildLeading(BuildContext context) => IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () => close(context, ''),
+      );
+
+  @override
+  Widget buildResults(BuildContext context) => _buildSearchResults(context);
+
+  @override
+  Widget buildSuggestions(BuildContext context) => _buildSearchResults(context);
+
+  Widget _buildSearchResults(BuildContext context) {
+    if (query.isEmpty) {
+      return const Center(child: Text('Type to search guides, tips, and resources'));
+    }
+    return FutureBuilder<QuerySnapshot>(
+      future: FirebaseFirestore.instance
+          .collection('expatGuides')
+          .where('searchKeywords', arrayContains: query.toLowerCase())
+          .limit(20)
+          .get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final docs = snapshot.data?.docs ?? [];
+        if (docs.isEmpty) {
+          return Center(child: Text('No results for "$query"'));
+        }
+        return ListView.builder(
+          itemCount: docs.length,
+          itemBuilder: (context, i) {
+            final data = docs[i].data() as Map<String, dynamic>;
+            return ListTile(
+              leading: const Icon(Icons.article_outlined),
+              title: Text(data['title'] as String? ?? ''),
+              subtitle: Text(data['summary'] as String? ?? '',
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
+              onTap: () => close(context, docs[i].id),
+            );
+          },
+        );
+      },
     );
   }
 }

@@ -74,11 +74,24 @@ import '../../features/bike_share/presentation/bike_share_map_screen.dart';
 import '../../features/bike_share/presentation/nearby_stations_screen.dart';
 import '../../features/chat/presentation/conversations_list_screen.dart';
 import '../../features/chat/presentation/chat_screen.dart' as chat;
+import '../../features/family_pricing/presentation/family_live_map_screen.dart';
 import '../../features/family_pricing/presentation/family_management_screen.dart';
+import '../../features/family_pricing/presentation/family_setup_wizard.dart';
+import '../../features/family_pricing/presentation/alert_history_screen.dart';
+import '../../features/family_pricing/presentation/family_achievements_screen.dart';
+import '../../features/family_pricing/presentation/family_dashboard_screen.dart';
+import '../../features/family_pricing/presentation/ride_history_screen.dart';
+import '../../features/family_pricing/presentation/safe_zones_screen.dart';
+import '../../features/family_pricing/presentation/safe_zone_edit_screen.dart';
+import '../../features/family_pricing/presentation/guest_riders_screen.dart';
+import '../../features/family_pricing/presentation/group_rides_screen.dart';
+import '../../features/family_pricing/domain/family_location.dart';
 import '../../features/family_pricing/presentation/subscription_plans_screen.dart';
 import '../../features/buddy_matching/presentation/buddy_discovery_screen.dart';
 import '../../features/expat_hub/presentation/expat_hub_screen.dart';
 import '../../features/expat_hub/presentation/guides_screen.dart';
+import '../../features/home/presentation/weather_alerts_screen.dart';
+import '../../features/notifications/presentation/notifications_list_screen.dart';
 
 // ─── Route Name Constants ────────────────────────────────────────────────────
 
@@ -123,6 +136,12 @@ class AppRoutes {
 
   // Theft Alerts
   static const String theftAlerts = '/theft-alerts';
+
+  // Weather Alerts
+  static const String weatherAlerts = '/weather-alerts';
+
+  // Notifications
+  static const String notifications = '/notifications';
 
   // Social
   static const String social = '/social';
@@ -169,6 +188,16 @@ class AppRoutes {
   // Family Pricing
   static const String familyGroups = '/family';
   static const String familySubscription = '/family/subscription';
+  static const String familySetup = '/family/setup';
+  static const String familyDashboard = '/family/dashboard';
+  static const String familyMap = '/family/map';
+  static const String familySafeZones = '/family/safe-zones';
+  static const String familySafeZoneEdit = '/family/safe-zones/edit';
+  static const String familyRideHistory = '/family/rides';
+  static const String familyAlertHistory = '/family/alerts';
+  static const String familyAchievements = '/family/achievements';
+  static const String familyGuests = '/family/guests';
+  static const String familyGroupRides = '/family/group-rides';
 
   // Buddy Matching
   static const String buddyMatching = '/buddy-matching';
@@ -227,8 +256,8 @@ class _RouterNotifier extends AsyncNotifier<void> implements Listenable {
         location == AppRoutes.forgotPassword;
 
     if (user == null) {
-      // Signed out: send to welcome unless already on an auth screen.
-      if (isOnSplash || !isOnAuthScreen) return AppRoutes.welcome;
+      // Signed out: send to login unless already on an auth screen.
+      if (isOnSplash || !isOnAuthScreen) return AppRoutes.login;
       return null;
     }
 
@@ -307,7 +336,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
           child: const WelcomeScreen(),
-          transitionDuration: const Duration(milliseconds: 400),
+          transitionDuration: const Duration(milliseconds: 200),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },
@@ -341,7 +370,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
           child: const GdprConsentScreen(),
-          transitionDuration: const Duration(milliseconds: 400),
+          transitionDuration: const Duration(milliseconds: 200),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },
@@ -443,6 +472,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.theftAlerts,
         name: 'theft-alerts',
         builder: (context, state) => const TheftAlertsScreen(),
+      ),
+
+      // ── Weather Alerts ──────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.weatherAlerts,
+        name: 'weather-alerts',
+        builder: (context, state) => const WeatherAlertsScreen(),
+      ),
+
+      // ── Notifications ───────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.notifications,
+        name: 'notifications',
+        builder: (context, state) => const NotificationsListScreen(),
       ),
 
       // ── Social ──────────────────────────────────────────────────────────
@@ -615,6 +658,62 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'family-subscription',
         builder: (context, state) => const SubscriptionPlansScreen(),
       ),
+      GoRoute(
+        path: AppRoutes.familySetup,
+        name: 'family-setup',
+        builder: (context, state) => const FamilySetupWizard(),
+      ),
+      GoRoute(
+        path: AppRoutes.familyMap,
+        name: 'family-map',
+        builder: (context, state) => const FamilyLiveMapScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.familySafeZones,
+        name: 'family-safe-zones',
+        builder: (context, state) => const SafeZonesScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.familySafeZoneEdit,
+        name: 'family-safe-zone-edit',
+        builder: (context, state) {
+          final zone = state.extra as SafeZone?;
+          return SafeZoneEditScreen(existingZone: zone);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.familyDashboard,
+        name: 'family-dashboard',
+        builder: (context, state) => const FamilyDashboardScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.familyRideHistory,
+        name: 'family-ride-history',
+        builder: (context, state) {
+          final memberId = state.extra as String?;
+          return RideHistoryScreen(memberId: memberId);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.familyAlertHistory,
+        name: 'family-alert-history',
+        builder: (context, state) => const AlertHistoryScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.familyAchievements,
+        name: 'family-achievements',
+        builder: (context, state) => const FamilyAchievementsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.familyGuests,
+        name: 'family-guests',
+        builder: (context, state) => const GuestRidersScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.familyGroupRides,
+        name: 'family-group-rides',
+        builder: (context, state) => const GroupRidesScreen(),
+      ),
 
       // ── Buddy Matching ──────────────────────────────────────────────────
       GoRoute(
@@ -649,7 +748,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 pageBuilder: (context, state) => CustomTransitionPage(
                   key: state.pageKey,
                   child: const HomeScreen(),
-                  transitionDuration: const Duration(milliseconds: 400),
+                  transitionDuration: const Duration(milliseconds: 250),
                   transitionsBuilder: (context, animation, secondaryAnimation, child) {
                     // Smooth fade when coming from splash
                     return FadeTransition(opacity: animation, child: child);

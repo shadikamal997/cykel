@@ -70,10 +70,14 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
   Future<void> updateCommuterAddresses({
     String? homeAddress,
     String? workAddress,
+    LatLng? homeLocation,
+    LatLng? workLocation,
   }) async {
     state = state.copyWith(
       homeAddress: homeAddress,
       workAddress: workAddress,
+      homeLocation: homeLocation ?? state.homeLocation,
+      workLocation: workLocation ?? state.workLocation,
     );
     await _save();
   }

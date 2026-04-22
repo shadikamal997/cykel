@@ -23,9 +23,9 @@ class LocationListScreen extends ConsumerWidget {
     final locationsAsync = ref.watch(myLocationsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         title: Text(l10n.locationsTitle, style: AppTextStyles.headline3),
       ),
       body: locationsAsync.when(
@@ -42,12 +42,12 @@ class LocationListScreen extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.location_off_outlined,
-                        size: 56, color: AppColors.textSecondary),
+                    Icon(Icons.location_off_outlined,
+                        size: 56, color: context.colors.textSecondary),
                     const SizedBox(height: 16),
                     Text(l10n.noLocationsYet,
                         style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.textSecondary),
+                            color: context.colors.textSecondary),
                         textAlign: TextAlign.center),
                     const SizedBox(height: 24),
                     FilledButton.icon(
@@ -127,7 +127,7 @@ class _LocationCard extends ConsumerWidget {
             : context.colors.textSecondary;
 
     return Material(
-      color: AppColors.surface,
+      color: context.colors.surface,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: () => context.push(
@@ -139,7 +139,7 @@ class _LocationCard extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: context.colors.border),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,18 +188,18 @@ class _LocationCard extends ConsumerWidget {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  const Icon(Icons.location_on_outlined,
-                      size: 14, color: AppColors.textSecondary),
+                  Icon(Icons.location_on_outlined,
+                      size: 14, color: context.colors.textSecondary),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(location.fullAddress,
                         style: AppTextStyles.bodySmall
-                            .copyWith(color: AppColors.textSecondary),
+                            .copyWith(color: context.colors.textSecondary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis),
                   ),
-                  const Icon(Icons.chevron_right_rounded,
-                      size: 20, color: AppColors.textSecondary),
+                  Icon(Icons.chevron_right_rounded,
+                      size: 20, color: context.colors.textSecondary),
                 ],
               ),
               // Quick actions

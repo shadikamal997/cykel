@@ -244,9 +244,9 @@ class _EditProviderScreenState extends ConsumerState<EditProviderScreen> {
     _init(provider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         title: Text(l10n.editProviderTitle, style: AppTextStyles.headline3),
       ),
       body: Form(
@@ -376,8 +376,8 @@ class _EditProviderScreenState extends ConsumerState<EditProviderScreen> {
           child: FilledButton(
             onPressed: _saving ? null : () => _save(provider),
             style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-              foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
               elevation: 0,
               minimumSize: const Size.fromHeight(52),
               shape: RoundedRectangleBorder(
@@ -707,7 +707,7 @@ class _EditProviderScreenState extends ConsumerState<EditProviderScreen> {
       title: Text(label, style: AppTextStyles.bodyMedium),
       value: value,
       contentPadding: EdgeInsets.zero,
-      activeTrackColor: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.5),
+      activeTrackColor: (context.colors.textPrimary).withValues(alpha: 0.5),
       dense: true,
       onChanged: onChanged,
     );
@@ -725,7 +725,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+        Icon(icon, size: 20, color: context.colors.textPrimary),
         const SizedBox(width: 8),
         Text(label, style: AppTextStyles.headline3),
       ],

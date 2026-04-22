@@ -3,14 +3,23 @@
 
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/l10n.dart';
+import '../../../core/providers/back_button_provider.dart';
+import '../../../core/theme/app_colors.dart';
 
 // ─── Design Colors ─────────────────────────────────────────────────────────────
-const _kPrimaryColor = Color(0xFF4A7C59);
+const _kPrimaryColor = AppColors.primary;
 
-class ShellScreen extends StatelessWidget {
+// ─── Tab Visibility Provider ──────────────────────────────────────────────────
+/// Tracks which tab is currently visible in the navigation shell.
+/// Used to dispose heavy widgets (like GoogleMap) when their tab is hidden.
+/// Tab indices: 0=Home, 1=Map, 2=Activity, 3=Discover, 4=Marketplace
+final tabVisibilityProvider = StateProvider<int>((ref) => 0);
+
+class ShellScreen extends ConsumerStatefulWidget {
   const ShellScreen({
     super.key,
     required this.navigationShell,
@@ -19,24 +28,69 @@ class ShellScreen extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
   @override
+  ConsumerState<ShellScreen> createState() => _ShellScreenState();
+}
+
+class _ShellScreenState extends ConsumerState<ShellScreen> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Update tab visibility whenever dependencies change
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(tabVisibilityProvider.notifier).state = 
+            widget.navigationShell.currentIndex;
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Update tab visibility on every build
+    final currentIndex = widget.navigationShell.currentIndex;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(tabVisibilityProvider.notifier).state = currentIndex;
+      }
+    });
     return PopScope(
-      canPop: navigationShell.currentIndex == 0,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) {
-          // Navigate to home tab instead of exiting the app
-          navigationShell.goBranch(0, initialLocation: true);
+      canPop: false, // Always intercept to check with handler first
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
+        // First, check if any screen has registered a back button handler
+        final handler = ref.read(backButtonHandlerProvider);
+        if (handler != null) {
+          final handled = await handler();
+          if (handled) {
+            // Handler took care of the back press (e.g., closed route card)
+            return;
+          }
+        }
+        
+        // No handler or handler didn't consume the event
+        if (widget.navigationShell.currentIndex == 0) {
+          // On home tab and nothing to close — exit app
+          // ignore: use_build_context_synchronously
+          Navigator.of(context).maybePop();
+        } else {
+          // Not on home tab — go to home tab
+          widget.navigationShell.goBranch(0, initialLocation: true);
         }
       },
       child: Scaffold(
         extendBody: true,
-        body: navigationShell,
+        body: widget.navigationShell,
         bottomNavigationBar: _CykelBottomNav(
-          currentIndex: navigationShell.currentIndex,
-          onTap: (index) => navigationShell.goBranch(
-            index,
-            initialLocation: index == navigationShell.currentIndex,
-          ),
+          currentIndex: currentIndex,
+          onTap: (index) {
+            // Update visibility provider before navigation
+            ref.read(tabVisibilityProvider.notifier).state = index;
+            widget.navigationShell.goBranch(
+              index,
+              initialLocation: index == currentIndex,
+            );
+          },
         ),
       ),
     );

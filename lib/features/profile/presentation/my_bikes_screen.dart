@@ -35,7 +35,7 @@ class MyBikesScreen extends ConsumerWidget {
             ? Colors.white
             : Colors.black,
         elevation: 0,
-        icon: Icon(Icons.add_rounded, color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white),
+        icon: Icon(Icons.add_rounded, color: Colors.white),
         label: Text(l10n.addBikeTitle,
             style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white)),
       ),
@@ -77,7 +77,7 @@ class MyBikesScreen extends ConsumerWidget {
           TextButton(
               onPressed: () => Navigator.pop(context, true),
               child: Text(l10n.yes,
-                  style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black))),
+                  style: TextStyle(color: context.colors.textPrimary))),
         ],
       ),
     );
@@ -308,8 +308,8 @@ class _AddBikeSheetState extends ConsumerState<_AddBikeSheet> {
             child: FilledButton(
               onPressed: _saving ? null : _add,
               style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
@@ -357,7 +357,7 @@ class _BikeCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+              color: (context.colors.textPrimary).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
@@ -388,14 +388,14 @@ class _BikeCard extends StatelessWidget {
           // Maintenance indicator
           IconButton(
             icon: Icon(Icons.build_circle_outlined,
-                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, size: 20),
+                color: context.colors.textPrimary, size: 20),
             tooltip: l10n.maintenance,
             onPressed: () => context.push(AppRoutes.profileMaintenance, extra: bike),
           ),
           IconButton(
             tooltip: l10n.delete,
             icon: Icon(Icons.delete_outline_rounded,
-                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, size: 20),
+                color: context.colors.textPrimary, size: 20),
             onPressed: onDelete,
           ),
         ]),
@@ -431,8 +431,8 @@ class _EmptyBikes extends StatelessWidget {
           icon: const Icon(Icons.add_rounded),
           label: Text(l10n.addBikeTitle),
           style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-              foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
               elevation: 0),
         ),
       ]),

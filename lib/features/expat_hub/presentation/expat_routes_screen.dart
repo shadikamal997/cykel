@@ -4,14 +4,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/l10n/l10n.dart';
 import '../domain/expat_resource.dart';
 import '../application/expat_hub_providers.dart';
 
-class ExpatRoutesScreen extends ConsumerWidget {
+class ExpatRoutesScreen extends ConsumerStatefulWidget {
   const ExpatRoutesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ExpatRoutesScreen> createState() => _ExpatRoutesScreenState();
+}
+
+class _ExpatRoutesScreenState extends ConsumerState<ExpatRoutesScreen> {
+  String _filter = 'all';
+
+  @override
+  Widget build(BuildContext context) {
     final routesAsync = ref.watch(expatRoutesProvider);
 
     return Scaffold(
@@ -20,9 +28,7 @@ class ExpatRoutesScreen extends ConsumerWidget {
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.filter_list),
-            onSelected: (value) {
-              // TODO: Handle filter
-            },
+            onSelected: (value) => setState(() => _filter = value),
             itemBuilder: (context) => [
               const PopupMenuItem(value: 'all', child: Text('All Routes')),
               const PopupMenuItem(value: 'scenic', child: Text('Scenic')),
@@ -34,22 +40,28 @@ class ExpatRoutesScreen extends ConsumerWidget {
       ),
       body: routesAsync.when(
         data: (routes) {
-          if (routes.isEmpty) {
-            return const Center(child: Text('No routes available'));
+          final filtered = _filter == 'all' ? routes : routes.where((r) {
+            if (_filter == 'scenic') return r.isScenic;
+            if (_filter == 'tourist') return r.isTouristFriendly;
+            if (_filter == 'commute') return r.isCommute;
+            return true;
+          }).toList();
+
+          if (filtered.isEmpty) {
+            return Center(child: Text(context.l10n.expatNoRoutesAvailable));
           }
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: routes.length,
+            itemCount: filtered.length,
             itemBuilder: (context, index) {
-              final route = routes[index];
-              return _RouteCard(route: route);
+              return RepaintBoundary(child: _RouteCard(route: filtered[index]));
             },
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
-          child: Text('Error loading routes: $error'),
+          child: Text(context.l10n.expatErrorLoading(error.toString())),
         ),
       ),
     );
@@ -67,7 +79,14 @@ class _RouteCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to route detail
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            builder: (_) => _RouteDetailSheet(route: route),
+          );
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -193,5 +212,75 @@ class _RouteCard extends StatelessWidget {
       case DifficultyLevel.advanced:
         return Colors.red;
     }
+  }
+}
+
+class _RouteDetailSheet extends StatelessWidget {
+  const _RouteDetailSheet({required this.route});
+  final ExpatRoute route;
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      maxChildSize: 0.9,
+      minChildSize: 0.4,
+      expand: false,
+      builder: (_, controller) => ListView(
+        controller: controller,
+        padding: const EdgeInsets.all(24),
+        children: [
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(route.name,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text('${route.distanceDisplay} • ${route.estimatedTimeDisplay}',
+              style: TextStyle(color: Colors.grey[600])),
+          const SizedBox(height: 16),
+          Text(route.description, style: const TextStyle(fontSize: 15)),
+          if (route.highlights.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Text('Highlights', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+            const SizedBox(height: 8),
+            ...route.highlights.map((h) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(children: [
+                const Icon(Icons.star_rounded, size: 16, color: Colors.amber),
+                const SizedBox(width: 8),
+                Expanded(child: Text(h)),
+              ]),
+            )),
+          ],
+          if (route.tips.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Text('Tips', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+            const SizedBox(height: 8),
+            ...route.tips.map((t) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(children: [
+                const Icon(Icons.lightbulb_outline, size: 16, color: Colors.orange),
+                const SizedBox(width: 8),
+                Expanded(child: Text(t)),
+              ]),
+            )),
+          ],
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.close),
+            label: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 }

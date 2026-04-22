@@ -1,8 +1,12 @@
+import '../../../core/widgets/app_image.dart';
+import '../../auth/domain/app_user.dart';
 /// CYKEL — Theft Alerts Screen
 /// View and report bike thefts in the area
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../core/l10n/l10n.dart';
@@ -162,10 +166,12 @@ class _NearbyTab extends ConsumerWidget {
         return ListView.builder(
           padding: const EdgeInsets.only(top: 8, bottom: 100),
           itemCount: reports.length,
-          itemBuilder: (context, index) => _TheftReportCard(
-            report: reports[index],
-            userLocation: userLocation,
-            onTap: () => _showReportDetails(context, reports[index]),
+          itemBuilder: (context, index) => RepaintBoundary(
+            child: _TheftReportCard(
+              report: reports[index],
+              userLocation: userLocation,
+              onTap: () => _showReportDetails(context, reports[index]),
+            ),
           ),
         );
       },
@@ -210,9 +216,11 @@ class _AllReportsTab extends ConsumerWidget {
         return ListView.builder(
           padding: const EdgeInsets.only(top: 8, bottom: 100),
           itemCount: reports.length,
-          itemBuilder: (context, index) => _TheftReportCard(
-            report: reports[index],
-            onTap: () => _showReportDetails(context, reports[index]),
+          itemBuilder: (context, index) => RepaintBoundary(
+            child: _TheftReportCard(
+              report: reports[index],
+              onTap: () => _showReportDetails(context, reports[index]),
+            ),
           ),
         );
       },
@@ -322,12 +330,11 @@ class _TheftReportCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(8),
-                  image: report.bikePhotoUrl != null
-                      ? DecorationImage(
-                          image: NetworkImage(report.bikePhotoUrl!),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
+                  image: AppImage.decorationImage(
+                    url: report.bikePhotoUrl,
+                    thumbnailUrl: AppUser.getThumbnailUrl(report.bikePhotoUrl),
+                    preferThumbnail: true,
+                  ),
                 ),
                 child: report.bikePhotoUrl == null
                     ? const Center(
@@ -895,10 +902,31 @@ class _TheftReportDetailsSheet extends ConsumerWidget {
   }
 
   Future<void> _reportSighting(BuildContext context, WidgetRef ref) async {
-    // TODO: Implement sighting report with location picker
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.theftSightingThanks)),
-    );
+    try {
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+        perm = await Geolocator.requestPermission();
+      }
+      final pos = await Geolocator.getCurrentPosition();
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null || !context.mounted) return;
+      await ref.read(theftAlertServiceProvider).reportSighting(
+        reportId: report.id,
+        reporterId: user.uid,
+        location: LatLng(pos.latitude, pos.longitude),
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.theftSightingThanks)),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not report sighting: $e')),
+        );
+      }
+    }
   }
 }
 

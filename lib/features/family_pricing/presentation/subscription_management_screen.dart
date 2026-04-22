@@ -90,7 +90,7 @@ class SubscriptionManagementScreen extends ConsumerWidget {
                   return Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: context.colors.surface,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Column(
@@ -360,7 +360,7 @@ class _TrialBanner extends StatelessWidget {
                 Text(
                   '$daysRemaining ${daysRemaining == 1 ? 'day' : 'days'} remaining in your free trial',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                 ),
               ],
@@ -418,7 +418,7 @@ class _FamilyQuickAccess extends StatelessWidget {
                   Text(
                     '$memberCount of $maxMembers members',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                   ),
                 ],
