@@ -660,7 +660,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   if (savedRoutes.isEmpty)
                     _EmptyCard(
                         icon: Icons.bookmark_outline_rounded,
-                        text: l10n.discoverNoSaved)
+                        text: l10n.discoverNoSaved,
+                        subtitle: 'Plan a route and save it to see it here')
                   else
                     ...savedRoutes.take(5).map((r) => Padding(
                           padding: const EdgeInsets.only(bottom: 8),
@@ -701,7 +702,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   if (_userLocation == null)
                     _EmptyCard(
                         icon: Icons.warning_amber_rounded,
-                        text: l10n.discoverNoHazards)
+                        text: l10n.discoverNoHazards,
+                        subtitle: 'Enable location to see hazards near you')
                   else
                     _HazardsSection(center: _userLocation!),
                 ],
@@ -1058,7 +1060,7 @@ class _HazardsSection extends ConsumerWidget {
           return _EmptyCard(
               icon: Icons.check_circle_outline_rounded,
               text: context.l10n.discoverNoHazards,
-              color: Colors.white);
+              subtitle: 'All clear in your area — ride safe!');
         }
         return Column(
             children: hazards
@@ -1134,35 +1136,60 @@ class _EmptyCard extends StatelessWidget {
   const _EmptyCard(
       {required this.icon,
       required this.text,
-      this.color = AppColors.textSecondary});
+      this.subtitle});
   final IconData icon;
   final String text;
-  final Color color;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
       decoration: BoxDecoration(
         color: context.colors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.colors.surfaceVariant),
-      ),
-      child: Row(children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: _kPrimaryColor.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: context.colors.surfaceVariant, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          child: Icon(icon, color: _kPrimaryColor, size: 20),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-            child: Text(text,
-                style: AppTextStyles.bodySmall
-                    .copyWith(color: context.colors.textSecondary))),
-      ]),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: context.colors.background,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: context.colors.surfaceVariant, width: 1),
+            ),
+            child: Icon(icon, size: 28, color: context.colors.textSecondary),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            text,
+            style: AppTextStyles.bodyMedium.copyWith(
+              fontWeight: FontWeight.w600,
+              color: context.colors.textPrimary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              subtitle!,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: context.colors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -1239,6 +1266,7 @@ class _CykelNearbyProviders extends ConsumerWidget {
       return _EmptyCard(
         icon: Icons.verified_rounded,
         text: context.l10n.noProvidersNearby,
+        subtitle: 'More partners are joining CYKEL soon',
       );
     }
     // Sort by distance (nearest first) & limit to 6.
