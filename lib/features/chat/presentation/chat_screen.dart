@@ -188,6 +188,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           _MessageInput(
             controller: _messageController,
             onSend: _sendMessage,
+            onAttach: () => _showOptionsMenu(context),
           ),
         ],
       ),
@@ -423,10 +424,12 @@ class _MessageInput extends StatelessWidget {
   const _MessageInput({
     required this.controller,
     required this.onSend,
+    required this.onAttach,
   });
 
   final TextEditingController controller;
   final VoidCallback onSend;
+  final VoidCallback onAttach;
 
   @override
   Widget build(BuildContext context) {
@@ -447,9 +450,7 @@ class _MessageInput extends StatelessWidget {
           children: [
             IconButton(
               icon: const Icon(Icons.attach_file),
-              onPressed: () {
-                // TODO: Show attachment options
-              },
+              onPressed: onAttach,
               color: AppColors.textSecondary,
             ),
             Expanded(

@@ -4968,6 +4968,39 @@ class AppLocalizationsDa extends AppLocalizations {
   String get expatWebsite => 'Hjemmeside';
 
   @override
+  String get expatHubTitle => 'Expat Hub';
+
+  @override
+  String get expatExploreResources => 'Udforsk ressourcer';
+
+  @override
+  String get expatFeaturedGuides => 'Udvalgte guides';
+
+  @override
+  String get expatQuickTips => 'Hurtige tips';
+
+  @override
+  String get expatNoFeaturedGuides => 'Ingen udvalgte guides endnu';
+
+  @override
+  String get expatNoTipsAvailable => 'Ingen tips tilgængelige';
+
+  @override
+  String get expatErrorLoadingGuides => 'Fejl ved indlæsning af guides';
+
+  @override
+  String get expatErrorLoadingTips => 'Fejl ved indlæsning af tips';
+
+  @override
+  String get eventsTrendingNow => 'Trending nu';
+
+  @override
+  String get familyDashboardTitle => 'Dashboard';
+
+  @override
+  String get familyNoPlan => 'Ingen familieplan fundet';
+
+  @override
   String get commonShowAll => 'Vis alle';
 
   @override

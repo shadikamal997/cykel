@@ -9362,6 +9362,72 @@ abstract class AppLocalizations {
   /// **'Website'**
   String get expatWebsite;
 
+  /// No description provided for @expatHubTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Expat Hub'**
+  String get expatHubTitle;
+
+  /// No description provided for @expatExploreResources.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore Resources'**
+  String get expatExploreResources;
+
+  /// No description provided for @expatFeaturedGuides.
+  ///
+  /// In en, this message translates to:
+  /// **'Featured Guides'**
+  String get expatFeaturedGuides;
+
+  /// No description provided for @expatQuickTips.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Tips'**
+  String get expatQuickTips;
+
+  /// No description provided for @expatNoFeaturedGuides.
+  ///
+  /// In en, this message translates to:
+  /// **'No featured guides yet'**
+  String get expatNoFeaturedGuides;
+
+  /// No description provided for @expatNoTipsAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No tips available'**
+  String get expatNoTipsAvailable;
+
+  /// No description provided for @expatErrorLoadingGuides.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading guides'**
+  String get expatErrorLoadingGuides;
+
+  /// No description provided for @expatErrorLoadingTips.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading tips'**
+  String get expatErrorLoadingTips;
+
+  /// No description provided for @eventsTrendingNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Trending Now'**
+  String get eventsTrendingNow;
+
+  /// No description provided for @familyDashboardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard'**
+  String get familyDashboardTitle;
+
+  /// No description provided for @familyNoPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'No family plan found'**
+  String get familyNoPlan;
+
   /// No description provided for @commonShowAll.
   ///
   /// In en, this message translates to:

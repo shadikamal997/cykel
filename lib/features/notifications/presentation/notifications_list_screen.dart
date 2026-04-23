@@ -57,7 +57,7 @@ class NotificationsListScreen extends ConsumerWidget {
         actions: [
           if (notifications.isNotEmpty && notifications.any((n) => !n.isRead))
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 final user = FirebaseAuth.instance.currentUser;
                 if (user == null) return;
                 final batch = FirebaseFirestore.instance.batch();
@@ -71,7 +71,9 @@ class NotificationsListScreen extends ConsumerWidget {
                     {'isRead': true},
                   );
                 }
-                batch.commit();
+                try {
+                  await batch.commit();
+                } catch (_) {}
               },
               child: Text(
                 l10n.markAllRead,
@@ -263,9 +265,9 @@ class _NotificationCard extends StatelessWidget {
     return switch (type) {
       NotificationType.marketplace => AppColors.info,
       NotificationType.event => AppColors.success,
-      NotificationType.social => const Color(0xFF9C27B0),
+      NotificationType.social => AppColors.warning,
       NotificationType.ride => AppColors.primaryLight,
-      NotificationType.achievement => const Color(0xFFFFB300),
+      NotificationType.achievement => AppColors.warning,
       NotificationType.system => AppColors.textSecondary,
     };
   }

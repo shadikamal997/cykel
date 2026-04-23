@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/l10n/l10n.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_image.dart';
@@ -44,14 +45,14 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen>
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (error, _) => Scaffold(
-        appBar: AppBar(title: const Text('Dashboard')),
+        appBar: AppBar(title: Text(context.l10n.familyDashboardTitle)),
         body: Center(child: Text('Error: $error')),
       ),
       data: (account) {
         if (account == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Dashboard')),
-            body: const Center(child: Text('No family account found')),
+            appBar: AppBar(title: Text(context.l10n.familyDashboardTitle)),
+            body: Center(child: Text(context.l10n.familyNoPlan)),
           );
         }
 

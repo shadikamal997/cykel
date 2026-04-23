@@ -4954,6 +4954,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expatWebsite => 'Website';
 
   @override
+  String get expatHubTitle => 'Expat Hub';
+
+  @override
+  String get expatExploreResources => 'Explore Resources';
+
+  @override
+  String get expatFeaturedGuides => 'Featured Guides';
+
+  @override
+  String get expatQuickTips => 'Quick Tips';
+
+  @override
+  String get expatNoFeaturedGuides => 'No featured guides yet';
+
+  @override
+  String get expatNoTipsAvailable => 'No tips available';
+
+  @override
+  String get expatErrorLoadingGuides => 'Error loading guides';
+
+  @override
+  String get expatErrorLoadingTips => 'Error loading tips';
+
+  @override
+  String get eventsTrendingNow => 'Trending Now';
+
+  @override
+  String get familyDashboardTitle => 'Dashboard';
+
+  @override
+  String get familyNoPlan => 'No family plan found';
+
+  @override
   String get commonShowAll => 'Show All';
 
   @override

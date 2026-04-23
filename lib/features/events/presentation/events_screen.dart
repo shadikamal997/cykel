@@ -95,7 +95,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         color: Colors.orange.shade700),
                       const SizedBox(width: 8),
                       Text(
-                        'Trending Now',
+                        context.l10n.eventsTrendingNow,
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,

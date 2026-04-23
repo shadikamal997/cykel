@@ -60,7 +60,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
             // Payment method
             Text(
-              'Payment Method',
+              context.l10n.familyAddPayment,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -522,7 +522,7 @@ class _AddPaymentMethodCard extends StatelessWidget {
                 size: 40, color: AppColors.textHint),
             const SizedBox(height: 8),
             Text(
-              'Add Payment Method',
+              context.l10n.familyAddPayment,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: context.colors.textSecondary,
                     fontWeight: FontWeight.w500,
@@ -567,12 +567,33 @@ class _AddPaymentMethodSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Add Payment Method',
+            context.l10n.familyAddPayment,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.info.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline, color: AppColors.info, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Payment integration is coming soon. You can start your free trial now.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.info),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           ...PaymentMethod.values.map((method) => ListTile(
                 leading: Icon(_getIconForMethod(method)),
                 title: Text(method.displayName),
@@ -582,11 +603,10 @@ class _AddPaymentMethodSheet extends ConsumerWidget {
                 ),
                 onTap: () {
                   Navigator.pop(context);
-                  // TODO: Integrate with actual payment provider
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(
-                          '${method.displayName} integration coming soon'),
+                      content: Text('${method.displayName} — payment integration coming soon'),
+                      duration: const Duration(seconds: 3),
                     ),
                   );
                 },

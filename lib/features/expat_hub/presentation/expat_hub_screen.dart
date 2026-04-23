@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/l10n/l10n.dart';
 import '../../../core/widgets/cached_image.dart';
 
 import '../domain/expat_resource.dart';
@@ -32,7 +33,7 @@ class _ExpatHubScreenState extends ConsumerState<ExpatHubScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Expat Hub'),
+        title: Text(context.l10n.expatHubTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
@@ -67,32 +68,32 @@ class _ExpatHubScreenState extends ConsumerState<ExpatHubScreen> {
             const SizedBox(height: 24),
 
             // Quick Access Categories
-            _buildSectionTitle('Explore Resources'),
+            _buildSectionTitle(context.l10n.expatExploreResources),
             const SizedBox(height: 12),
             _buildCategoryGrid(context),
             const SizedBox(height: 24),
 
             // Featured Guides
-            _buildSectionTitle('Featured Guides'),
+            _buildSectionTitle(context.l10n.expatFeaturedGuides),
             const SizedBox(height: 12),
             featuredGuidesAsync.when(
               data: (guides) => guides.isEmpty
-                  ? const Center(child: Text('No featured guides'))
+                  ? Center(child: Text(context.l10n.expatNoFeaturedGuides))
                   : _buildFeaturedGuides(context, guides),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, _) => const Center(child: Text('Error loading guides')),
+              error: (_, _) => Center(child: Text(context.l10n.expatErrorLoadingGuides)),
             ),
             const SizedBox(height: 24),
 
             // Top Tips
-            _buildSectionTitle('Quick Tips'),
+            _buildSectionTitle(context.l10n.expatQuickTips),
             const SizedBox(height: 12),
             topTipsAsync.when(
               data: (tips) => tips.isEmpty
-                  ? const Center(child: Text('No tips available'))
+                  ? Center(child: Text(context.l10n.expatNoTipsAvailable))
                   : _buildTopTips(context, tips),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, _) => const Center(child: Text('Error loading tips')),
+              error: (_, _) => Center(child: Text(context.l10n.expatErrorLoadingTips)),
             ),
             const SizedBox(height: 24),
 

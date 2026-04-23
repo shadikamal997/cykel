@@ -40,6 +40,31 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
       ),
       body: CustomScrollView(
         slivers: [
+          // Coming soon notice
+          SliverToBoxAdapter(
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.construction_rounded, color: AppColors.warning, size: 20),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Offline maps tile download is coming soon. Downloads are simulated for now.',
+                      style: TextStyle(fontSize: 13, color: AppColors.warning),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
           // Storage info card
           SliverToBoxAdapter(
             child: _StorageInfoCard(),

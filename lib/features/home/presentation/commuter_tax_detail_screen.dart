@@ -13,7 +13,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../services/commuter_tax_service.dart';
 import '../../profile/presentation/commuter_tax_settings_screen.dart';
 
-const _kPrimaryColor = Color(0xFF00BFA5);
+const _kPrimaryColor = AppColors.primary;
 
 class CommuterTaxDetailScreen extends ConsumerWidget {
   const CommuterTaxDetailScreen({super.key});

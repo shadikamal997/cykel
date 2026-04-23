@@ -1,6 +1,7 @@
 /// CYKEL — Conversations List Screen
 /// Shows all user's chat conversations
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/l10n/l10n.dart';
@@ -64,6 +65,32 @@ class _ConversationsListScreenState extends ConsumerState<ConversationsListScree
     }
   }
 
+  void _showNewMessageSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _NewMessageSheet(
+        onUserSelected: (userId) async {
+          final service = ref.read(chatServiceProvider);
+          final conversationId = await service.getOrCreateDirectConversation(userId);
+          if (!mounted) return;
+          if (context.mounted) Navigator.pop(context);
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ChatScreen(conversationId: conversationId),
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final conversationsAsync = ref.watch(conversationsProvider);
@@ -75,9 +102,7 @@ class _ConversationsListScreenState extends ConsumerState<ConversationsListScree
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_square),
-            onPressed: () {
-              // TODO: Navigate to new conversation screen
-            },
+            onPressed: () => _showNewMessageSheet(context),
             tooltip: 'New Message',
           ),
         ],
@@ -339,6 +364,120 @@ class _EmptyState extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── New Message Sheet ────────────────────────────────────────────────────────
+
+class _NewMessageSheet extends StatefulWidget {
+  const _NewMessageSheet({required this.onUserSelected});
+  final Future<void> Function(String userId) onUserSelected;
+
+  @override
+  State<_NewMessageSheet> createState() => _NewMessageSheetState();
+}
+
+class _NewMessageSheetState extends State<_NewMessageSheet> {
+  final _searchController = TextEditingController();
+  List<Map<String, dynamic>> _results = [];
+  bool _searching = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search(String query) async {
+    if (query.trim().isEmpty) {
+      setState(() => _results = []);
+      return;
+    }
+    setState(() => _searching = true);
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('users')
+          .where('displayName', isGreaterThanOrEqualTo: query)
+          .where('displayName', isLessThan: '${query}z')
+          .limit(15)
+          .get();
+      if (mounted) {
+        setState(() => _results = snap.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+      }
+    } finally {
+      if (mounted) setState(() => _searching = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.6,
+      maxChildSize: 0.9,
+      builder: (_, controller) => Column(
+        children: [
+          const SizedBox(height: 12),
+          Container(width: 40, height: 4,
+            decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text('New Message', style: AppTextStyles.labelLarge),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              controller: _searchController,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Search by name...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                filled: true,
+              ),
+              onChanged: _search,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (_searching)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: CircularProgressIndicator(),
+            )
+          else
+            Expanded(
+              child: _results.isEmpty
+                  ? Center(
+                      child: Text(
+                        _searchController.text.isEmpty
+                            ? 'Type a name to search for riders'
+                            : 'No riders found',
+                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                      ),
+                    )
+                  : ListView.builder(
+                      controller: controller,
+                      itemCount: _results.length,
+                      itemBuilder: (_, i) {
+                        final user = _results[i];
+                        return ListTile(
+                          leading: AppAvatar(
+                            url: user['photoUrl'] as String?,
+                            size: 40,
+                            fallbackText: (user['displayName'] as String? ?? '?')[0].toUpperCase(),
+                          ),
+                          title: Text(user['displayName'] as String? ?? 'Rider'),
+                          subtitle: Text(user['email'] as String? ?? ''),
+                          onTap: () => widget.onUserSelected(user['id'] as String),
+                        );
+                      },
+                    ),
+            ),
         ],
       ),
     );
