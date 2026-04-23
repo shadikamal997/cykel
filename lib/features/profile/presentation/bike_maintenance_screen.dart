@@ -94,12 +94,8 @@ class BikeMaintenanceScreen extends ConsumerWidget {
         onPressed: () => _showAddRecordSheet(context, ref),
         icon: const Icon(Icons.add),
         label: Text(context.l10n.addService),
-        backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? Colors.white
-            : Colors.black,
-        foregroundColor: Theme.of(context).brightness == Brightness.dark
-            ? Colors.black
-            : Colors.white,
+        backgroundColor: context.colors.textPrimary,
+        foregroundColor: context.colors.background,
         elevation: 0,
       ),
     );
@@ -139,7 +135,6 @@ class _HealthScoreCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final score = status.healthScore;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final baseColor = context.colors.textPrimary;
     final color = score >= 80
         ? baseColor.withValues(alpha: 1.0)
@@ -233,7 +228,7 @@ class _AlertsSection extends StatelessWidget {
           if (status.overdueItems.isNotEmpty) ...[
             _AlertCard(
               icon: Icons.warning_amber_rounded,
-              color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.9) : Colors.black.withValues(alpha: 0.9),
+              color: context.colors.textPrimary.withValues(alpha: 0.9),
               title: context.l10n.overdueAlert,
               items: status.overdueItems.map((r) => 
                 '${r.type.displayName}: ${(-r.kmUntilService(totalKm)).toStringAsFixed(0)} km over'
@@ -244,7 +239,7 @@ class _AlertsSection extends StatelessWidget {
           if (status.dueSoonItems.isNotEmpty)
             _AlertCard(
               icon: Icons.schedule,
-              color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.7) : Colors.black.withValues(alpha: 0.7),
+              color: context.colors.textPrimary.withValues(alpha: 0.7),
               title: context.l10n.dueSoonAlert,
               items: status.dueSoonItems.map((r) => 
                 '${r.type.displayName}: om ${r.kmUntilService(totalKm).toStringAsFixed(0)} km'

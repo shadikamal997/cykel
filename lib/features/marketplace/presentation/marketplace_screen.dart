@@ -167,7 +167,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 5, vertical: 1),
                         decoration: BoxDecoration(
-                          color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.2),
+                          color: context.colors.textPrimary.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text('$unread',

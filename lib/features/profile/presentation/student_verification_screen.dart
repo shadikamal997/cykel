@@ -137,7 +137,7 @@ class _StudentVerificationScreenState
       appBar: AppBar(
         title: Text(l10n.studentVerificationTitle),
         backgroundColor: context.colors.surface,
-        foregroundColor: AppColors.textPrimary,
+        foregroundColor: context.colors.textPrimary,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -232,7 +232,7 @@ class _StudentVerificationScreenState
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: AppColors.surface,
+                  fillColor: context.colors.surface,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -286,8 +286,7 @@ class _StudentVerificationScreenState
                                 domain,
                                 style: const TextStyle(fontSize: 12),
                               ),
-                              backgroundColor:
-                                  AppColors.surface,
+                              backgroundColor: context.colors.surface,
                               materialTapTargetSize:
                                   MaterialTapTargetSize.shrinkWrap,
                             ),
@@ -331,12 +330,8 @@ class _StudentVerificationScreenState
                       ? null
                       : _submitVerification,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white
-                        : Colors.black,
-                    foregroundColor: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.black
-                        : Colors.white,
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -346,7 +341,8 @@ class _StudentVerificationScreenState
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
                         )
                       : Text(
                           _verificationEmailSent
@@ -399,16 +395,12 @@ class _BenefitTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.blue.shade900.withValues(alpha: 0.3)
-                  : Colors.blue.shade50,
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               icon,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.blue.shade300
-                  : Colors.blue.shade700,
+              color: AppColors.primary,
               size: 24,
             ),
           ),

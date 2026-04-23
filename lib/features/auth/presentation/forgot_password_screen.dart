@@ -8,7 +8,6 @@ import '../providers/auth_providers.dart';
 import '../data/auth_repository.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/cykel_button.dart';
 import '../../../core/utils/validators.dart';
 
@@ -62,22 +61,99 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       );
     });
 
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: context.colors.primary,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: _emailSent ? _SuccessView(email: _emailCtrl.text) : _FormView(
-            formKey: _formKey,
-            emailCtrl: _emailCtrl,
-            isLoading: isLoading,
-            onSubmit: _submit,
+      backgroundColor: AppColors.primaryDark,
+      body: Column(
+        children: [
+          // ═══ TOP: HERO IMAGE (55-60% of screen) ═══
+          Expanded(
+            flex: 55,
+            child: Stack(
+              children: [
+                // Hero image - full width
+                Positioned.fill(
+                  child: Image.asset(
+                    'assets/images/hero.webp',
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,
+                  ),
+                ),
+                // Back button overlay
+                SafeArea(
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 28),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+
+          // ═══ BOTTOM: WHITE ROUNDED SHEET (45-40% of screen) ═══
+          Expanded(
+            flex: 45,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(32),
+                  topRight: Radius.circular(32),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x11000000),
+                    blurRadius: 20,
+                    offset: Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(32),
+                  topRight: Radius.circular(32),
+                ),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(24, 0, 24, bottomPad + 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Drag handle
+                      const SizedBox(height: 12),
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE0E0E0),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Content
+                      _emailSent ? _SuccessView(email: _emailCtrl.text) : _FormView(
+                        formKey: _formKey,
+                        emailCtrl: _emailCtrl,
+                        isLoading: isLoading,
+                        onSubmit: _submit,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -106,17 +182,30 @@ class _FormView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 16),
-
-          Text(l10n.forgotPasswordTitle, style: AppTextStyles.headline1),
-          const SizedBox(height: 8),
+          // Title
+          Text(
+            l10n.forgotPasswordTitle,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF111111),
+              height: 1.2,
+            ),
+          ),
+          const SizedBox(height: 6),
+          // Subtitle
           Text(
             l10n.forgotPasswordSubtitle,
-            style: AppTextStyles.bodyMedium
-                .copyWith(color: context.colors.textSecondary),
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF777777),
+              height: 1.4,
+            ),
           ),
-          const SizedBox(height: 36),
+          const SizedBox(height: 20),
 
+          // Email field
           TextFormField(
             controller: emailCtrl,
             keyboardType: TextInputType.emailAddress,
@@ -129,15 +218,17 @@ class _FormView extends StatelessWidget {
             ),
             validator: AppValidators.email(context),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
 
+          // Send reset link button
           CykelButton(
             label: l10n.sendResetLink,
             isLoading: isLoading,
             onPressed: isLoading ? null : onSubmit,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
+          // Back to sign in button
           CykelButton(
             label: l10n.backToSignIn,
             variant: CykelButtonVariant.ghost,
@@ -162,7 +253,7 @@ class _SuccessView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Spacer(),
+        const SizedBox(height: 20),
         Center(
           child: Container(
             width: 88,
@@ -178,32 +269,42 @@ class _SuccessView extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
         Text(
           l10n.emailSentTitle,
-          style: AppTextStyles.headline1,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 12),
-        Text(
-          l10n.resetLinkSentTo(email),
-          style:
-              AppTextStyles.bodyMedium.copyWith(color: context.colors.textSecondary),
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF111111),
+            height: 1.2,
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
         Text(
-          l10n.checkInbox,
-          style:
-              AppTextStyles.bodySmall.copyWith(color: context.colors.textSecondary),
+          l10n.resetLinkSentTo(email),
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w400,
+            color: Color(0xFF777777),
+            height: 1.4,
+          ),
           textAlign: TextAlign.center,
         ),
-        const Spacer(),
+        const SizedBox(height: 6),
+        Text(
+          l10n.checkInbox,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Color(0xFF999999),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 32),
         CykelButton(
           label: l10n.backToSignIn,
           onPressed: () => context.pop(),
         ),
-        const SizedBox(height: 32),
       ],
     );
   }

@@ -7,6 +7,8 @@ import '../../../core/l10n/l10n.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_image.dart';
+import '../../../core/widgets/premium_gate.dart';
+import '../../../services/subscription_providers.dart';
 import '../../auth/domain/app_user.dart';
 import '../application/family_location_service.dart';
 import '../application/family_pricing_providers.dart';
@@ -38,6 +40,14 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isPremium = ref.watch(isPremiumProvider);
+    if (!isPremium) {
+      return PremiumGateScreen(
+        screenTitle: context.l10n.familyDashboardTitle,
+        child: const SizedBox.shrink(),
+      );
+    }
+
     final familyAccountAsync = ref.watch(familyAccountProvider);
 
     return familyAccountAsync.when(

@@ -8,6 +8,7 @@ import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -117,39 +118,40 @@ class OfflineMapsService {
       // Generate all tile coordinates
       final tiles = _generateTileCoordinates(region.bounds, region.zoomLevels);
 
-      for (final tile in tiles) {
-        if (_currentDownloadId != region.id) {
-          // Download was paused or cancelled
-          break;
-        }
+      const batchSize = 4;
+      for (int i = 0; i < tiles.length; i += batchSize) {
+        if (_currentDownloadId != region.id) break;
 
-        // Simulate tile download (in real app, would download from tile server)
-        // For demo purposes, we create placeholder files
-        final tileFile = File('${regionDir.path}/${tile.z}_${tile.x}_${tile.y}.png');
-        
-        // In production, you'd download from a tile server like:
-        // https://tile.openstreetmap.org/{z}/{x}/{y}.png
-        // But for this demo, we simulate the download
-        await Future.delayed(const Duration(milliseconds: 10)); // Simulate network delay
-        
-        // Create empty placeholder (in real app, write actual tile data)
-        if (!await tileFile.exists()) {
-          await tileFile.writeAsBytes([]);
-        }
+        final batch = tiles.sublist(i, math.min(i + batchSize, tiles.length));
+        await Future.wait(batch.map((tile) async {
+          final tileFile = File('${regionDir.path}/${tile.z}_${tile.x}_${tile.y}.png');
+          if (await tileFile.exists() && await tileFile.length() > 0) return;
 
-        downloadedTiles++;
-        totalSize += 15000; // Simulated ~15KB per tile
+          try {
+            final response = await http.get(
+              Uri.parse('https://tile.openstreetmap.org/${tile.z}/${tile.x}/${tile.y}.png'),
+              headers: {'User-Agent': 'CYKEL/1.0 (cycling app; contact@cykel.app)'},
+            );
+            if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+              await tileFile.writeAsBytes(response.bodyBytes);
+              totalSize += response.bodyBytes.length;
+            } else {
+              await tileFile.writeAsBytes([]);
+            }
+          } catch (_) {
+            await tileFile.writeAsBytes([]);
+          }
 
-        final progress = downloadedTiles / region.tileCount;
-        _updateRegion(region.id, (r) => r.copyWith(
-          progress: progress,
-          downloadedTiles: downloadedTiles,
-          sizeBytes: totalSize,
-        ));
-
-        // Emit progress
-        final updated = _regions.firstWhere((r) => r.id == region.id);
-        _downloadProgressController.add(updated);
+          downloadedTiles++;
+          final progress = downloadedTiles / region.tileCount;
+          _updateRegion(region.id, (r) => r.copyWith(
+            progress: progress,
+            downloadedTiles: downloadedTiles,
+            sizeBytes: totalSize,
+          ));
+          final updated = _regions.firstWhere((r) => r.id == region.id);
+          _downloadProgressController.add(updated);
+        }));
       }
 
       // Mark as completed

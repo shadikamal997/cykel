@@ -31,13 +31,11 @@ class MyBikesScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddBikeSheet(context, ref),
         tooltip: l10n.addBikeTitle,
-        backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? Colors.white
-            : Colors.black,
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         elevation: 0,
-        icon: Icon(Icons.add_rounded, color: Colors.white),
-        label: Text(l10n.addBikeTitle,
-            style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white)),
+        icon: const Icon(Icons.add_rounded),
+        label: Text(l10n.addBikeTitle),
       ),
       body: bikesAsync.when(
         loading: () =>
@@ -225,11 +223,10 @@ class _AddBikeSheetState extends ConsumerState<_AddBikeSheet> {
             spacing: 8,
             children: BikeType.values.map((t) {
               final selected = _type == t;
-              final isDark = Theme.of(context).brightness == Brightness.dark;
               return ChoiceChip(
                 label: Text('${t.emoji} ${t.localizedLabel(context)}'),
                 selected: selected,
-                selectedColor: isDark ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.2),
+                selectedColor: context.colors.border.withValues(alpha: 0.2),
                 onSelected: (_) => setState(() => _type = t),
               );
             }).toList(),

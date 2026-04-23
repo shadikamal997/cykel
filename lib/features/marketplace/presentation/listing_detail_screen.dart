@@ -21,8 +21,6 @@ import 'listing_helpers.dart';
 
 // ─── Design Colors ─────────────────────────────────────────────────────────────
 const _kSecondaryText = Color(0xFF6B6B6B);
-const _kBackground = Color(0xFFFFFFFF);
-const _kSoftElements = Color(0xFFE9ECE6);
 
 class ListingDetailScreen extends ConsumerStatefulWidget {
   const ListingDetailScreen({
@@ -54,7 +52,6 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = context.l10n;
     final user = ref.watch(currentUserProvider);
     final savedIds =
@@ -81,14 +78,14 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     final isSaved = savedIds.contains(listing.id);
 
     return Scaffold(
-      backgroundColor: _kBackground,
+      backgroundColor: context.colors.surface,
       body: CustomScrollView(
         slivers: [
           // ── Image app bar ─────────────────────────────────────────────────
           SliverAppBar(
             expandedHeight: 300,
             pinned: true,
-            backgroundColor: _kBackground,
+            backgroundColor: context.colors.surface,
             leading: IconButton(
               tooltip: l10n.goBack,
               icon: Container(
@@ -293,7 +290,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                                 Navigator.of(context).pop(true),
                             child: Text(l10n.yes,
                                 style: TextStyle(
-                                    color: isDark ? Colors.white : Colors.black)),
+                                    color: context.colors.textPrimary)),
                           ),
                         ],
                       ),
@@ -379,7 +376,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                   const SizedBox(width: 12),
                   Text(listing.priceLabel,
                       style: AppTextStyles.headline3.copyWith(
-                          color: isDark ? Colors.white : Colors.black, fontSize: 20)),
+                          color: context.colors.textPrimary, fontSize: 20)),
                 ]),
                 const SizedBox(height: 10),
 
@@ -396,7 +393,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                       label: listing.isShop
                           ? l10n.listingShopSeller
                           : l10n.listingPrivateSeller,
-                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.6)),
+                      color: context.colors.textPrimary.withValues(alpha: 0.6)),
                   if (listing.brand != null && listing.brand!.isNotEmpty)
                     _Chip(
                         icon: Icons.sell_outlined,
@@ -406,17 +403,17 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                     _Chip(
                         icon: Icons.electric_bike_rounded,
                         label: l10n.listingElectricBadge,
-                        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.7)),
+                        color: context.colors.textPrimary.withValues(alpha: 0.7)),
                   if (listing.serialVerified)
                     _Chip(
                         icon: Icons.verified_rounded,
                         label: l10n.listingSerialVerified,
-                        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.9))
+                        color: context.colors.textPrimary.withValues(alpha: 0.9))
                   else if (listing.serialDuplicate)
                     _Chip(
                         icon: Icons.warning_rounded,
                         label: l10n.listingSerialDuplicate,
-                        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.5))
+                        color: context.colors.textPrimary.withValues(alpha: 0.5))
                   else if (listing.serialNumber != null)
                     _Chip(
                         icon: Icons.qr_code_rounded,
@@ -454,10 +451,10 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: _kBackground,
+                    color: context.colors.surface,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                        color: _kSoftElements, width: 1),
+                        color: context.colors.border, width: 1),
                   ),
                   child: Row(children: [
                     AppAvatar(
@@ -494,12 +491,12 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                                     children: [
                                       Icon(Icons.phone_rounded,
                                           size: 13,
-                                          color: isDark ? Colors.white : Colors.black),
+                                          color: context.colors.textPrimary),
                                       const SizedBox(width: 4),
                                       Text(listing.phone!,
                                           style: AppTextStyles.bodySmall
                                               .copyWith(
-                                                  color: isDark ? Colors.white : Colors.black,
+                                                  color: context.colors.textPrimary,
                                                   fontWeight:
                                                       FontWeight.w600)),
                                     ]),
@@ -508,7 +505,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                         ])),
                     if (isOwner)
                       Icon(Icons.verified_rounded,
-                          color: isDark ? Colors.white : Colors.black, size: 18),
+                          color: context.colors.textPrimary, size: 18),
                   ]),
                 ),
               ]),
@@ -521,11 +518,11 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       bottomNavigationBar: Container(
         padding: EdgeInsets.fromLTRB(
             16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
-        decoration: const BoxDecoration(
-          color: _kBackground,
+        decoration: BoxDecoration(
+          color: context.colors.surface,
           border: Border(
               top: BorderSide(
-                  color: _kSoftElements, width: 1)),
+                  color: context.colors.border, width: 1)),
         ),
         child: isOwner
             ? _OwnerStatsBar(listing: listing)
@@ -538,7 +535,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                     child: Center(
                         child: Text(l10n.listingSoldBadge,
                             style: AppTextStyles.bodyMedium.copyWith(
-                                color: isDark ? Colors.white : Colors.black,
+                                color: context.colors.textPrimary,
                                 fontWeight: FontWeight.w700))))
                 : listing.phone != null
                     ? Row(children: [
@@ -551,9 +548,9 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                             icon: const Icon(Icons.phone_rounded, size: 16),
                             label: Text(l10n.listingCallSeller),
                             style: OutlinedButton.styleFrom(
-                                foregroundColor: isDark ? Colors.white : Colors.black,
+                                foregroundColor: context.colors.textPrimary,
                                 side: BorderSide(
-                                    color: isDark ? Colors.white : Colors.black),
+                                    color: context.colors.textPrimary),
                                 padding: const EdgeInsets.symmetric(
                                     vertical: 14),
                                 textStyle: AppTextStyles.labelLarge),
@@ -578,8 +575,8 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                                     size: 16),
                             label: Text(l10n.listingContactSeller),
                             style: FilledButton.styleFrom(
-                                backgroundColor: isDark ? Colors.white : Colors.black,
-                                foregroundColor: isDark ? Colors.black : Colors.white,
+                                backgroundColor: context.colors.textPrimary,
+                                foregroundColor: context.colors.surface,
                                 padding: const EdgeInsets.symmetric(
                                     vertical: 14),
                                 elevation: 0,
@@ -606,8 +603,8 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                                   size: 16),
                           label: Text(l10n.listingContactSeller),
                           style: FilledButton.styleFrom(
-                              backgroundColor: isDark ? Colors.white : Colors.black,
-                              foregroundColor: isDark ? Colors.black : Colors.white,
+                              backgroundColor: context.colors.textPrimary,
+                              foregroundColor: context.colors.surface,
                               padding:
                                   const EdgeInsets.symmetric(vertical: 14),
                               elevation: 0,
@@ -726,7 +723,6 @@ class _OwnerStatsBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = context.l10n;
     final inquiries =
         ref.watch(listingInquiriesCountProvider(listing.id)).valueOrNull ?? 0;
@@ -748,31 +744,27 @@ class _OwnerStatsBar extends ConsumerWidget {
               icon: Icons.bookmark_rounded,
               value: '${listing.saveCount}',
               label: l10n.savesStat,
-              color: isDark ? Colors.white : Colors.black,
+              color: context.colors.textPrimary,
             ),
             const SizedBox(width: 10),
             _StatPill(
               icon: Icons.chat_bubble_rounded,
               value: '$inquiries',
               label: l10n.chatsStat,
-              color: isDark ? Colors.white : Colors.black,
+              color: context.colors.textPrimary,
             ),
             const Spacer(),
             Container(
               padding:
                   const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: listing.isSold
-                    ? (isDark ? Colors.white : Colors.black).withValues(alpha: 0.12)
-                    : (isDark ? Colors.white : Colors.black).withValues(alpha: 0.12),
+                color: context.colors.textPrimary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 listing.isSold ? l10n.listingSoldBadge : l10n.activeStatus,
                 style: AppTextStyles.labelSmall.copyWith(
-                  color: listing.isSold
-                      ? (isDark ? Colors.white : Colors.black)
-                      : (isDark ? Colors.white : Colors.black),
+                  color: context.colors.textPrimary,
                   fontWeight: FontWeight.w700,
                   fontSize: 11,
                 ),
@@ -847,16 +839,15 @@ class _CategoryHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final (emoji, color) = switch (category) {
-      ListingCategory.bike => ('🚲', isDark ? Colors.white : Colors.black),
-      ListingCategory.parts => ('🔩', isDark ? Colors.white : Colors.black),
-      ListingCategory.accessories => ('🎒', isDark ? Colors.white : Colors.black),
-      ListingCategory.clothing => ('🪖', isDark ? Colors.white : Colors.black),
-      ListingCategory.tools => ('🔧', isDark ? Colors.white : Colors.black),
+    final emoji = switch (category) {
+      ListingCategory.bike => '🚲',
+      ListingCategory.parts => '🔩',
+      ListingCategory.accessories => '🎒',
+      ListingCategory.clothing => '🪖',
+      ListingCategory.tools => '🔧',
     };
     return Container(
-      color: color.withValues(alpha: 0.10),
+      color: context.colors.textPrimary.withValues(alpha: 0.10),
       child: Center(child: Text(emoji, style: const TextStyle(fontSize: 64))),
     );
   }

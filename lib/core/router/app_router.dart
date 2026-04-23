@@ -256,8 +256,8 @@ class _RouterNotifier extends AsyncNotifier<void> implements Listenable {
         location == AppRoutes.forgotPassword;
 
     if (user == null) {
-      // Signed out: send to login unless already on an auth screen.
-      if (isOnSplash || !isOnAuthScreen) return AppRoutes.login;
+      // Signed out: send to welcome unless already on an auth screen.
+      if (isOnSplash || !isOnAuthScreen) return AppRoutes.welcome;
       return null;
     }
 

@@ -7,7 +7,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/premium_gate.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../services/subscription_providers.dart';
 import '../data/offline_maps_provider.dart';
 import '../domain/offline_map.dart';
 
@@ -22,14 +24,23 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+
+    if (!ref.watch(isPremiumProvider)) {
+      return PremiumGateScreen(
+        screenTitle: l10n.offlineMapsTitle,
+        featureDescription: 'Download maps to your device and navigate without an internet connection.',
+        child: const SizedBox.shrink(),
+      );
+    }
+
     final regionsAsync = ref.watch(offlineRegionsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
         title: Text(l10n.offlineMapsTitle),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: context.colors.surface,
+        foregroundColor: context.colors.textPrimary,
         elevation: 0,
         actions: [
           IconButton(
@@ -40,31 +51,6 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
       ),
       body: CustomScrollView(
         slivers: [
-          // Coming soon notice
-          SliverToBoxAdapter(
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.construction_rounded, color: AppColors.warning, size: 20),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'Offline maps tile download is coming soon. Downloads are simulated for now.',
-                      style: TextStyle(fontSize: 13, color: AppColors.warning),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
           // Storage info card
           SliverToBoxAdapter(
             child: _StorageInfoCard(),
@@ -125,7 +111,7 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
               child: Text(
                 l10n.downloadMapsForOfflineNav,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
               ),
             ),
@@ -166,7 +152,7 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
   void _showSettings(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -220,7 +206,7 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
   void _showCustomRegionPicker(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -248,16 +234,16 @@ class _StorageInfoCard extends ConsumerWidget {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.storage, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+              Icon(Icons.storage, color: context.colors.textPrimary),
               const SizedBox(width: 8),
               Text(l10n.storage, style: AppTextStyles.headline3),
             ],
@@ -268,9 +254,9 @@ class _StorageInfoCard extends ConsumerWidget {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: progress,
-              backgroundColor: AppColors.border,
+              backgroundColor: context.colors.border,
               valueColor: AlwaysStoppedAnimation(
-                (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: progress > 0.9 ? 1.0 : 0.7),
+                context.colors.textPrimary.withValues(alpha: progress > 0.9 ? 1.0 : 0.7),
               ),
               minHeight: 8,
             ),
@@ -289,7 +275,7 @@ class _StorageInfoCard extends ConsumerWidget {
               Text(
                 '${settings.maxStorageMB} MB',
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
               ),
             ],
@@ -318,9 +304,9 @@ class _EmptyRegionsCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         children: [
@@ -336,7 +322,7 @@ class _EmptyRegionsCard extends StatelessWidget {
           Text(
             l10n.downloadMapsToUseOffline,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -367,9 +353,9 @@ class _RegionCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         children: [
@@ -392,7 +378,7 @@ class _RegionCard extends StatelessWidget {
             subtitle: Text(
               _getSubtitle(l10n),
               style: AppTextStyles.caption.copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
             trailing: _buildTrailingButton(),
@@ -407,8 +393,8 @@ class _RegionCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: region.progress,
-                      backgroundColor: AppColors.border,
-                      valueColor: AlwaysStoppedAnimation(Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+                      backgroundColor: context.colors.border,
+                      valueColor: AlwaysStoppedAnimation(context.colors.textPrimary),
                       minHeight: 6,
                     ),
                   ),
@@ -416,7 +402,7 @@ class _RegionCard extends StatelessWidget {
                   Text(
                     '${(region.progress * 100).toInt()}% - ${region.downloadedTiles}/${region.tileCount} tiles',
                     style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ],
@@ -448,18 +434,17 @@ class _RegionCard extends StatelessWidget {
   }
 
   Color _statusColor(BuildContext context, DownloadStatus status) {
-    final baseColor = Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black;
     switch (status) {
       case DownloadStatus.completed:
-        return baseColor.withValues(alpha: 1.0);
+        return context.colors.textPrimary;
       case DownloadStatus.downloading:
-        return baseColor.withValues(alpha: 0.9);
+        return context.colors.textPrimary.withValues(alpha: 0.9);
       case DownloadStatus.paused:
-        return baseColor.withValues(alpha: 0.6);
+        return context.colors.textPrimary.withValues(alpha: 0.6);
       case DownloadStatus.failed:
-        return baseColor.withValues(alpha: 0.5);
+        return context.colors.textPrimary.withValues(alpha: 0.5);
       case DownloadStatus.pending:
-        return AppColors.textSecondary;
+        return context.colors.textSecondary;
     }
   }
 
@@ -516,35 +501,35 @@ class _PredefinedRegionCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: ListTile(
         leading: Container(
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+            color: context.colors.textPrimary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Center(
-            child: Icon(Icons.map_outlined, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+            child: Icon(Icons.map_outlined, color: context.colors.textPrimary),
           ),
         ),
         title: Text(region.name, style: AppTextStyles.bodyMedium),
         subtitle: Text(
           '${region.description} • ~${region.estimatedSizeMB} MB',
           style: AppTextStyles.caption.copyWith(
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         trailing: IconButton.filled(
           onPressed: onDownload,
           icon: const Icon(Icons.download, size: 20),
           style: IconButton.styleFrom(
-            backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-            foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+            backgroundColor: context.colors.textPrimary,
+            foregroundColor: context.colors.background,
           ),
         ),
       ),
@@ -597,7 +582,7 @@ class _CustomRegionPickerState extends ConsumerState<_CustomRegionPicker> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.textSecondary.withValues(alpha: 0.3),
+                    color: context.colors.textSecondary.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -609,7 +594,7 @@ class _CustomRegionPickerState extends ConsumerState<_CustomRegionPicker> {
               Text(
                 l10n.selectRegionOnMap,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -647,8 +632,8 @@ class _CustomRegionPickerState extends ConsumerState<_CustomRegionPicker> {
                   icon: const Icon(Icons.download),
                   label: Text(l10n.downloadRegion),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                    foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                    backgroundColor: context.colors.textPrimary,
+                    foregroundColor: context.colors.background,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
@@ -715,7 +700,7 @@ class _OfflineSettingsSheet extends ConsumerWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.textSecondary.withValues(alpha: 0.3),
+                color: context.colors.textSecondary.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -769,10 +754,10 @@ class _OfflineSettingsSheet extends ConsumerWidget {
           Center(
             child: TextButton.icon(
               onPressed: () => _clearAll(context, ref),
-              icon: Icon(Icons.delete_sweep, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+              icon: Icon(Icons.delete_sweep, color: context.colors.textPrimary),
               label: Text(
                 l10n.deleteAllOfflineMaps,
-                style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+                style: TextStyle(color: context.colors.textPrimary),
               ),
             ),
           ),

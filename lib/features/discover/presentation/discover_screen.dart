@@ -28,7 +28,6 @@ import 'report_hazard_sheet.dart';
 
 // ─── Design Colors ─────────────────────────────────────────────────────────────
 const _kPrimaryColor = Color(0xFF4A7C59);
-const _kBackground = Color(0xFFFFFFFF);
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -211,7 +210,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     }
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: _kBackground,
+      backgroundColor: context.colors.surface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -245,7 +244,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         if (_searchCtrl.text.isEmpty) setState(() => _searchOpen = false);
       },
       child: Scaffold(
-        backgroundColor: _kBackground,
+        backgroundColor: context.colors.background,
         body: Column(
           children: [
             // ── Header + Search bar ────────────────────────────────────────

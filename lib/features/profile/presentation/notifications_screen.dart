@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/premium_gate.dart';
+import '../../../services/subscription_providers.dart';
 import '../data/notifications_provider.dart';
 
 class NotificationsScreen extends ConsumerWidget {
@@ -239,15 +241,21 @@ class NotificationsScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
-          _Section(
-            title: l10n.notifSectionScheduled,
-            tiles: [
-              _ScheduleReminderTile(
-                current: state.scheduledRideTime,
-                onChanged: notifier.setScheduledRideTime,
-              ),
-            ],
-          ),
+          if (ref.watch(isPremiumProvider))
+            _Section(
+              title: l10n.notifSectionScheduled,
+              tiles: [
+                _ScheduleReminderTile(
+                  current: state.scheduledRideTime,
+                  onChanged: notifier.setScheduledRideTime,
+                ),
+              ],
+            )
+          else
+            PremiumGate(
+              featureDescription: 'Schedule automatic ride reminders at your preferred time.',
+              child: const SizedBox.shrink(),
+            ),
         ],
       ),
     );
@@ -311,7 +319,6 @@ class _Toggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(children: [
@@ -331,7 +338,9 @@ class _Toggle extends StatelessWidget {
         Switch(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: isDark ? Colors.white.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.5)),
+            activeTrackColor: AppColors.primary,
+            activeThumbColor: Colors.white,
+            inactiveTrackColor: context.colors.border),
       ]),
     );
   }
@@ -347,7 +356,6 @@ class _ScheduleReminderTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -388,7 +396,7 @@ class _ScheduleReminderTile extends StatelessWidget {
             },
             child: Text(
               current == null ? l10n.setTime : l10n.changeTime,
-              style: TextStyle(color: context.colors.textPrimary),
+              style: const TextStyle(color: AppColors.primary),
             ),
           ),
         ],

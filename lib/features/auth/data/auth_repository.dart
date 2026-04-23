@@ -123,6 +123,9 @@ class AuthRepository {
   );
 
   Future<AppUser> signInWithGoogle() async {
+    // Sign out first to force account picker to show every time
+    await _googleSignIn.signOut();
+    
     final googleUser = await _googleSignIn.signIn();
     if (googleUser == null) throw const AuthCancelledException();
 

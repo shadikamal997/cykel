@@ -1,0 +1,338 @@
+/// CYKEL — SOS / Emergency Action Sheet (Phase 6)
+///
+/// A bottom sheet that opens when the SOS FAB is tapped.
+/// Lets the rider: call 112, share their location, or report an accident.
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/l10n/l10n.dart';
+import '../data/emergency_service.dart';
+
+/// The SOS FAB that sits on the map.
+class SosFab extends StatelessWidget {
+  const SosFab({super.key, required this.position, required this.bottomPad});
+  final LatLng? position;
+  final double bottomPad;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      bottom: bottomPad,
+      right: 16,
+      child: FloatingActionButton.small(
+        heroTag: 'sos_fab',
+        backgroundColor: AppColors.error,
+        foregroundColor: Colors.white,
+        elevation: 6,
+        tooltip: context.l10n.sosButton,
+        onPressed: () => _showSosSheet(context),
+        child: const Text(
+          'SOS',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 11,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showSosSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.colors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SosSheet(position: position),
+    );
+  }
+}
+
+// ─── SOS Bottom Sheet ─────────────────────────────────────────────────────────
+
+class SosSheet extends ConsumerStatefulWidget {
+  const SosSheet({super.key, required this.position});
+  final LatLng? position;
+
+  @override
+  ConsumerState<SosSheet> createState() => _SosSheetState();
+}
+
+class _SosSheetState extends ConsumerState<SosSheet> {
+  bool _reportingAccident = false;
+  final _descController = TextEditingController();
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _descController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          16,
+          20,
+          MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Text('🆘', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 8),
+                Text(l10n.sosTitle, style: AppTextStyles.headline3),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Call 112
+            _SosAction(
+              color: AppColors.error,
+              icon: Icons.call_rounded,
+              label: l10n.sosCall112,
+              subtitle: l10n.sosCall112Subtitle,
+              onTap: _call112,
+            ),
+            const SizedBox(height: 10),
+
+            // Share location
+            _SosAction(
+              color: AppColors.info,
+              icon: Icons.share_location_rounded,
+              label: l10n.sosShareLocation,
+              subtitle: widget.position != null
+                  ? '${widget.position!.latitude.toStringAsFixed(5)}, '
+                    '${widget.position!.longitude.toStringAsFixed(5)}'
+                  : l10n.locationDenied,
+              onTap: widget.position != null ? _shareLocation : null,
+            ),
+            const SizedBox(height: 10),
+
+            // Report accident
+            if (!_reportingAccident)
+              _SosAction(
+                color: AppColors.warning,
+                icon: Icons.car_crash_rounded,
+                label: l10n.sosReportAccident,
+                subtitle: l10n.sosReportAccidentSubtitle,
+                onTap: () => setState(() => _reportingAccident = true),
+              )
+            else ...[
+              TextField(
+                controller: _descController,
+                maxLines: 3,
+                maxLength: 300,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: l10n.sosAccidentDescHint,
+                  hintStyle:
+                      AppTextStyles.bodySmall.copyWith(color: AppColors.textHint),
+                  filled: true,
+                  fillColor: AppColors.surfaceVariant,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () =>
+                          setState(() => _reportingAccident = false),
+                      child: Text(l10n.cancel),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: _submitting ? null : _submitAccident,
+                      icon: _submitting
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.send_rounded),
+                      label: Text(l10n.sosReportSubmit),
+                      style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.warning),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _call112() async {
+    final uri = Uri.parse('tel:112');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  void _shareLocation() {
+    final pos = widget.position!;
+    final text =
+        '${pos.latitude.toStringAsFixed(6)}, ${pos.longitude.toStringAsFixed(6)}\n'
+        'https://maps.google.com/?q=${pos.latitude},${pos.longitude}';
+    Clipboard.setData(ClipboardData(text: text));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.sosLocationCopied),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  Future<void> _submitAccident() async {
+    final pos = widget.position;
+    if (pos == null) return;
+    setState(() => _submitting = true);
+    try {
+      final success = await ref.read(emergencyServiceProvider).reportAccident(
+            position: pos,
+            description: _descController.text.trim(),
+          );
+      if (mounted) {
+        if (success != null) {
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(context.l10n.sosAccidentReported),
+              backgroundColor: AppColors.success,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(context.l10n.errGeneric),
+              backgroundColor: Colors.red,
+            ),
+          );
+          setState(() => _submitting = false);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.errGeneric),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() => _submitting = false);
+      }
+    }
+  }
+}
+
+// ─── Action Row ───────────────────────────────────────────────────────────────
+
+class _SosAction extends StatelessWidget {
+  const _SosAction({
+    required this.color,
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
+  final Color color;
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedOpacity(
+        opacity: onTap != null ? 1.0 : 0.5,
+        duration: const Duration(milliseconds: 150),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.09),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: color.withValues(alpha: 0.30),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style: AppTextStyles.bodyMedium
+                            .copyWith(fontWeight: FontWeight.w700)),
+                    Text(subtitle,
+                        style: AppTextStyles.bodySmall
+                            .copyWith(color: AppColors.textSecondary),
+                        overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded,
+                  color: color, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

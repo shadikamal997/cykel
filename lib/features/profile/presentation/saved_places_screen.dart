@@ -55,16 +55,11 @@ class _SavedPlacesScreenState extends ConsumerState<SavedPlacesScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddSheet(context),
         tooltip: l10n.addPlaceTitle,
-        backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? Colors.white
-            : Colors.black,
-        foregroundColor: Theme.of(context).brightness == Brightness.dark
-            ? Colors.black
-            : Colors.white,
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         elevation: 0,
         icon: const Icon(Icons.add_location_alt_outlined),
-        label: Text(l10n.addPlaceTitle, style: AppTextStyles.labelLarge.copyWith(
-            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white)),
+        label: Text(l10n.addPlaceTitle, style: AppTextStyles.labelLarge),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
@@ -73,9 +68,7 @@ class _SavedPlacesScreenState extends ConsumerState<SavedPlacesScreen> {
           _PlaceCard(
             icon: Icons.home_outlined,
             label: l10n.homePlace,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white
-                : Colors.black,
+            color: AppColors.primary,
             controller: _homeCtrl,
             hint: l10n.enterAddress,
             onSave: () async {
@@ -96,9 +89,7 @@ class _SavedPlacesScreenState extends ConsumerState<SavedPlacesScreen> {
           _PlaceCard(
             icon: Icons.work_outline_rounded,
             label: l10n.workPlace,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white
-                : Colors.black,
+            color: AppColors.primary,
             controller: _workCtrl,
             hint: l10n.enterAddress,
             onSave: () async {
@@ -285,19 +276,17 @@ class _PlaceCardState extends State<_PlaceCard> {
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton(
+            child: FilledButton(
               onPressed: widget.onSave,
-              style: OutlinedButton.styleFrom(
-                  foregroundColor: widget.color,
+              style: FilledButton.styleFrom(
                   backgroundColor: widget.color,
-                  side: BorderSide(color: widget.color),
+                  foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.symmetric(vertical: 12)),
               child: Text(context.l10n.saveChanges,
-                  style: AppTextStyles.labelLarge.copyWith(
-                      color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white)),
+                  style: AppTextStyles.labelLarge),
             ),
           ),
         ],
@@ -331,11 +320,11 @@ class _CustomPlaceCard extends StatelessWidget {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: (context.colors.textPrimary).withValues(alpha: 0.10),
+            color: AppColors.primary.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(Icons.place_outlined,
-              size: 18, color: context.colors.textPrimary),
+          child: const Icon(Icons.place_outlined,
+              size: 18, color: AppColors.primary),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -459,8 +448,8 @@ class _AddPlaceSheetState extends ConsumerState<_AddPlaceSheet> {
               labelStyle: AppTextStyles.bodyMedium
                   .copyWith(color: context.colors.textSecondary),
               prefixIcon: _selected != null
-                  ? Icon(Icons.check_circle_rounded,
-                      size: 18, color: context.colors.textPrimary)
+                  ? const Icon(Icons.check_circle_rounded,
+                      size: 18, color: AppColors.primary)
                   : Icon(Icons.search_rounded,
                       size: 18, color: context.colors.textHint),
               suffixIcon: _searching
@@ -481,8 +470,8 @@ class _AddPlaceSheetState extends ConsumerState<_AddPlaceSheet> {
                   borderSide: BorderSide(color: context.colors.border)),
               focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                      color: context.colors.textPrimary, width: 1.5)),
+                  borderSide: const BorderSide(
+                      color: AppColors.primary, width: 1.5)),
             ),
           ),
 
@@ -507,8 +496,8 @@ class _AddPlaceSheetState extends ConsumerState<_AddPlaceSheet> {
                     final r = _results[i];
                     return ListTile(
                       dense: true,
-                      leading: Icon(Icons.place_rounded,
-                          color: context.colors.textPrimary, size: 18),
+                      leading: const Icon(Icons.place_rounded,
+                          color: AppColors.primary, size: 18),
                       title: Text(r.text,
                           style: AppTextStyles.bodyMedium,
                           maxLines: 2,
@@ -548,18 +537,16 @@ class _AddPlaceSheetState extends ConsumerState<_AddPlaceSheet> {
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                disabledBackgroundColor:
-                    (context.colors.textPrimary).withValues(alpha: 0.35),
+                disabledBackgroundColor: context.colors.border,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 elevation: 0,
               ),
               child: _saving
-                  ? SizedBox(
+                  ? const SizedBox(
                       width: 20, height: 20,
-                      child: CircularProgressIndicator(
-                          color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white, strokeWidth: 2))
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : Text(l10n.addPlaceTitle,
                       style: AppTextStyles.labelLarge),
             ),
@@ -599,7 +586,7 @@ class _Field extends StatelessWidget {
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide:
-                BorderSide(color: context.colors.textPrimary, width: 1.5)),
+                const BorderSide(color: AppColors.primary, width: 1.5)),
       ),
     );
   }

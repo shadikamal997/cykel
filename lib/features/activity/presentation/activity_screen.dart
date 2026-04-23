@@ -23,7 +23,6 @@ import 'route_replay_screen.dart';
 const _kPrimaryColor = AppColors.primary;
 const _kPrimaryText = AppColors.textPrimary;
 const _kSecondaryText = AppColors.textSecondary;
-const _kBackground = AppColors.background;
 const _kCardBackground = AppColors.surface;
 const _kSoftElements = AppColors.surfaceVariant;
 
@@ -69,7 +68,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(context.l10n.rideSavedSnackbar(ride.distanceLabel)),
-          backgroundColor: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.9),
+          backgroundColor: context.colors.textPrimary.withValues(alpha: 0.9),
         ));
         _tabs.animateTo(1); // jump to history tab
       }
@@ -455,9 +454,9 @@ class _HistoryTab extends StatelessWidget {
           padding: const EdgeInsets.all(40),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Container(width: 88, height: 88,
-              decoration: BoxDecoration(color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+              decoration: BoxDecoration(color: context.colors.border.withValues(alpha: 0.1),
                   shape: BoxShape.circle),
-              child: const Icon(Icons.history_rounded, size: 44, color: Colors.white)),
+              child: Icon(Icons.history_rounded, size: 44, color: context.colors.textPrimary)),
             const SizedBox(height: 20),
             Text(l10n.noRidesYet, style: AppTextStyles.headline3),
             const SizedBox(height: 8),
@@ -829,20 +828,13 @@ class _PeriodCard extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: Theme.of(context).brightness == Brightness.dark
-                  ? [
-                      Colors.black.withValues(alpha: 0.4),
-                      Colors.black.withValues(alpha: 0.2),
-                    ]
-                  : [
-                      Colors.white.withValues(alpha: 0.4),
-                      Colors.white.withValues(alpha: 0.2),
-                    ],
+              colors: [
+                context.colors.surface.withValues(alpha: 0.4),
+                context.colors.surface.withValues(alpha: 0.2),
+              ],
             ),
             border: Border.all(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.black.withValues(alpha: 0.1),
+              color: context.colors.border.withValues(alpha: 0.1),
               width: 1,
             ),
             borderRadius: BorderRadius.circular(16),
@@ -853,9 +845,7 @@ class _PeriodCard extends StatelessWidget {
                 offset: const Offset(0, 2),
               ),
               BoxShadow(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : Colors.black.withValues(alpha: 0.05),
+                color: context.colors.border.withValues(alpha: 0.05),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -949,20 +939,13 @@ class _WeeklyBarChart extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: Theme.of(context).brightness == Brightness.dark
-                  ? [
-                      Colors.black.withValues(alpha: 0.4),
-                      Colors.black.withValues(alpha: 0.2),
-                    ]
-                  : [
-                      Colors.white.withValues(alpha: 0.4),
-                      Colors.white.withValues(alpha: 0.2),
-                    ],
+              colors: [
+                context.colors.surface.withValues(alpha: 0.4),
+                context.colors.surface.withValues(alpha: 0.2),
+              ],
             ),
             border: Border.all(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.black.withValues(alpha: 0.1),
+              color: context.colors.border.withValues(alpha: 0.1),
               width: 1,
             ),
             borderRadius: BorderRadius.circular(16),
@@ -973,9 +956,7 @@ class _WeeklyBarChart extends StatelessWidget {
                 offset: const Offset(0, 2),
               ),
               BoxShadow(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : Colors.black.withValues(alpha: 0.05),
+                color: context.colors.border.withValues(alpha: 0.05),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -1009,20 +990,12 @@ class _WeeklyBarChart extends StatelessWidget {
                         end: Alignment.bottomCenter,
                         colors: isToday
                             ? [
-                                Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.white
-                                    : Colors.black,
-                                Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.white.withValues(alpha: 0.7)
-                                    : Colors.black.withValues(alpha: 0.7),
+                                context.colors.textPrimary,
+                                context.colors.textPrimary.withValues(alpha: 0.7),
                               ]
                             : [
-                                Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.white.withValues(alpha: 0.4)
-                                    : Colors.black.withValues(alpha: 0.4),
-                                Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.white.withValues(alpha: 0.2)
-                                    : Colors.black.withValues(alpha: 0.2),
+                                context.colors.textPrimary.withValues(alpha: 0.4),
+                                context.colors.textPrimary.withValues(alpha: 0.2),
                               ],
                       ),
                       borderRadius: BorderRadius.circular(4),
@@ -1036,9 +1009,7 @@ class _WeeklyBarChart extends StatelessWidget {
                             ? FontWeight.w700
                             : FontWeight.normal,
                         color: isToday
-                            ? (Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black)
+                            ? context.colors.textPrimary
                             : _kSecondaryText,
                       )),
                 ],
@@ -1072,20 +1043,13 @@ class _PersonalRecordsCard extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: Theme.of(context).brightness == Brightness.dark
-                  ? [
-                      Colors.black.withValues(alpha: 0.4),
-                      Colors.black.withValues(alpha: 0.2),
-                    ]
-                  : [
-                      Colors.white.withValues(alpha: 0.4),
-                      Colors.white.withValues(alpha: 0.2),
-                    ],
+              colors: [
+                context.colors.surface.withValues(alpha: 0.4),
+                context.colors.surface.withValues(alpha: 0.2),
+              ],
             ),
             border: Border.all(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.black.withValues(alpha: 0.1),
+              color: context.colors.border.withValues(alpha: 0.1),
               width: 1,
             ),
             borderRadius: BorderRadius.circular(16),
@@ -1096,9 +1060,7 @@ class _PersonalRecordsCard extends StatelessWidget {
                 offset: const Offset(0, 2),
               ),
               BoxShadow(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : Colors.black.withValues(alpha: 0.05),
+                color: context.colors.border.withValues(alpha: 0.05),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -1182,23 +1144,16 @@ class _RecordRow extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: Theme.of(context).brightness == Brightness.dark
-                    ? [
-                        Colors.white.withValues(alpha: 0.15),
-                        Colors.white.withValues(alpha: 0.05),
-                      ]
-                    : [
-                        Colors.black.withValues(alpha: 0.08),
-                        Colors.black.withValues(alpha: 0.02),
-                      ],
+                colors: [
+                  context.colors.textPrimary.withValues(alpha: 0.08),
+                  context.colors.textPrimary.withValues(alpha: 0.02),
+                ],
               ),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               icon,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white
-                  : Colors.black87,
+              color: context.colors.textPrimary,
               size: 18,
             ),
           ),

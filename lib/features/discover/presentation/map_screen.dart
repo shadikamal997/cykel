@@ -47,6 +47,8 @@ import '../domain/bike_profile.dart';
 import '../domain/saved_route.dart';
 import '../data/wind_overlay_provider.dart';
 import '../domain/route_hazard_checker.dart';
+import '../../offline_maps/data/offline_maps_provider.dart';
+import '../../offline_maps/data/local_tile_provider.dart';
 import '../../home/data/quick_routes_provider.dart';
 import '../../provider/data/provider_service.dart';
 import '../../provider/domain/provider_enums.dart';
@@ -2009,6 +2011,20 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             'https://tile.memomaps.de/tilegen/{z}/{x}/{y}.png',
           ),
           transparency: 0.2,
+        ),
+      );
+    }
+    // Offline tile overlay — replaces Google Maps base tiles when device is
+    // offline and the user has at least one fully downloaded region.
+    final hasOfflineTiles = ref.watch(hasOfflineTilesProvider);
+    if (_isOffline && hasOfflineTiles) {
+      final offlineService = ref.read(offlineMapsServiceProvider);
+      tileOverlays.add(
+        TileOverlay(
+          tileOverlayId: const TileOverlayId('offline'),
+          tileProvider: LocalTileProvider(offlineService),
+          transparency: 0.0,
+          zIndex: -1,
         ),
       );
     }

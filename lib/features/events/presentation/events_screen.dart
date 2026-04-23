@@ -19,7 +19,6 @@ const _kPrimaryColor = Color(0xFF4A7C59);
 const _kPrimaryPressed = Color(0xFF3D6B4A);
 const _kPrimaryText = Color(0xFF1A1A1A);
 const _kSecondaryText = Color(0xFF6B6B6B);
-const _kBackground = Color(0xFFFFFFFF);
 const _kCardBackground = Color(0xFFF4F5F2);
 const _kSoftElements = Color(0xFFE9ECE6);
 
@@ -57,7 +56,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : _kBackground,
+      backgroundColor: context.colors.background,
       body: CustomScrollView(
         controller: _scrollController,
         slivers: [
@@ -432,7 +431,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             child: Container(
               height: 52,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.colors.surface,
                 borderRadius: BorderRadius.circular(26),
                 boxShadow: [
                   BoxShadow(
@@ -699,7 +698,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   void _showSortOptions(BuildContext context, bool isDark) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1A202C) : Colors.white,
+      backgroundColor: context.colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -749,7 +748,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   void _showDifficultyFilter(BuildContext context, bool isDark) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1A202C) : Colors.white,
+      backgroundColor: context.colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -800,7 +799,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
     double tempDistance = _maxDistance;
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1A202C) : Colors.white,
+      backgroundColor: context.colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -872,7 +871,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   void _showAgeFilter(BuildContext context, bool isDark) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1A202C) : Colors.white,
+      backgroundColor: context.colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -990,7 +989,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   void _showLanguageFilter(BuildContext context, bool isDark) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1A202C) : Colors.white,
+      backgroundColor: context.colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1087,7 +1086,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   void _showEventTypeFilter(BuildContext context, bool isDark) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1A202C) : Colors.white,
+      backgroundColor: context.colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1749,7 +1748,7 @@ class _PremiumEventCard extends ConsumerWidget {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: context.colors.surface,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
@@ -1778,7 +1777,7 @@ class _PremiumEventCard extends ConsumerWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: context.colors.surface,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -2008,7 +2007,7 @@ class _PremiumEventCard extends ConsumerWidget {
                 ][index % 4],
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isDark ? const Color(0xFF2D3748) : Colors.white,
+                  color: isDark ? const Color(0xFF2D3748) : _kCardBackground,
                   width: 2,
                 ),
               ),
@@ -2263,17 +2262,16 @@ class _EventSearchDelegate extends SearchDelegate<RideEvent?> {
   @override
   ThemeData appBarTheme(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     return theme.copyWith(
       appBarTheme: AppBarTheme(
-        backgroundColor: isDark ? const Color(0xFF1A202C) : _kBackground,
+        backgroundColor: context.colors.background,
         iconTheme: IconThemeData(
-          color: isDark ? Colors.white : _kPrimaryText,
+          color: context.colors.textPrimary,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         hintStyle: TextStyle(
-          color: isDark ? const Color(0xFF718096) : _kSecondaryText,
+          color: context.colors.textSecondary,
         ),
       ),
     );

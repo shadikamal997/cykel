@@ -46,7 +46,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
       appBar: AppBar(
         title: Text(context.l10n.community),
         backgroundColor: context.colors.surface,
-        foregroundColor: AppColors.textPrimary,
+        foregroundColor: context.colors.textPrimary,
         elevation: 0,
         actions: [
           IconButton(
@@ -59,14 +59,14 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
                     top: 0,
                     child: Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
                         shape: BoxShape.circle,
                       ),
                       child: Text(
                         '$pendingCount',
-                        style: TextStyle(
-                          color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                        style: const TextStyle(
+                          color: Colors.white,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
@@ -84,9 +84,10 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-          unselectedLabelColor: AppColors.textSecondary,
-          indicatorColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: context.colors.textSecondary,
+          indicatorColor: AppColors.primary,
+          indicatorSize: TabBarIndicatorSize.label,
           tabs: [
             Tab(text: context.l10n.socialActivityTab),
             Tab(text: context.l10n.socialFriendsTab),
@@ -262,7 +263,7 @@ class _FriendTile extends ConsumerWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
         ),
-        color: const Color(0xFFF8F9FA),
+        color: context.colors.surface,
         elevation: 4,
         shadowColor: Colors.black.withValues(alpha: 0.08),
         offset: const Offset(0, 8),
@@ -476,7 +477,7 @@ class _SharedRideCard extends ConsumerWidget {
                 IconButton(
                   icon: Icon(
                     isLiked ? Icons.favorite : Icons.favorite_border,
-                    color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: isLiked ? 1.0 : 0.5),
+                    color: isLiked ? AppColors.primary : context.colors.textSecondary,
                     size: 20,
                   ),
                   onPressed: () => _toggleLike(ref),
@@ -581,7 +582,7 @@ class _StatItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+        Icon(icon, size: 16, color: context.colors.textSecondary),
         const SizedBox(width: 4),
         Text(value, style: AppTextStyles.bodySmall),
       ],
@@ -724,11 +725,11 @@ class _RequestTile extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: Icon(Icons.check, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+                  icon: const Icon(Icons.check, color: AppColors.primary),
                   onPressed: () => _accept(context, ref),
                 ),
                 IconButton(
-                  icon: Icon(Icons.close, color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.7)),
+                  icon: Icon(Icons.close, color: context.colors.textSecondary),
                   onPressed: () => _decline(context, ref),
                 ),
               ],
@@ -896,14 +897,14 @@ class _SearchResultTile extends ConsumerWidget {
         style: AppTextStyles.caption.copyWith(color: context.colors.textSecondary),
       ),
       trailing: result.isFriend
-          ? Icon(Icons.check, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)
+          ? const Icon(Icons.check, color: AppColors.primary)
           : result.hasPendingRequest
               ? Icon(Icons.schedule, color: context.colors.textSecondary)
-              : ElevatedButton(
+              : FilledButton(
                   onPressed: () => _sendRequest(context, ref),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                    foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                   ),
                   child: Text(context.l10n.socialAdd),
@@ -1059,13 +1060,19 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  IconButton.filled(
+                  IconButton(
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: context.colors.border,
+                    ),
                     onPressed: _sending ? null : _sendComment,
                     icon: _sending
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
                           )
                         : const Icon(Icons.send),
                   ),

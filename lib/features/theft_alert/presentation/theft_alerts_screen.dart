@@ -64,11 +64,11 @@ class _TheftAlertsScreenState extends ConsumerState<TheftAlertsScreen>
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
         title: Text(l10n.theftAlerts),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: context.colors.surface,
+        foregroundColor: context.colors.textPrimary,
         elevation: 0,
         actions: [
           IconButton(
@@ -78,9 +78,10 @@ class _TheftAlertsScreenState extends ConsumerState<TheftAlertsScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-          unselectedLabelColor: AppColors.textSecondary,
-          indicatorColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: context.colors.textSecondary,
+          indicatorColor: AppColors.primary,
+          indicatorSize: TabBarIndicatorSize.label,
           tabs: [
             Tab(text: l10n.theftNearby),
             Tab(text: l10n.theftAll),
@@ -100,8 +101,8 @@ class _TheftAlertsScreenState extends ConsumerState<TheftAlertsScreen>
             ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showReportTheftSheet(context),
-        backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-        foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+        backgroundColor: AppColors.error,
+        foregroundColor: Colors.white,
         elevation: 0,
         icon: const Icon(Icons.warning_rounded),
         label: Text(l10n.theftReport),
@@ -112,7 +113,7 @@ class _TheftAlertsScreenState extends ConsumerState<TheftAlertsScreen>
   void _showSettings(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -124,7 +125,7 @@ class _TheftAlertsScreenState extends ConsumerState<TheftAlertsScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -181,7 +182,7 @@ class _NearbyTab extends ConsumerWidget {
   void _showReportDetails(BuildContext context, TheftReport report) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -230,7 +231,7 @@ class _AllReportsTab extends ConsumerWidget {
   void _showReportDetails(BuildContext context, TheftReport report) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -278,7 +279,7 @@ class _MyReportsTab extends ConsumerWidget {
   void _showReportDetails(BuildContext context, WidgetRef ref, TheftReport report) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -308,11 +309,11 @@ class _TheftReportCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: report.status == TheftReportStatus.active
-              ? (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.3)
+              ? context.colors.border.withValues(alpha: 0.3)
               : AppColors.border,
         ),
       ),
@@ -328,7 +329,7 @@ class _TheftReportCard extends StatelessWidget {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                  color: context.colors.border.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(8),
                   image: AppImage.decorationImage(
                     url: report.bikePhotoUrl,
@@ -369,7 +370,7 @@ class _TheftReportCard extends StatelessWidget {
                     Text(
                       report.bikeDescription,
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -377,22 +378,22 @@ class _TheftReportCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.schedule, size: 14, color: AppColors.textSecondary),
+                        Icon(Icons.schedule, size: 14, color: context.colors.textSecondary),
                         const SizedBox(width: 4),
                         Text(
                           _timeAgo(context, report.reportedAt),
                           style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                         ),
                         if (report.cityArea != null) ...[
                           const SizedBox(width: 12),
-                          const Icon(Icons.location_on, size: 14, color: AppColors.textSecondary),
+                          Icon(Icons.location_on, size: 14, color: context.colors.textSecondary),
                           const SizedBox(width: 4),
                           Text(
                             report.cityArea!,
                             style: AppTextStyles.caption.copyWith(
-                              color: AppColors.textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                           ),
                         ],
@@ -401,8 +402,8 @@ class _TheftReportCard extends StatelessWidget {
                   ],
                 ),
               ),
-              
-              const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+
+              Icon(Icons.chevron_right, color: context.colors.textSecondary),
             ],
           ),
         ),
@@ -448,7 +449,7 @@ class _EmptyState extends StatelessWidget {
             Text(
               subtitle,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -515,7 +516,7 @@ class _ReportTheftSheetState extends ConsumerState<_ReportTheftSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.textSecondary.withValues(alpha: 0.3),
+                    color: context.colors.textSecondary.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -538,7 +539,7 @@ class _ReportTheftSheetState extends ConsumerState<_ReportTheftSheet> {
                     return Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                        color: context.colors.border.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -628,8 +629,8 @@ class _ReportTheftSheetState extends ConsumerState<_ReportTheftSheet> {
               ElevatedButton(
                 onPressed: _saving ? null : _submit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                  foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                  backgroundColor: context.colors.textPrimary,
+                  foregroundColor: context.colors.background,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: _saving
@@ -638,7 +639,7 @@ class _ReportTheftSheetState extends ConsumerState<_ReportTheftSheet> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                          color: context.colors.background,
                         ),
                       )
                     : Text(l10n.theftReport),
@@ -728,7 +729,7 @@ class _TheftReportDetailsSheet extends ConsumerWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.textSecondary.withValues(alpha: 0.3),
+                    color: context.colors.textSecondary.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -762,7 +763,7 @@ class _TheftReportDetailsSheet extends ConsumerWidget {
                   Text(
                     _timeAgo(context, report.reportedAt),
                     style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ],
@@ -775,7 +776,7 @@ class _TheftReportDetailsSheet extends ConsumerWidget {
               Text(
                 report.bikeDescription,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -799,8 +800,8 @@ class _TheftReportDetailsSheet extends ConsumerWidget {
                   icon: const Icon(Icons.check_circle),
                   label: Text(l10n.theftMarkRecovered),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                    foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                    backgroundColor: context.colors.textPrimary,
+                    foregroundColor: context.colors.background,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -815,8 +816,8 @@ class _TheftReportDetailsSheet extends ConsumerWidget {
                   icon: const Icon(Icons.visibility),
                   label: Text(l10n.theftSeenThisBike),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                    foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                    backgroundColor: context.colors.textPrimary,
+                    foregroundColor: context.colors.background,
                   ),
                 ),
               ],
@@ -828,14 +829,13 @@ class _TheftReportDetailsSheet extends ConsumerWidget {
   }
 
   Color _statusColor(BuildContext context, TheftReportStatus status) {
-    final baseColor = Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black;
     switch (status) {
       case TheftReportStatus.active:
-        return baseColor.withValues(alpha: 1.0);
+        return context.colors.textPrimary;
       case TheftReportStatus.recovered:
-        return baseColor.withValues(alpha: 0.7);
+        return context.colors.textPrimary.withValues(alpha: 0.7);
       case TheftReportStatus.closed:
-        return AppColors.textSecondary;
+        return context.colors.textSecondary;
     }
   }
 
@@ -957,7 +957,7 @@ class _DetailRow extends StatelessWidget {
                 Text(
                   label,
                   style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
                 Text(value, style: AppTextStyles.bodyMedium),
@@ -994,7 +994,7 @@ class _TheftAlertSettingsSheet extends ConsumerWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.textSecondary.withValues(alpha: 0.3),
+                  color: context.colors.textSecondary.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

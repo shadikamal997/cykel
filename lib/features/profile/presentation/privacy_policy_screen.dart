@@ -18,7 +18,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(l10n.privacyPolicyTitle),
         backgroundColor: context.colors.surface,
-        foregroundColor: AppColors.textPrimary,
+        foregroundColor: context.colors.textPrimary,
         elevation: 0,
       ),
       body: const SingleChildScrollView(

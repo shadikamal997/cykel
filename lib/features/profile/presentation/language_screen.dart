@@ -43,7 +43,6 @@ class LanguageScreen extends ConsumerWidget {
                 final lang = languages[i];
                 final isSelected =
                     currentLocale.languageCode == lang.code;
-                final isDark = Theme.of(context).brightness == Brightness.dark;
                 return Column(
                   children: [
                     InkWell(

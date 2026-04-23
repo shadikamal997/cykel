@@ -39,49 +39,53 @@ class WelcomeScreen extends ConsumerWidget {
       );
     });
 
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
-      backgroundColor: AppColors.primaryDark,
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // ── Hero image — full screen, behind everything ───────────────────
-          Positioned(
-            top: -60,
-            left: 0,
-            right: 0,
-            child: Image.asset(
-              'assets/images/hero.webp',
-              fit: BoxFit.fitWidth,
-              alignment: Alignment.topCenter,
+          // ═══ BACKGROUND: HERO IMAGE (FULL SCREEN) ═══
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/images/hero.webp'),
+                  fit: BoxFit.contain,
+                  alignment: Alignment(0, -1.3),
+                ),
+              ),
             ),
           ),
 
-          // ── Main column: hero on top, card on bottom ──────────────────────
-          Column(
-            children: [
-              // ── Hero area (transparent — image is behind) ─────────────
-              const Expanded(child: SizedBox.expand()),
-
-              // ── White card ────────────────────────────────────────────────
-              Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(40),
-                    topRight: Radius.circular(40),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0x22000000),
-                      blurRadius: 30,
-                      offset: Offset(0, -6),
-                    ),
-                  ],
+          // ═══ BOTTOM SHEET (OVERLAPS IMAGE) ═══
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              constraints: BoxConstraints(
+                maxHeight: screenHeight * 0.55,
+              ),
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(30),
                 ),
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(28, 0, 28, bottomPad + 16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x22000000),
+                    blurRadius: 30,
+                    offset: Offset(0, -6),
+                  ),
+                ],
+              ),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(28, 0, 28, bottomPad + 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                       // Drag handle
                       const SizedBox(height: 14),
                       Container(
@@ -119,16 +123,16 @@ class WelcomeScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 24),
 
-                      // Apple button
+                      // ═══ 1. APPLE BUTTON ═══
                       _PillButton(
                         onTap: isLoading
                             ? null
                             : () => ref
                                 .read(authNotifierProvider.notifier)
                                 .signInWithApple(),
-                        backgroundColor: Colors.black,
+                        backgroundColor: const Color(0xFF000000),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -148,7 +152,7 @@ class WelcomeScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 12),
 
-                      // Google button
+                      // ═══ 2. GOOGLE BUTTON ═══
                       _PillButton(
                         onTap: isLoading
                             ? null
@@ -156,7 +160,7 @@ class WelcomeScreen extends ConsumerWidget {
                                 .read(authNotifierProvider.notifier)
                                 .signInWithGoogle(),
                         backgroundColor: Colors.white,
-                        border: Border.all(color: AppColors.border, width: 1.5),
+                        border: Border.all(color: const Color(0xFFE5E5E5), width: 1),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -171,85 +175,98 @@ class WelcomeScreen extends ConsumerWidget {
                               style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF1F1F1F),
+                                color: Color(0xFF111111),
                                 letterSpacing: 0.2,
                               ),
                             ),
                           ],
                         ),
                       ),
+                      const SizedBox(height: 16),
 
-                      const SizedBox(height: 24),
-
-                      // Divider
+                      // ═══ 3. DIVIDER ═══
                       Row(
                         children: [
-                          const Expanded(child: Divider()),
+                          const Expanded(
+                            child: Divider(
+                              color: Color(0xFFE0E0E0),
+                              thickness: 1,
+                            ),
+                          ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
                             child: Text(
                               l10n.or,
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: context.colors.textHint,
-                                fontWeight: FontWeight.w500,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF888888),
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           ),
-                          const Expanded(child: Divider()),
+                          const Expanded(
+                            child: Divider(
+                              color: Color(0xFFE0E0E0),
+                              thickness: 1,
+                            ),
+                          ),
                         ],
                       ),
+                      const SizedBox(height: 16),
 
-                      const SizedBox(height: 20),
-
-                      // Email + Create account
+                      // ═══ 4. AUTH LINKS (INLINE) ═══
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _TextLink(
-                            label: l10n.signInWithEmail,
+                          GestureDetector(
                             onTap: isLoading ? null : () => context.push(AppRoutes.login),
+                            child: Text(
+                              l10n.signInWithEmail,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF666666),
+                              ),
+                            ),
                           ),
-                          Container(
-                            width: 1,
-                            height: 14,
-                            margin: const EdgeInsets.symmetric(horizontal: 16),
-                            color: context.colors.border,
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 8),
+                            child: Text(
+                              '|',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFFCCCCCC),
+                              ),
+                            ),
                           ),
-                          _TextLink(
-                            label: l10n.createAccount,
+                          GestureDetector(
                             onTap: isLoading ? null : () => context.push(AppRoutes.signup),
-                            primary: true,
+                            child: Text(
+                              l10n.createAccount,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: context.colors.primary,
+                              ),
+                            ),
                           ),
                         ],
                       ),
+                      const SizedBox(height: 12),
 
-                      const SizedBox(height: 24),
-
-                      // Terms
+                      // ═══ 5. FOOTER TEXT ═══
                       Text(
                         l10n.termsNotice,
                         textAlign: TextAlign.center,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: context.colors.textHint,
-                          fontSize: 11,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF999999),
                           height: 1.5,
                         ),
                       ),
+                      const SizedBox(height: 8),
                     ],
                   ),
-                ),
-              ),
-            ],
-          ),
-
-          // ── Loading overlay ───────────────────────────────────────────────
-          if (isLoading)
-            Container(
-              color: Colors.black38,
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: context.colors.primary,
-                  strokeWidth: 2.5,
                 ),
               ),
             ),
@@ -282,10 +299,10 @@ class _PillButton extends StatelessWidget {
         opacity: onTap == null ? 0.45 : 1.0,
         duration: const Duration(milliseconds: 150),
         child: Container(
-          height: 56,
+          height: 54,
           decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: BorderRadius.circular(100),
+            borderRadius: BorderRadius.circular(27),
             border: border,
           ),
           child: child,
@@ -295,36 +312,6 @@ class _PillButton extends StatelessWidget {
   }
 }
 
-// ─── Text Link ────────────────────────────────────────────────────────────────
-
-class _TextLink extends StatelessWidget {
-  const _TextLink({
-    required this.label,
-    this.onTap,
-    this.primary = false,
-  });
-
-  final String label;
-  final VoidCallback? onTap;
-  final bool primary;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: primary ? FontWeight.w700 : FontWeight.w500,
-          color: primary ? context.colors.primary : context.colors.textSecondary,
-          decoration: primary ? TextDecoration.underline : TextDecoration.none,
-          decorationColor: context.colors.primary,
-        ),
-      ),
-    );
-  }
-}
 // ─── Google G Painter ─────────────────────────────────────────────────────────
 
 class _GoogleGPainter extends CustomPainter {

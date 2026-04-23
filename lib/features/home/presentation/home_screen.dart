@@ -38,6 +38,7 @@ import '../../../services/commuter_tax_service.dart';
 import 'commuter_tax_detail_screen.dart';
 import '../../events/data/events_provider.dart';
 import '../../events/domain/event.dart';
+import '../../../services/subscription_providers.dart';
 
 // ─── Design Colors (kept for compatibility with white-on-color elements) ─────
 const _kPrimaryColor = AppColors.primary;
@@ -70,6 +71,7 @@ class HomeScreen extends ConsumerWidget {
     final rawName = user?.displayName.split(' ').first ?? '';
     final firstName = rawName.isEmpty ? l10n.defaultRiderName : rawName;
     final dashboardSettings = ref.watch(dashboardSettingsProvider).valueOrNull ?? const DashboardSettings();
+    final isPremium = ref.watch(isPremiumProvider);
     final topPad = MediaQuery.of(context).padding.top;
 
     return Scaffold(
@@ -87,10 +89,10 @@ class HomeScreen extends ConsumerWidget {
             SliverToBoxAdapter(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.colors.surface,
                   border: Border(
                     bottom: BorderSide(
-                      color: Colors.black.withValues(alpha: 0.06),
+                      color: context.colors.border.withValues(alpha: 0.06),
                       width: 1,
                     ),
                   ),
@@ -234,7 +236,7 @@ class HomeScreen extends ConsumerWidget {
                       const _MonthlyChallengeCard(),
                       const SizedBox(height: 12),
                     ],
-                    if (dashboardSettings.showEbikeRange) ...[
+                    if (isPremium && dashboardSettings.showEbikeRange) ...[
                       const _EbikeRangeCard(),
                       const SizedBox(height: 12),
                     ],
@@ -254,6 +256,12 @@ class HomeScreen extends ConsumerWidget {
                     _SectionLabel(l10n.sectionFrequentRoutes),
                     const SizedBox(height: 10),
                     const _FrequentDestinationsCard(),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // ── Maintenance Reminder ───────────────────────────
+                  if (isPremium && dashboardSettings.showMaintenanceReminder) ...[
+                    const _MaintenanceAlertsCard(),
                     const SizedBox(height: 24),
                   ],
 
@@ -506,7 +514,7 @@ class _RideConditionCard extends ConsumerWidget {
               const SizedBox(height: 14),
               Container(
                 height: 1,
-                color: Colors.black.withValues(alpha: 0.08),
+                color: context.colors.border.withValues(alpha: 0.08),
               ),
               const SizedBox(height: 12),
               // ── Metric row ────────────────────────────────────────────────
@@ -1078,9 +1086,9 @@ class _RouteButton extends StatelessWidget {
         color: _kCardBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isSet 
-              ? _kPrimaryColor.withValues(alpha: 0.4) 
-              : Colors.black.withValues(alpha: 0.08),
+          color: isSet
+              ? _kPrimaryColor.withValues(alpha: 0.4)
+              : context.colors.border.withValues(alpha: 0.08),
           width: 1.5,
         ),
       ),
@@ -1092,7 +1100,7 @@ class _RouteButton extends StatelessWidget {
             decoration: BoxDecoration(
               color: isSet
                   ? _kPrimaryColor.withValues(alpha: 0.12)
-                  : Colors.black.withValues(alpha: 0.04),
+                  : context.colors.border.withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon,
@@ -1327,7 +1335,7 @@ class _EmptyStateCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: context.colors.surface,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: _kSoftElements, width: 1),
             ),
@@ -1360,7 +1368,6 @@ class _EmptyStateCard extends StatelessWidget {
 void _showLanguageSelector(BuildContext context, WidgetRef ref) {
   final l10n = context.l10n;
   final currentLocale = ref.read(localeProvider);
-  final isDark = Theme.of(context).brightness == Brightness.dark;
 
   final languages = [
     (code: 'en', label: l10n.languageEnglish, flag: '🇬🇧'),
@@ -1374,7 +1381,7 @@ void _showLanguageSelector(BuildContext context, WidgetRef ref) {
     builder: (context) => SafeArea(
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
+          color: context.colors.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
@@ -1390,7 +1397,7 @@ void _showLanguageSelector(BuildContext context, WidgetRef ref) {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : _kPrimaryText,
+                color: context.colors.textPrimary,
               ),
             ),
           ),
@@ -1408,13 +1415,13 @@ void _showLanguageSelector(BuildContext context, WidgetRef ref) {
                 margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? (isDark ? _kPrimaryColor.withValues(alpha: 0.2) : _kPrimaryColor.withValues(alpha: 0.1))
+                      ? _kPrimaryColor.withValues(alpha: 0.1)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected
                         ? _kPrimaryColor
-                        : (isDark ? AppColors.cardDark : _kSoftElements),
+                        : context.colors.border,
                     width: isSelected ? 2 : 1,
                   ),
                 ),
@@ -1431,7 +1438,7 @@ void _showLanguageSelector(BuildContext context, WidgetRef ref) {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                          color: isDark ? Colors.white : _kPrimaryText,
+                          color: context.colors.textPrimary,
                         ),
                       ),
                     ),
@@ -1753,7 +1760,7 @@ class _FrequentDestinationsCard extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: context.colors.surface,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: _kSoftElements, width: 1),
                             ),
@@ -2434,7 +2441,7 @@ class _MonthlyChallengeCard extends ConsumerWidget {
                     colors: [AppColors.successLight, AppColors.successLight],
                   )
                 : null,
-            color: challenge.isComplete ? null : Colors.white,
+            color: challenge.isComplete ? null : context.colors.cardBackground,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -2501,8 +2508,8 @@ class _MonthlyChallengeCard extends ConsumerWidget {
                   ),
                   Text(
                     challenge.statusLabel,
-                    style: const TextStyle(
-                      color: Colors.black,
+                    style: TextStyle(
+                      color: context.colors.textPrimary,
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),
@@ -2536,7 +2543,7 @@ class _EbikeRangeCard extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/premium_gate.dart';
+import '../../../services/subscription_providers.dart';
 import '../application/family_pricing_providers.dart';
 import '../domain/subscription.dart';
 
@@ -26,6 +28,15 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isPremium = ref.watch(isPremiumProvider);
+    if (!isPremium) {
+      return const PremiumGateScreen(
+        screenTitle: 'Family Plan',
+        featureDescription: 'Manage family subscriptions and share CYKEL Premium with up to 5 family members.',
+        child: SizedBox.shrink(),
+      );
+    }
+
     final isProcessing = ref.watch(isProcessingPaymentProvider);
     final error = ref.watch(paymentErrorProvider);
     final savedMethods = ref.watch(savedPaymentMethodsProvider);
@@ -288,7 +299,7 @@ class _OrderSummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.cardBorder),
       ),
@@ -440,7 +451,7 @@ class _PaymentMethodTile extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.cardBorder,
@@ -512,7 +523,7 @@ class _AddPaymentMethodCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.cardBorder, style: BorderStyle.solid),
         ),

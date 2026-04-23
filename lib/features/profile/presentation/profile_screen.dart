@@ -43,9 +43,7 @@ class ProfileScreen extends ConsumerWidget {
           // ── Premium Profile Header ─────────────────────────────────────────
           SliverToBoxAdapter(
             child: Container(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? context.colors.surface
-                  : Colors.white,
+              color: context.colors.surface,
               child: Padding(
                 padding: EdgeInsets.fromLTRB(20, topPad + 12, 20, 24),
                 child: Column(
@@ -56,9 +54,7 @@ class ProfileScreen extends ConsumerWidget {
                         // Back button
                         Container(
                           decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white.withValues(alpha: 0.1)
-                                : Colors.grey.shade100,
+                            color: context.colors.surfaceVariant,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: IconButton(
@@ -66,9 +62,7 @@ class ProfileScreen extends ConsumerWidget {
                             icon: Icon(
                               Icons.arrow_back_rounded,
                               size: 22,
-                              color: Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black87,
+                              color: context.colors.textPrimary,
                             ),
                             tooltip: l10n.goBack,
                           ),
@@ -77,9 +71,7 @@ class ProfileScreen extends ConsumerWidget {
                         // Edit button
                         Container(
                           decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white.withValues(alpha: 0.1)
-                                : Colors.grey.shade100,
+                            color: context.colors.surfaceVariant,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: IconButton(
@@ -87,9 +79,7 @@ class ProfileScreen extends ConsumerWidget {
                             icon: Icon(
                               Icons.edit_outlined,
                               size: 22,
-                              color: Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black87,
+                              color: context.colors.textPrimary,
                             ),
                             tooltip: l10n.editProfile,
                           ),
@@ -104,9 +94,7 @@ class ProfileScreen extends ConsumerWidget {
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF334155)
-                            : const Color(0xFFE2E8F0),
+                        color: context.colors.border,
                         shape: BoxShape.circle,
                       ),
                       child: user?.photoUrl != null
@@ -122,9 +110,7 @@ class ProfileScreen extends ConsumerWidget {
                                 style: TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.w900,
-                                  color: Theme.of(context).brightness == Brightness.dark
-                                      ? Colors.white
-                                      : const Color(0xFF64748B),
+                                  color: context.colors.textSecondary,
                                 ),
                               ),
                             ),
@@ -138,9 +124,7 @@ class ProfileScreen extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white
-                            : const Color(0xFF0F172A),
+                        color: context.colors.textPrimary,
                         letterSpacing: -0.3,
                         height: 1.2,
                       ),
@@ -155,9 +139,7 @@ class ProfileScreen extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white.withValues(alpha: 0.7)
-                            : const Color(0xFF64748B),
+                        color: context.colors.textSecondary,
                         letterSpacing: 0.3,
                       ),
                       textAlign: TextAlign.center,
@@ -172,7 +154,6 @@ class ProfileScreen extends ConsumerWidget {
                           child: _GlassStatCard(
                             value: bikeCount.toString(),
                             label: l10n.myBikes,
-                            isDark: Theme.of(context).brightness == Brightness.dark,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -180,15 +161,13 @@ class ProfileScreen extends ConsumerWidget {
                           child: _GlassStatCard(
                             value: '0',
                             label: l10n.ridesLabel,
-                            isDark: Theme.of(context).brightness == Brightness.dark,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Expanded(
+                        const Expanded(
                           child: _GlassStatCard(
                             value: '0',
                             label: 'Saved',
-                            isDark: Theme.of(context).brightness == Brightness.dark,
                           ),
                         ),
                       ],
@@ -535,16 +514,12 @@ class _SettingsSection extends StatelessWidget {
             color: context.colors.surface,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? const Color(0xFF334155)
-                  : const Color(0xFFE2E8F0),
+              color: context.colors.border,
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.black.withValues(alpha: 0.2)
-                    : const Color(0xFF64748B).withValues(alpha: 0.06),
+                color: context.colors.border.withValues(alpha: 0.2),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -587,7 +562,6 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -598,17 +572,13 @@ class _SettingsTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF334155)
-                    : const Color(0xFFF1F5F9),
+                color: context.colors.surfaceVariant,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 icon,
                 size: 20,
-                color: isDark
-                    ? const Color(0xFF94A3B8)
-                    : const Color(0xFF475569),
+                color: context.colors.textSecondary,
               ),
             ),
             const SizedBox(width: 14),
@@ -625,9 +595,7 @@ class _SettingsTile extends StatelessWidget {
                 Icon(
                   Icons.chevron_right_rounded,
                   size: 22,
-                  color: isDark
-                      ? const Color(0xFF475569)
-                      : const Color(0xFF94A3B8),
+                  color: context.colors.textSecondary,
                 ),
           ],
         ),
@@ -650,7 +618,6 @@ class _SubscriptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
@@ -669,13 +636,13 @@ class _SubscriptionTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.2),
+              color: context.colors.border.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               plan,
               style: AppTextStyles.labelSmall.copyWith(
-                color: Colors.white,
+                color: context.colors.textPrimary,
               ),
             ),
           ),
@@ -691,7 +658,7 @@ class _SubscriptionTile extends StatelessWidget {
               child: Text(
                 isPremium ? context.l10n.manageButton : context.l10n.upgradeButton,
                 style: AppTextStyles.labelSmall.copyWith(
-                  color: isDark ? Colors.black : Colors.white,
+                  color: context.colors.background,
                 ),
               ),
             ),
@@ -855,7 +822,6 @@ class _GdprToggleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
@@ -866,7 +832,9 @@ class _GdprToggleTile extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: isDark ? Colors.white.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.5),
+            activeTrackColor: AppColors.primary,
+            activeThumbColor: Colors.white,
+            inactiveTrackColor: context.colors.border,
           ),
         ],
       ),
@@ -882,16 +850,15 @@ class _Badge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.2),
+        color: context.colors.border.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         label,
-        style: AppTextStyles.labelSmall.copyWith(color: Colors.white),
+        style: AppTextStyles.labelSmall.copyWith(color: context.colors.textPrimary),
       ),
     );
   }
@@ -933,10 +900,9 @@ class _ThemeTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final autoMode = ref.watch(autoThemeModeProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     String label;
     IconData icon;
-    
+
     switch (autoMode) {
       case AutoThemeMode.light:
         label = l10n.lightTheme;
@@ -968,7 +934,7 @@ class _ThemeTile extends ConsumerWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.2),
+                  color: context.colors.border.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: context.colors.textPrimary, size: 20),
@@ -1070,7 +1036,7 @@ class _ThemeOption extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                color: isSelected ? Colors.white : context.colors.textSecondary,
+                color: isSelected ? AppColors.primary : context.colors.textSecondary,
                 size: 24,
               ),
               const SizedBox(width: 16),
@@ -1097,7 +1063,7 @@ class _ThemeOption extends StatelessWidget {
               if (isSelected)
                 const Icon(
                   Icons.check_circle_rounded,
-                  color: Colors.white,
+                  color: AppColors.primary,
                   size: 20,
                 ),
             ],
@@ -1113,12 +1079,10 @@ class _GlassStatCard extends StatelessWidget {
   const _GlassStatCard({
     required this.value,
     required this.label,
-    required this.isDark,
   });
 
   final String value;
   final String label;
-  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -1128,28 +1092,19 @@ class _GlassStatCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: isDark
-              ? [
-                  const Color(0xFF1E293B),
-                  const Color(0xFF0F172A),
-                ]
-              : [
-                  const Color(0xFFF8FAFC),
-                  const Color(0xFFF1F5F9),
-                ],
+          colors: [
+            context.colors.surface,
+            context.colors.surfaceVariant,
+          ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark
-              ? const Color(0xFF334155)
-              : const Color(0xFFE2E8F0),
+          color: context.colors.border,
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.2)
-                : const Color(0xFF64748B).withValues(alpha: 0.08),
+            color: context.colors.border.withValues(alpha: 0.15),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1162,7 +1117,7 @@ class _GlassStatCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w900,
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
+              color: context.colors.textPrimary,
               letterSpacing: -0.5,
             ),
           ),
@@ -1172,9 +1127,7 @@ class _GlassStatCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: isDark
-                  ? const Color(0xFF94A3B8)
-                  : const Color(0xFF64748B),
+              color: context.colors.textSecondary,
               letterSpacing: 0.3,
             ),
             textAlign: TextAlign.center,

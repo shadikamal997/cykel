@@ -214,7 +214,7 @@ class SubscriptionScreen extends ConsumerWidget {
               child: Row(
                 children: [
                   Expanded(child: Text(l10n.featuresHeader, style: AppTextStyles.labelSmall)),
-                  _ColLabel(l10n.freeColumn, Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.7) : Colors.black.withValues(alpha: 0.7)),
+                  _ColLabel(l10n.freeColumn, context.colors.textPrimary.withValues(alpha: 0.7)),
                   const SizedBox(width: 8),
                   _ColLabel(l10n.proColumn, context.colors.textPrimary),
                 ],
@@ -696,8 +696,8 @@ class _BillingPeriodButton extends StatelessWidget {
           textAlign: TextAlign.center,
           style: AppTextStyles.labelMedium.copyWith(
             color: isSelected
-                ? (Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white)
-                : AppColors.textSecondary,
+                ? context.colors.surface
+                : context.colors.textSecondary,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
           ),
         ),

@@ -185,13 +185,11 @@ class _AddressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final iconColor = isDark ? Colors.black : Colors.white;
     return Container(
       decoration: BoxDecoration(
-        color: context.colors.textPrimary,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.colors.textPrimary),
+        border: Border.all(color: context.colors.border),
       ),
       child: InkWell(
         onTap: onTap,
@@ -203,22 +201,22 @@ class _AddressCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.2),
+                  color: AppColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: iconColor, size: 24),
+                child: Icon(icon, color: AppColors.primary, size: 24),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: AppTextStyles.labelLarge.copyWith(color: isDark ? Colors.black : Colors.white)),
+                    Text(title, style: AppTextStyles.labelLarge.copyWith(color: context.colors.textPrimary)),
                     const SizedBox(height: 4),
                     Text(
                       address ?? context.l10n.notSet,
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.7),
+                        color: context.colors.textSecondary,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -226,7 +224,7 @@ class _AddressCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.edit_rounded, size: 20, color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.7)),
+              Icon(Icons.edit_rounded, size: 20, color: context.colors.textSecondary),
             ],
           ),
         ),
@@ -342,7 +340,7 @@ class _DawaAddressSearchSheetState
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: _results.length,
-                  separatorBuilder: (_, __) => Divider(
+                  separatorBuilder: (_, i) => Divider(
                     height: 1,
                     color: context.colors.textSecondary.withValues(alpha: 0.2),
                   ),

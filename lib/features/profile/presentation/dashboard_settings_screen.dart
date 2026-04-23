@@ -7,8 +7,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/premium_gate.dart';
 import '../../../services/dashboard_settings_provider.dart';
-import '../../../core/l10n/l10n.dart';
 import '../../../services/subscription_providers.dart';
+import '../../../core/l10n/l10n.dart';
 
 class DashboardSettingsScreen extends ConsumerWidget {
   const DashboardSettingsScreen({super.key});
@@ -51,7 +51,6 @@ class _Body extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(dashboardSettingsProvider.notifier);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -64,74 +63,45 @@ class _Body extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
 
-        // Monthly Challenge
-        SwitchListTile(
-          tileColor: context.colors.textPrimary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: Text(context.l10n.sectionMonthlyChallenge, style: AppTextStyles.bodyMedium.copyWith(color: isDark ? Colors.black : Colors.white)),
-            subtitle: Text(context.l10n.sectionMonthlyChallengeDesc,
-                style: TextStyle(color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.7), fontSize: 12)),
-            value: settings.showMonthlyChallenge,
-            activeTrackColor: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.5),
-            onChanged: (v) => notifier.setShowMonthlyChallenge(v),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-          ),
-
-        const SizedBox(height: 8),
-        // E-bike Range
-        SwitchListTile(
-          tileColor: context.colors.textPrimary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: Text(context.l10n.sectionEbikeRange, style: AppTextStyles.bodyMedium.copyWith(color: isDark ? Colors.black : Colors.white)),
-            subtitle: Text(context.l10n.sectionEbikeRangeDesc,
-                style: TextStyle(color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.7), fontSize: 12)),
-            value: settings.showEbikeRange,
-            activeTrackColor: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.5),
-            onChanged: (v) => notifier.setShowEbikeRange(v),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-          ),
-
-        const SizedBox(height: 8),
-        // Quick Routes
-        SwitchListTile(
-          tileColor: context.colors.textPrimary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: Text(context.l10n.sectionQuickRoutesLabel, style: AppTextStyles.bodyMedium.copyWith(color: isDark ? Colors.black : Colors.white)),
-            subtitle: Text(context.l10n.sectionQuickRoutesDesc,
-                style: TextStyle(color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.7), fontSize: 12)),
-            value: settings.showQuickRoutes,
-            activeTrackColor: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.5),
-            onChanged: (v) => notifier.setShowQuickRoutes(v),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-          ),
-
-        const SizedBox(height: 8),
-        // Recent Activity
-        SwitchListTile(
-          tileColor: context.colors.textPrimary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: Text(context.l10n.sectionRecentActivity, style: AppTextStyles.bodyMedium.copyWith(color: isDark ? Colors.black : Colors.white)),
-            subtitle: Text(context.l10n.sectionRecentActivityDesc,
-                style: TextStyle(color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.7), fontSize: 12)),
-            value: settings.showRecentActivity,
-            activeTrackColor: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.5),
-            onChanged: (v) => notifier.setShowRecentActivity(v),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-          ),
-
-        const SizedBox(height: 8),
-        // Maintenance Reminder
-        SwitchListTile(
-          tileColor: context.colors.textPrimary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: Text(context.l10n.sectionMaintenanceReminder, style: AppTextStyles.bodyMedium.copyWith(color: isDark ? Colors.black : Colors.white)),
-            subtitle: Text(context.l10n.sectionMaintenanceReminderDesc,
-                style: TextStyle(color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.7), fontSize: 12)),
-            value: settings.showMaintenanceReminder,
-            activeTrackColor: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.5),
-            onChanged: (v) => notifier.setShowMaintenanceReminder(v),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-          ),
+        _ToggleCard(
+          icon: Icons.emoji_events_outlined,
+          title: context.l10n.sectionMonthlyChallenge,
+          subtitle: context.l10n.sectionMonthlyChallengeDesc,
+          value: settings.showMonthlyChallenge,
+          onChanged: notifier.setShowMonthlyChallenge,
+        ),
+        const SizedBox(height: 10),
+        _ToggleCard(
+          icon: Icons.battery_charging_full_outlined,
+          title: context.l10n.sectionEbikeRange,
+          subtitle: context.l10n.sectionEbikeRangeDesc,
+          value: settings.showEbikeRange,
+          onChanged: notifier.setShowEbikeRange,
+        ),
+        const SizedBox(height: 10),
+        _ToggleCard(
+          icon: Icons.map_outlined,
+          title: context.l10n.sectionQuickRoutesLabel,
+          subtitle: context.l10n.sectionQuickRoutesDesc,
+          value: settings.showQuickRoutes,
+          onChanged: notifier.setShowQuickRoutes,
+        ),
+        const SizedBox(height: 10),
+        _ToggleCard(
+          icon: Icons.directions_bike_outlined,
+          title: context.l10n.sectionRecentActivity,
+          subtitle: context.l10n.sectionRecentActivityDesc,
+          value: settings.showRecentActivity,
+          onChanged: notifier.setShowRecentActivity,
+        ),
+        const SizedBox(height: 10),
+        _ToggleCard(
+          icon: Icons.build_outlined,
+          title: context.l10n.sectionMaintenanceReminder,
+          subtitle: context.l10n.sectionMaintenanceReminderDesc,
+          value: settings.showMaintenanceReminder,
+          onChanged: notifier.setShowMaintenanceReminder,
+        ),
 
         const SizedBox(height: 40),
         Text(
@@ -152,5 +122,55 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(title,
         style: AppTextStyles.headline3.copyWith(fontSize: 15));
+  }
+}
+
+class _ToggleCard extends StatelessWidget {
+  const _ToggleCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: context.colors.textSecondary.withValues(alpha: 0.12),
+        ),
+      ),
+      child: SwitchListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        secondary: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 20),
+        ),
+        title: Text(title, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+        subtitle: Text(
+          subtitle,
+          style: AppTextStyles.bodySmall.copyWith(color: context.colors.textSecondary),
+        ),
+        value: value,
+        activeThumbColor: AppColors.primary,
+        onChanged: onChanged,
+      ),
+    );
   }
 }

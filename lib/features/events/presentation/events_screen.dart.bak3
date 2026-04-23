@@ -1,0 +1,2349 @@
+/// CYKEL — Events Discovery Screen
+/// Premium Dribbble-level design for group ride events
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/l10n/l10n.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/router/app_router.dart';
+import '../../profile/data/user_profile_provider.dart';
+import '../data/events_provider.dart';
+import '../domain/event.dart';
+import '../../../core/widgets/cached_image.dart';
+import '../../../core/widgets/app_image.dart';
+
+// ─── Design Colors ─────────────────────────────────────────────────────────────
+const _kPrimaryColor = Color(0xFF4A7C59);
+const _kPrimaryPressed = Color(0xFF3D6B4A);
+const _kPrimaryText = Color(0xFF1A1A1A);
+const _kSecondaryText = Color(0xFF6B6B6B);
+const _kBackground = Color(0xFFFFFFFF);
+const _kCardBackground = Color(0xFFF4F5F2);
+const _kSoftElements = Color(0xFFE9ECE6);
+
+class EventsScreen extends ConsumerStatefulWidget {
+  const EventsScreen({super.key});
+
+  @override
+  ConsumerState<EventsScreen> createState() => _EventsScreenState();
+}
+
+class _EventsScreenState extends ConsumerState<EventsScreen> {
+  final ScrollController _scrollController = ScrollController();
+  int _selectedTabIndex = 0;
+  String _sortBy = 'date'; // 'date', 'distance', 'participants'
+  String _filterDifficulty = 'all'; // 'all', 'easy', 'moderate', 'hard'
+  String _filterEventType = 'all'; // 'all', 'social', 'training', 'tour', etc.
+  double _maxDistance = 50.0; // km
+  // Phase 3: Age filtering
+  String _filterAge = 'all'; // 'all', '18+', '21+', '16-25', '26-40', '41-60', '60+'
+  int? _customMinAge;
+  int? _customMaxAge;
+  // Phase 5: Language filtering
+  String _filterLanguage = 'all'; // 'all', 'da', 'en', 'de', etc.
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return Scaffold(
+      backgroundColor: isDark ? AppColors.backgroundDark : _kBackground,
+      body: CustomScrollView(
+        controller: _scrollController,
+        slivers: [
+          // ─── Hero Header Section ─────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: _buildHeroHeader(context, l10n, isDark),
+          ),
+
+          // ─── Tab Pills ───────────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: _buildTabPills(context, l10n, isDark),
+          ),
+
+          // ─── Filter & Sort Bar ───────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: _buildFilterSortBar(context, l10n, isDark),
+          ),
+
+          // ─── Quick Stats Bar ─────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: _buildQuickStats(context, l10n, isDark),
+          ),
+
+          // ─── Section Title: Trending Now ─────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.local_fire_department_rounded, 
+                        size: 24, 
+                        color: Colors.orange.shade700),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Trending Now',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : _kPrimaryText,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Text(
+                      l10n.viewAll,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.primaryLight : _kPrimaryColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ─── Trending Events Cards ───────────────────────────────────────
+          SliverToBoxAdapter(
+            child: _buildTrendingEvents(context, screenWidth, isDark),
+          ),
+
+          // ─── Section Title: New Rides ────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 32, 20, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.fiber_new_rounded, 
+                        size: 24, 
+                        color: isDark ? AppColors.primaryLight : _kPrimaryColor),
+                      const SizedBox(width: 8),
+                      Text(
+                        'New Rides',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : _kPrimaryText,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Text(
+                      l10n.viewAll,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.primaryLight : _kPrimaryColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ─── New Rides Cards ─────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: _buildNewEvents(context, screenWidth, isDark),
+          ),
+
+          // ─── Section Title: Nearby Events ────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 32, 20, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.near_me_rounded, 
+                        size: 24, 
+                        color: Colors.blue.shade600),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Nearby Events',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : _kPrimaryText,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Text(
+                      l10n.viewAll,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.primaryLight : _kPrimaryColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ─── Nearby Events Cards ─────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: _buildNearbyEvents(context, screenWidth, isDark),
+          ),
+
+          // ─── Section Title: This Weekend ─────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 32, 20, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.weekend_rounded, 
+                        size: 24, 
+                        color: Colors.purple.shade600),
+                      const SizedBox(width: 8),
+                      Text(
+                        'This Weekend',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : _kPrimaryText,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Text(
+                      l10n.viewAll,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.primaryLight : _kPrimaryColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ─── Weekend Events Cards ────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: _buildWeekendEvents(context, screenWidth, isDark),
+          ),
+
+          // ─── Section Title: Popular Events ───────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 32, 20, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    l10n.popularEvents,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : _kPrimaryText,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      // Show all events
+                    },
+                    child: Text(
+                      l10n.viewAll,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.primaryLight : _kPrimaryColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ─── Horizontal Event Cards ──────────────────────────────────────
+          SliverToBoxAdapter(
+            child: _buildHorizontalEventCards(context, screenWidth, isDark),
+          ),
+
+          // ─── Upcoming Events Section ─────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 32, 20, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    l10n.upcomingEvents,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : _kPrimaryText,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ─── Event List ──────────────────────────────────────────────────
+          _buildEventList(context, isDark),
+
+          // Bottom padding for FAB
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 100),
+          ),
+        ],
+      ),
+      floatingActionButton: _buildCreateFAB(context, l10n, isDark),
+    );
+  }
+
+  // ─── Hero Header with Search ─────────────────────────────────────────────────
+  Widget _buildHeroHeader(BuildContext context, AppLocalizations l10n, bool isDark) {
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 16,
+        left: 20,
+        right: 20,
+        bottom: 24,
+      ),
+      decoration: BoxDecoration(
+        image: isDark
+            ? null
+            : const DecorationImage(
+                image: AssetImage('assets/images/eventhero.webp'),
+                fit: BoxFit.cover,
+              ),
+        gradient: isDark
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF2D3748), Color(0xFF1A202C)],
+              )
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Back button and menu
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              GestureDetector(
+                onTap: () => context.pop(),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () => _showSearch(context),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.search,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Greeting text
+          Text(
+            l10n.discoverGroupRides,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withValues(alpha: 0.8),
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Title
+          Text(
+            l10n.groupRides,
+            style: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: -1,
+              height: 1.1,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Search bar (pill shape)
+          GestureDetector(
+            onTap: () => _showSearch(context),
+            child: Container(
+              height: 52,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(26),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.search,
+                    color: _kSecondaryText,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    l10n.searchEventsHint,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: _kSecondaryText,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Tab Pills ───────────────────────────────────────────────────────────────
+  Widget _buildTabPills(BuildContext context, AppLocalizations l10n, bool isDark) {
+    final tabs = [
+      l10n.eventsTabAll,
+      l10n.eventsTabMine,
+      l10n.eventsTabCreated,
+    ];
+
+    return Container(
+      height: 52,
+      margin: const EdgeInsets.only(top: 20),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: tabs.length,
+        itemBuilder: (context, index) {
+          final isSelected = _selectedTabIndex == index;
+          return GestureDetector(
+            onTap: () => setState(() => _selectedTabIndex = index),
+            child: Container(
+              margin: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? (isDark ? Colors.white : _kPrimaryColor)
+                    : (isDark ? const Color(0xFF2D3748) : _kCardBackground),
+                borderRadius: BorderRadius.circular(26),
+                border: isSelected
+                    ? null
+                    : Border.all(
+                        color: isDark
+                            ? const Color(0xFF4A5568)
+                            : _kSoftElements,
+                        width: 1),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: (isDark ? Colors.white : _kPrimaryColor).withValues(alpha: 0.25),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        )
+                      ]
+                    : [],
+              ),
+              child: Text(
+                tabs[index],
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected
+                      ? (isDark ? _kPrimaryText : Colors.white)
+                      : (isDark ? const Color(0xFFA0AEC0) : _kSecondaryText),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ─── Filter & Sort Bar ───────────────────────────────────────────────────────
+  Widget _buildFilterSortBar(BuildContext context, AppLocalizations l10n, bool isDark) {
+    final userProfile = ref.watch(userProfileProvider);
+    
+    return Container(
+      height: 60,
+      margin: const EdgeInsets.only(top: 16),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        children: [
+          // Phase 4: Family mode indicator
+          if (userProfile.isFamilyMode)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.green.withValues(alpha: 0.4),
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.family_restroom, size: 18, color: Colors.green.shade700),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Family Mode Active',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // Phase 5: Tourist mode indicator
+          if (userProfile.isTouristMode)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.blue.withValues(alpha: 0.4),
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.camera_alt_outlined, size: 18, color: Colors.blue.shade700),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Tourist Mode Active',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // Sort button
+          _buildFilterChip(
+            context,
+            isDark,
+            icon: Icons.sort_rounded,
+            label: 'Sort: ${_sortBy == 'date' ? 'Date' : _sortBy == 'distance' ? 'Distance' : 'Popular'}',
+            onTap: () => _showSortOptions(context, isDark),
+          ),
+          const SizedBox(width: 8),
+          // Event type filter
+          _buildFilterChip(
+            context,
+            isDark,
+            icon: Icons.category_rounded,
+            label: _getEventTypeFilterLabel(),
+            onTap: () => _showEventTypeFilter(context, isDark),
+          ),
+          const SizedBox(width: 8),
+          // Difficulty filter
+          _buildFilterChip(
+            context,
+            isDark,
+            icon: Icons.terrain_rounded,
+            label: _filterDifficulty == 'all' ? 'All' : _filterDifficulty.substring(0, 1).toUpperCase() + _filterDifficulty.substring(1),
+            onTap: () => _showDifficultyFilter(context, isDark),
+          ),
+          const SizedBox(width: 8),
+          // Distance filter
+          _buildFilterChip(
+            context,
+            isDark,
+            icon: Icons.space_dashboard_rounded,
+            label: '${_maxDistance.toInt()}km',
+            onTap: () => _showDistanceFilter(context, isDark),
+          ),
+          const SizedBox(width: 8),
+          // Phase 3: Age filter
+          _buildFilterChip(
+            context,
+            isDark,
+            icon: Icons.cake_rounded,
+            label: _getAgeFilterLabel(),
+            onTap: () => _showAgeFilter(context, isDark),
+          ),
+          const SizedBox(width: 8),
+          // Phase 5: Language filter
+          _buildFilterChip(
+            context,
+            isDark,
+            icon: Icons.language_rounded,
+            label: _getLanguageFilterLabelShort(),
+            onTap: () => _showLanguageFilter(context, isDark),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(BuildContext context, bool isDark, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF2D3748) : _kCardBackground,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDark ? const Color(0xFF4A5568) : _kSoftElements,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: isDark ? AppColors.primaryLight : _kPrimaryColor),
+            const SizedBox(width: 8),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 140),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : _kPrimaryText,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSortOptions(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1A202C) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white24 : Colors.black12,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildSortOption(context, isDark, 'date', 'Sort by Date', Icons.calendar_today),
+            _buildSortOption(context, isDark, 'distance', 'Sort by Distance', Icons.near_me),
+            _buildSortOption(context, isDark, 'participants', 'Sort by Popularity', Icons.people),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortOption(BuildContext context, bool isDark, String value, String label, IconData icon) {
+    final isSelected = _sortBy == value;
+    return ListTile(
+      leading: Icon(icon, color: isSelected ? _kPrimaryColor : (isDark ? Colors.white54 : _kSecondaryText)),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          color: isSelected ? _kPrimaryColor : (isDark ? Colors.white : _kPrimaryText),
+        ),
+      ),
+      trailing: isSelected ? const Icon(Icons.check, color: _kPrimaryColor) : null,
+      onTap: () {
+        setState(() => _sortBy = value);
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  void _showDifficultyFilter(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1A202C) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white24 : Colors.black12,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildDifficultyOption(context, isDark, 'all', 'All Levels'),
+            _buildDifficultyOption(context, isDark, 'easy', 'Easy'),
+            _buildDifficultyOption(context, isDark, 'moderate', 'Moderate'),
+            _buildDifficultyOption(context, isDark, 'hard', 'Hard'),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDifficultyOption(BuildContext context, bool isDark, String value, String label) {
+    final isSelected = _filterDifficulty == value;
+    return ListTile(
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          color: isSelected ? _kPrimaryColor : (isDark ? Colors.white : _kPrimaryText),
+        ),
+      ),
+      trailing: isSelected ? const Icon(Icons.check, color: _kPrimaryColor) : null,
+      onTap: () {
+        setState(() => _filterDifficulty = value);
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  void _showDistanceFilter(BuildContext context, bool isDark) {
+    double tempDistance = _maxDistance;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1A202C) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : Colors.black12,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Maximum Distance',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : _kPrimaryText,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  '${tempDistance.toInt()} km',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    color: _kPrimaryColor,
+                  ),
+                ),
+                Slider(
+                  value: tempDistance,
+                  min: 5,
+                  max: 100,
+                  divisions: 19,
+                  activeColor: _kPrimaryColor,
+                  onChanged: (value) {
+                    setModalState(() => tempDistance = value);
+                  },
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: () {
+                    setState(() => _maxDistance = tempDistance);
+                    Navigator.pop(context);
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _kPrimaryColor,
+                    minimumSize: const Size.fromHeight(50),
+                  ),
+                  child: Text(context.l10n.eventsApplyFilter),
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Phase 3: Age filter dialog
+  void _showAgeFilter(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1A202C) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  'Age Group Filter',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : _kPrimaryText,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildAgeOption(context, isDark, 'all', 'All Ages'),
+                      _buildAgeOption(context, isDark, '18+', '18+'),
+                      _buildAgeOption(context, isDark, '21+', '21+'),
+                      _buildAgeOption(context, isDark, '16-25', '16-25'),
+                      _buildAgeOption(context, isDark, '26-40', '26-40'),
+                      _buildAgeOption(context, isDark, '41-60', '41-60'),
+                      _buildAgeOption(context, isDark, '60+', '60+'),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAgeOption(BuildContext context, bool isDark, String value, String label) {
+    final isSelected = _filterAge == value;
+    return ListTile(
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          color: isSelected ? _kPrimaryColor : (isDark ? Colors.white : _kPrimaryText),
+        ),
+      ),
+      trailing: isSelected ? const Icon(Icons.check, color: _kPrimaryColor) : null,
+      onTap: () {
+        setState(() {
+          _filterAge = value;
+          // Set custom age range based on selection
+          switch (value) {
+            case 'all':
+              _customMinAge = null;
+              _customMaxAge = null;
+              break;
+            case '18+':
+              _customMinAge = 18;
+              _customMaxAge = null;
+              break;
+            case '21+':
+              _customMinAge = 21;
+              _customMaxAge = null;
+              break;
+            case '16-25':
+              _customMinAge = 16;
+              _customMaxAge = 25;
+              break;
+            case '26-40':
+              _customMinAge = 26;
+              _customMaxAge = 40;
+              break;
+            case '41-60':
+              _customMinAge = 41;
+              _customMaxAge = 60;
+              break;
+            case '60+':
+              _customMinAge = 60;
+              _customMaxAge = null;
+              break;
+          }
+        });
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  String _getAgeFilterLabel() {
+    if (_filterAge == 'all') return 'All';
+    return _filterAge;
+  }
+
+  // Phase 5: Language filter dialog
+  void _showLanguageFilter(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1A202C) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  'Language Filter',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : _kPrimaryText,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildLanguageOption(context, isDark, 'all', 'All Languages'),
+                      _buildLanguageOption(context, isDark, 'da', 'Danish'),
+                      _buildLanguageOption(context, isDark, 'en', 'English'),
+                      _buildLanguageOption(context, isDark, 'de', 'German'),
+                      _buildLanguageOption(context, isDark, 'sv', 'Swedish'),
+                      _buildLanguageOption(context, isDark, 'no', 'Norwegian'),
+                      _buildLanguageOption(context, isDark, 'fr', 'French'),
+                      _buildLanguageOption(context, isDark, 'es', 'Spanish'),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageOption(BuildContext context, bool isDark, String value, String label) {
+    final isSelected = _filterLanguage == value;
+    return ListTile(
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          color: isSelected ? _kPrimaryColor : (isDark ? Colors.white : _kPrimaryText),
+        ),
+      ),
+      trailing: isSelected ? const Icon(Icons.check, color: _kPrimaryColor) : null,
+      onTap: () {
+        setState(() {
+          _filterLanguage = value;
+        });
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  String _getLanguageFilterLabelShort() {
+    switch (_filterLanguage) {
+      case 'all': return 'All';
+      case 'da': return 'DA';
+      case 'en': return 'EN';
+      case 'de': return 'DE';
+      case 'sv': return 'SV';
+      case 'no': return 'NO';
+      case 'fr': return 'FR';
+      case 'es': return 'ES';
+      default: return 'All';
+    }
+  }
+
+  // Event type filter methods
+  void _showEventTypeFilter(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1A202C) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  'Event Type Filter',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : _kPrimaryText,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildEventTypeOption(context, isDark, 'all', 'All Types'),
+                      _buildEventTypeOption(context, isDark, 'social', 'Social'),
+                      _buildEventTypeOption(context, isDark, 'training', 'Training'),
+                      _buildEventTypeOption(context, isDark, 'tour', 'Tour'),
+                      _buildEventTypeOption(context, isDark, 'beginner', 'Beginner'),
+                      _buildEventTypeOption(context, isDark, 'family', 'Family'),
+                      _buildEventTypeOption(context, isDark, 'night', 'Night'),
+                      _buildEventTypeOption(context, isDark, 'gravel', 'Gravel/MTB'),
+                      _buildEventTypeOption(context, isDark, 'expat', 'Expat'),
+                      _buildEventTypeOption(context, isDark, 'race', 'Race'),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEventTypeOption(BuildContext context, bool isDark, String value, String label) {
+    final isSelected = _filterEventType == value;
+    return ListTile(
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          color: isSelected ? _kPrimaryColor : (isDark ? Colors.white : _kPrimaryText),
+        ),
+      ),
+      trailing: isSelected ? const Icon(Icons.check, color: _kPrimaryColor) : null,
+      onTap: () {
+        setState(() {
+          _filterEventType = value;
+        });
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  String _getEventTypeFilterLabel() {
+    switch (_filterEventType) {
+      case 'all': return 'All';
+      case 'social': return 'Social';
+      case 'training': return 'Training';
+      case 'tour': return 'Tour';
+      case 'beginner': return 'Beginner';
+      case 'family': return 'Family';
+      case 'night': return 'Night';
+      case 'gravel': return 'Gravel';
+      case 'expat': return 'Expat';
+      case 'race': return 'Race';
+      default: return 'All';
+    }
+  }
+
+  // ─── Quick Stats Bar ─────────────────────────────────────────────────────────
+  Widget _buildQuickStats(BuildContext context, AppLocalizations l10n, bool isDark) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [const Color(0xFF2D3748), const Color(0xFF1A202C)]
+              : [_kPrimaryColor.withValues(alpha: 0.05), _kPrimaryColor.withValues(alpha: 0.1)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? const Color(0xFF4A5568) : _kPrimaryColor.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildStatItem(
+            context,
+            isDark,
+            icon: Icons.event_rounded,
+            value: '127',
+            label: 'Total Events',
+            color: _kPrimaryColor,
+          ),
+          Container(
+            width: 1,
+            height: 40,
+            color: isDark ? Colors.white12 : Colors.black12,
+          ),
+          _buildStatItem(
+            context,
+            isDark,
+            icon: Icons.people_rounded,
+            value: '3.2K',
+            label: 'Participants',
+            color: Colors.blue.shade600,
+          ),
+          Container(
+            width: 1,
+            height: 40,
+            color: isDark ? Colors.white12 : Colors.black12,
+          ),
+          _buildStatItem(
+            context,
+            isDark,
+            icon: Icons.schedule_rounded,
+            value: '18',
+            label: 'This Week',
+            color: Colors.orange.shade600,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(BuildContext context, bool isDark, {
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+  }) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: isDark ? Colors.white : _kPrimaryText,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: isDark ? const Color(0xFFA0AEC0) : _kSecondaryText,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── Trending Events ─────────────────────────────────────────────────────────
+  Widget _buildTrendingEvents(BuildContext context, double screenWidth, bool isDark) {
+    final eventsAsync = ref.watch(upcomingEventsProvider);
+
+    return eventsAsync.when(
+      loading: () => const SizedBox(
+        height: 280,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => const SizedBox.shrink(),
+      data: (events) {
+        if (events.isEmpty) return const SizedBox.shrink();
+
+        // Apply filters and sorting
+        final filtered = _applyFilters(events);
+        
+        // Filter for trending (events with high participant count)
+        final trending = filtered.where((e) => e.currentParticipants >= 5).take(5).toList();
+        if (trending.isEmpty) return const SizedBox.shrink();
+
+        return SizedBox(
+          height: 300,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: trending.length,
+            itemBuilder: (context, index) {
+              return _PremiumEventCard(
+                event: trending[index],
+                width: screenWidth * 0.8,
+                isDark: isDark,
+                badge: '🔥 Trending',
+                badgeColor: Colors.orange.shade700,
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // ─── New Events ──────────────────────────────────────────────────────────────
+  Widget _buildNewEvents(BuildContext context, double screenWidth, bool isDark) {
+    final eventsAsync = ref.watch(upcomingEventsProvider);
+
+    return eventsAsync.when(
+      loading: () => const SizedBox(
+        height: 280,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => const SizedBox.shrink(),
+      data: (events) {
+        if (events.isEmpty) return const SizedBox.shrink();
+
+        // Apply filters and sorting
+        final filtered = _applyFilters(events);
+        
+        // Show newest events
+        final newEvents = filtered.take(5).toList();
+
+        return SizedBox(
+          height: 300,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: newEvents.length,
+            itemBuilder: (context, index) {
+              return _PremiumEventCard(
+                event: newEvents[index],
+                width: screenWidth * 0.8,
+                isDark: isDark,
+                badge: '✨ New',
+                badgeColor: _kPrimaryColor,
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // ─── Nearby Events ───────────────────────────────────────────────────────────
+  Widget _buildNearbyEvents(BuildContext context, double screenWidth, bool isDark) {
+    final eventsAsync = ref.watch(upcomingEventsProvider);
+
+    return eventsAsync.when(
+      loading: () => const SizedBox(
+        height: 280,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => const SizedBox.shrink(),
+      data: (events) {
+        if (events.isEmpty) return const SizedBox.shrink();
+
+        // In a real app, you'd filter by distance from user location
+        final nearby = events.take(5).toList();
+
+        return SizedBox(
+          height: 300,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: nearby.length,
+            itemBuilder: (context, index) {
+              return _PremiumEventCard(
+                event: nearby[index],
+                width: screenWidth * 0.8,
+                isDark: isDark,
+                badge: '📍 Nearby',
+                badgeColor: Colors.blue.shade600,
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // ─── Weekend Events ──────────────────────────────────────────────────────────
+  Widget _buildWeekendEvents(BuildContext context, double screenWidth, bool isDark) {
+    final eventsAsync = ref.watch(upcomingEventsProvider);
+
+    return eventsAsync.when(
+      loading: () => const SizedBox(
+        height: 280,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => const SizedBox.shrink(),
+      data: (events) {
+        if (events.isEmpty) return const SizedBox.shrink();
+
+        // Filter for weekend events (Saturday or Sunday)
+        final weekend = events.where((e) {
+          final day = e.dateTime.weekday;
+          return day == 6 || day == 7; // Saturday or Sunday
+        }).take(5).toList();
+
+        if (weekend.isEmpty) return const SizedBox.shrink();
+
+        return SizedBox(
+          height: 300,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: weekend.length,
+            itemBuilder: (context, index) {
+              return _PremiumEventCard(
+                event: weekend[index],
+                width: screenWidth * 0.8,
+                isDark: isDark,
+                badge: '🎉 Weekend',
+                badgeColor: Colors.purple.shade600,
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // ─── Horizontal Event Cards (Premium Design) ─────────────────────────────────
+  Widget _buildHorizontalEventCards(BuildContext context, double screenWidth, bool isDark) {
+    final eventsAsync = ref.watch(upcomingEventsProvider);
+
+    return eventsAsync.when(
+      loading: () => const SizedBox(
+        height: 280,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => SizedBox(
+        height: 280,
+        child: Center(child: Text(context.l10n.errorPrefix(e.toString()))),
+      ),
+      data: (events) {
+        if (events.isEmpty) {
+          return SizedBox(
+            height: 200,
+            child: Center(
+              child: Text(
+                context.l10n.noUpcomingEvents,
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
+            ),
+          );
+        }
+
+        return SizedBox(
+          height: 300,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: events.take(5).length,
+            itemBuilder: (context, index) {
+              return _PremiumEventCard(
+                event: events[index],
+                width: screenWidth * 0.8,
+                isDark: isDark,
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // ─── Event List ──────────────────────────────────────────────────────────────
+  Widget _buildEventList(BuildContext context, bool isDark) {
+    // Handle the different provider types
+    if (_selectedTabIndex == 2) {
+      // myCreatedEventsProvider returns StreamProvider
+      final eventsAsync = ref.watch(myCreatedEventsProvider);
+      return eventsAsync.when(
+        loading: () => const SliverToBoxAdapter(
+          child: SizedBox(
+            height: 200,
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        ),
+        error: (e, _) => const SliverToBoxAdapter(
+          child: SizedBox(
+            height: 200,
+            child: Center(child: Text('Error loading events')),
+          ),
+        ),
+        data: (events) => _buildEventListContent(context, events, isDark),
+      );
+    }
+
+    // FutureProvider for tabs 0 and 1
+    final eventsAsync = _selectedTabIndex == 0
+        ? ref.watch(upcomingEventsProvider)
+        : ref.watch(userUpcomingEventsProvider);
+
+    return eventsAsync.when(
+      loading: () => const SliverToBoxAdapter(
+        child: SizedBox(
+          height: 200,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ),
+      error: (e, _) => const SliverToBoxAdapter(
+        child: SizedBox(
+          height: 200,
+          child: Center(child: Text('Error loading events')),
+        ),
+      ),
+      data: (events) => _buildEventListContent(context, events, isDark),
+    );
+  }
+
+  Widget _buildEventListContent(BuildContext context, List<RideEvent> events, bool isDark) {
+    if (events.isEmpty) {
+      return SliverToBoxAdapter(
+        child: _EmptyState(
+          icon: Icons.event_busy,
+          title: context.l10n.noUpcomingEvents,
+          subtitle: context.l10n.beFirstToCreate,
+          isDark: isDark,
+        ),
+      );
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => _CompactEventCard(
+            event: events[index],
+            isDark: isDark,
+          ),
+          childCount: events.length,
+        ),
+      ),
+    );
+  }
+
+  // ─── Create FAB ──────────────────────────────────────────────────────────────
+  Widget _buildCreateFAB(BuildContext context, AppLocalizations l10n, bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: _kPrimaryColor.withValues(alpha: 0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: FloatingActionButton.extended(
+        onPressed: () => context.push(AppRoutes.createEvent),
+        backgroundColor: isDark ? Colors.white : _kPrimaryColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        icon: const Icon(Icons.add, size: 22),
+        label: Text(
+          l10n.createEvent,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showSearch(BuildContext context) {
+    final l10n = context.l10n;
+    showSearch(
+      context: context,
+      delegate: _EventSearchDelegate(
+        ref.read(eventsServiceProvider),
+        l10n.searchEvents,
+      ),
+    );
+  }
+
+  // ─── Apply Filters & Sorting ─────────────────────────────────────────────────
+  List<RideEvent> _applyFilters(List<RideEvent> events) {
+    var filtered = events;
+
+    // Phase 4: Apply family mode filter
+    final userProfile = ref.read(userProfileProvider);
+    if (userProfile.isFamilyMode) {
+      filtered = filtered.where((e) {
+        // In family mode, show only family-friendly events
+        return e.eventType == EventType.family || 
+               e.eventType == EventType.beginner ||
+               e.eventType == EventType.social;
+      }).toList();
+    }
+
+    // Apply event type filter
+    if (_filterEventType != 'all') {
+      filtered = filtered.where((e) {
+        return e.eventType.name == _filterEventType;
+      }).toList();
+    }
+
+    // Apply difficulty filter
+    if (_filterDifficulty != 'all') {
+      filtered = filtered.where((e) {
+        return e.difficulty.name == _filterDifficulty;
+      }).toList();
+    }
+
+    // Phase 3: Apply age filter
+    if (_filterAge != 'all' && (_customMinAge != null || _customMaxAge != null)) {
+      filtered = filtered.where((e) {
+        // If event has no age restriction, it's available for all
+        if (!e.hasAgeRestriction) return true;
+        
+        // Check if the selected age range overlaps with the event's age restriction
+        // Event allows users within selected age range
+        if (_customMinAge != null && e.maxAge != null && _customMinAge! > e.maxAge!) {
+          return false; // Selected min age is above event's max age
+        }
+        if (_customMaxAge != null && e.minAge != null && _customMaxAge! < e.minAge!) {
+          return false; // Selected max age is below event's min age
+        }
+        
+        return true;
+      }).toList();
+    }
+
+    // Phase 5: Apply language filter
+    if (_filterLanguage != 'all') {
+      filtered = filtered.where((e) {
+        // If event has no language restriction, it's available for all
+        if (e.languages.isEmpty) return true;
+        
+        // Check if the selected language is in the event's languages
+        return e.languages.contains(_filterLanguage);
+      }).toList();
+    }
+
+    // Phase 5: Apply tourist mode filter
+    if (userProfile.isTouristMode) {
+      filtered = filtered.where((e) {
+        // In tourist mode, prioritize expat/language exchange events and social rides
+        return e.eventType == EventType.expat || 
+               e.eventType == EventType.languageExchange ||
+               e.eventType == EventType.social ||
+               e.eventType == EventType.tour;
+      }).toList();
+    }
+
+    // Apply distance filter (would need user location - placeholder for now)
+    // In a real app, you'd calculate distance from user's location
+    // For now, we keep all events within the filter
+
+    // Apply sorting
+    if (_sortBy == 'date') {
+      filtered.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+    } else if (_sortBy == 'participants') {
+      filtered.sort((a, b) => b.currentParticipants.compareTo(a.currentParticipants));
+    } else if (_sortBy == 'distance') {
+      // Would need user location for distance sorting
+      // Keeping original order for now
+    }
+
+    return filtered;
+  }
+}
+
+// ─── Premium Event Card (Horizontal Scroll) ────────────────────────────────────
+class _PremiumEventCard extends ConsumerWidget {
+  const _PremiumEventCard({
+    required this.event,
+    required this.width,
+    required this.isDark,
+    this.badge,
+    this.badgeColor,
+  });
+
+  final RideEvent event;
+  final double width;
+  final bool isDark;
+  final String? badge;
+  final Color? badgeColor;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final isFavorited = ref.watch(isEventFavoritedProvider(event.id));
+
+    return GestureDetector(
+      onTap: () => context.push('${AppRoutes.events}/${event.id}'),
+      child: Container(
+        width: width,
+        margin: const EdgeInsets.only(right: 16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF2D3748) : _kCardBackground,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ─── Image Area (65% of card) ───────────────────────────────────
+            Expanded(
+              flex: 65,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Event image or gradient
+                  if (event.imageUrl != null && event.imageUrl!.isNotEmpty)
+                    CachedImage(
+                      imageUrl: event.imageUrl!,
+                      fit: BoxFit.cover,
+                    )
+                  else
+                    _buildGradientPlaceholder(),
+
+                  // Favorite icon (top-right)
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: GestureDetector(
+                      onTap: () {
+                        ref.read(favoriteEventsNotifierProvider.notifier)
+                            .toggleFavorite(event.id);
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          isFavorited ? Icons.favorite : Icons.favorite_border,
+                          color: isFavorited ? _kPrimaryColor : _kSecondaryText,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Event type badge (top-left)
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            event.eventType.icon,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            event.eventType.localizedLabel(context),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: _kPrimaryText,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Category badge (bottom-left)
+                  if (badge != null)
+                    Positioned(
+                      bottom: 12,
+                      left: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: badgeColor ?? _kPrimaryColor,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          badge!,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            // ─── Card Content (35% of card) ─────────────────────────────────
+            Expanded(
+              flex: 35,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Title
+                    Text(
+                      event.title,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : _kPrimaryText,
+                        letterSpacing: -0.3,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Metadata row
+                    Row(
+                      children: [
+                        // Date
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 12,
+                          color: isDark
+                              ? const Color(0xFFA0AEC0)
+                              : _kSecondaryText,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          event.formattedDate,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark
+                                ? const Color(0xFFA0AEC0)
+                                : _kSecondaryText,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+
+                        // Location
+                        Icon(
+                          Icons.location_on_outlined,
+                          size: 12,
+                          color: isDark
+                              ? const Color(0xFFA0AEC0)
+                              : _kSecondaryText,
+                        ),
+                        const SizedBox(width: 3),
+                        Expanded(
+                          child: Text(
+                            event.meetingPoint.name ?? event.meetingPoint.address,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark
+                                  ? const Color(0xFFA0AEC0)
+                                  : _kSecondaryText,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Phase 3: Age restriction display
+                    if (event.hasAgeRestriction) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.cake_rounded,
+                            size: 12,
+                            color: Colors.orange.shade700,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            'Ages: ${event.ageRangeText}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.orange.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const Spacer(),
+
+                    // Participants (stacked avatars)
+                    Row(
+                      children: [
+                        _buildStackedAvatars(event.currentParticipants),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${event.currentParticipants} ${l10n.participants}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: isDark
+                                ? const Color(0xFFA0AEC0)
+                                : _kSecondaryText,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGradientPlaceholder() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF6F8F72),
+            Color(0xFF5A7A5D),
+          ],
+        ),
+      ),
+      child: const Center(
+        child: Icon(
+          Icons.directions_bike,
+          size: 48,
+          color: Colors.white54,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStackedAvatars(int count) {
+    final displayCount = count.clamp(0, 4);
+    return SizedBox(
+      width: 20.0 + (displayCount - 1) * 14,
+      height: 28,
+      child: Stack(
+        children: List.generate(displayCount, (index) {
+          return Positioned(
+            left: index * 14.0,
+            child: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: [
+                  _kPrimaryColor,
+                  _kPrimaryPressed,
+                  _kSecondaryText,
+                  _kSoftElements,
+                ][index % 4],
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isDark ? const Color(0xFF2D3748) : Colors.white,
+                  width: 2,
+                ),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.person,
+                  size: 14,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+// ─── Compact Event Card (Vertical List) ────────────────────────────────────────
+class _CompactEventCard extends StatelessWidget {
+  const _CompactEventCard({
+    required this.event,
+    required this.isDark,
+  });
+
+  final RideEvent event;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push('${AppRoutes.events}/${event.id}'),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF2D3748) : _kCardBackground,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Event image thumbnail
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                image: AppImage.decorationImage(
+                  url: event.imageUrl,
+                  thumbnailUrl: null,
+                  fit: BoxFit.cover,
+                ),
+                gradient: event.imageUrl == null || event.imageUrl!.isEmpty
+                    ? const LinearGradient(
+                        colors: [_kPrimaryColor, _kPrimaryPressed],
+                      )
+                    : null,
+              ),
+              child: event.imageUrl == null || event.imageUrl!.isEmpty
+                  ? const Center(
+                      child: Icon(
+                        Icons.directions_bike,
+                        color: Colors.white54,
+                        size: 28,
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 16),
+
+            // Event details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : _kPrimaryText,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 12,
+                        color: isDark
+                            ? const Color(0xFFA0AEC0)
+                            : _kSecondaryText,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${event.formattedDate} • ${event.formattedTime}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark
+                              ? const Color(0xFFA0AEC0)
+                              : _kSecondaryText,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.people_outline,
+                        size: 12,
+                        color: isDark
+                            ? const Color(0xFFA0AEC0)
+                            : _kSecondaryText,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        event.participantText,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark
+                              ? const Color(0xFFA0AEC0)
+                              : _kSecondaryText,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Phase 3: Age restriction display
+                  if (event.hasAgeRestriction) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.cake_rounded,
+                          size: 12,
+                          color: Colors.orange.shade700,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Ages: ${event.ageRangeText}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.orange.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            // Arrow
+            Icon(
+              Icons.chevron_right,
+              color: isDark ? const Color(0xFF4A5568) : _kSoftElements,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Empty State ───────────────────────────────────────────────────────────────
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.isDark,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF2D3748)
+                    : _kCardBackground,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 36,
+                color: isDark
+                    ? const Color(0xFF4A5568)
+                    : _kSoftElements,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : _kPrimaryText,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark
+                    ? const Color(0xFFA0AEC0)
+                    : _kSecondaryText,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Search Delegate ───────────────────────────────────────────────────────────
+class _EventSearchDelegate extends SearchDelegate<RideEvent?> {
+  _EventSearchDelegate(this._service, this.searchLabel);
+
+  final EventsService _service;
+  final String searchLabel;
+
+  @override
+  String get searchFieldLabel => searchLabel;
+
+  @override
+  ThemeData appBarTheme(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return theme.copyWith(
+      appBarTheme: AppBarTheme(
+        backgroundColor: isDark ? const Color(0xFF1A202C) : _kBackground,
+        iconTheme: IconThemeData(
+          color: isDark ? Colors.white : _kPrimaryText,
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        hintStyle: TextStyle(
+          color: isDark ? const Color(0xFF718096) : _kSecondaryText,
+        ),
+      ),
+    );
+  }
+
+  @override
+  List<Widget>? buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: const Icon(Icons.clear),
+        onPressed: () => query = '',
+      ),
+    ];
+  }
+
+  @override
+  Widget? buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () => close(context, null),
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) => _buildSearchResults(context);
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    if (query.isEmpty) {
+      return Center(
+        child: Text(
+          context.l10n.searchEventsHint,
+          style: const TextStyle(
+            color: _kSecondaryText,
+          ),
+        ),
+      );
+    }
+    return _buildSearchResults(context);
+  }
+
+  Widget _buildSearchResults(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return FutureBuilder<List<RideEvent>>(
+      future: _service.searchEvents(query),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final events = snapshot.data ?? [];
+        if (events.isEmpty) {
+          return Center(
+            child: Text(context.l10n.noEventsFound),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(20),
+          itemCount: events.length,
+          itemBuilder: (context, index) {
+            final event = events[index];
+            return _CompactEventCard(
+              event: event,
+              isDark: isDark,
+            );
+          },
+        );
+      },
+    );
+  }
+}

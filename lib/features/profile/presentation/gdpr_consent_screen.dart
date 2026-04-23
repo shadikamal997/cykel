@@ -246,18 +246,16 @@ class _ConsentToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = context.colors.textPrimary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: value
-            ? baseColor.withValues(alpha: 0.06)
+            ? AppColors.primary.withValues(alpha: 0.07)
             : context.colors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: value ? baseColor.withValues(alpha: 0.35) : context.colors.border,
-          width: 0.8,
+          color: value ? AppColors.primary.withValues(alpha: 0.5) : context.colors.border,
+          width: value ? 1.5 : 0.8,
         ),
       ),
       child: Row(
@@ -281,7 +279,9 @@ class _ConsentToggle extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: baseColor.withValues(alpha: 0.5),
+            activeTrackColor: AppColors.primary,
+            activeThumbColor: Colors.white,
+            inactiveTrackColor: context.colors.border,
           ),
         ],
       ),

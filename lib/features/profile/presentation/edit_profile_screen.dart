@@ -285,18 +285,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       right: 0,
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black,
+                        decoration: const BoxDecoration(
+                          color: AppColors.primary,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.camera_alt_rounded,
                           size: 16,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.black
-                              : Colors.white,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -685,24 +681,21 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               child: FilledButton(
                 onPressed: _saving ? null : _save,
                 style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                      : Colors.black,
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
                 child: _saving
-                    ? SizedBox(
+                    ? const SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(
-                            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white, strokeWidth: 2),
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                       )
                     : Text(l10n.saveChanges,
-                        style: AppTextStyles.labelLarge
-                            .copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white)),
+                        style: AppTextStyles.labelLarge.copyWith(color: Colors.white)),
               ),
             ),
           ],

@@ -115,7 +115,6 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
 
   Future<bool> _onWillPop() async {
     if (!_hasUnsavedChanges) return true;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = context.l10n;
     final result = await showDialog<bool>(
       context: context,
@@ -140,7 +139,6 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = context.l10n;
     final isEdit = widget.editListing != null;
     final totalImages = _existingUrls.length + _newImages.length;
@@ -471,7 +469,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               child: FilledButton(
                 style: FilledButton.styleFrom(
                   backgroundColor: context.colors.textPrimary,
-                  foregroundColor: isDark ? Colors.black : Colors.white,
+                  foregroundColor: context.colors.surface,
                   minimumSize: const Size.fromHeight(52),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -794,7 +792,6 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
   }
 
   void _showUpgradeDialog() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = context.l10n;
     showDialog(
       context: context,
@@ -819,7 +816,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
             },
             style: FilledButton.styleFrom(
               backgroundColor: context.colors.textPrimary,
-              foregroundColor: isDark ? Colors.black : Colors.white,
+              foregroundColor: context.colors.surface,
             ),
             child: Text(l10n.upgradeToPremium),
           ),
@@ -832,7 +829,6 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
 
   InputDecoration _inputDecoration(String hint,
           {String? suffix, IconData? prefix}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InputDecoration(
         hintText: hint,
         hintStyle:
@@ -894,7 +890,6 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
         decoration: BoxDecoration(
           color: context.colors.background,
@@ -997,7 +992,6 @@ class _ImageThumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Stack(children: [
         Container(
           width: 92,
@@ -1045,7 +1039,6 @@ class _LocalImageThumbState extends State<_LocalImageThumb> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Stack(children: [
         FutureBuilder<Uint8List>(
           future: _bytesFuture,

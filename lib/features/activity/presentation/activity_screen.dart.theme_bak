@@ -1,0 +1,1324 @@
+/// CYKEL — Activity Screen (Phase 4)
+/// Live GPS ride recording + ride history + analytics.
+
+import 'dart:io';
+import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/l10n/l10n.dart';
+import '../data/ride_repository.dart';
+import '../data/ride_recording_provider.dart';
+import '../data/analytics_provider.dart';
+import '../domain/ride.dart';
+import '../../../services/ride_sync_service.dart';
+import '../../../services/subscription_providers.dart';
+import 'co2_summary_card.dart';
+import 'route_replay_screen.dart';
+
+// ─── Design Colors ─────────────────────────────────────────────────────────────
+const _kPrimaryColor = AppColors.primary;
+const _kPrimaryText = AppColors.textPrimary;
+const _kSecondaryText = AppColors.textSecondary;
+const _kBackground = AppColors.background;
+const _kCardBackground = AppColors.surface;
+const _kSoftElements = AppColors.surfaceVariant;
+
+class ActivityScreen extends ConsumerStatefulWidget {
+  const ActivityScreen({super.key});
+
+  @override
+  ConsumerState<ActivityScreen> createState() => _ActivityScreenState();
+}
+
+class _ActivityScreenState extends ConsumerState<ActivityScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabs;
+  List<Ride> _history = [];
+  bool _historyLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabs = TabController(length: 3, vsync: this);
+    _loadHistory();
+  }
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadHistory() async {
+    setState(() => _historyLoading = true);
+    final rides = await ref.read(rideRepositoryProvider).getRides();
+    if (mounted) setState(() { _history = rides; _historyLoading = false; });
+  }
+
+  Future<void> _startRide() async =>
+      ref.read(rideNotifierProvider.notifier).startRide();
+
+  Future<void> _stopRide() async {
+    final ride = await ref.read(rideNotifierProvider.notifier).stopRide();
+    if (ride != null) {
+      await _loadHistory();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(context.l10n.rideSavedSnackbar(ride.distanceLabel)),
+          backgroundColor: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.9),
+        ));
+        _tabs.animateTo(1); // jump to history tab
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n   = context.l10n;
+    final topPad = MediaQuery.of(context).padding.top;
+    final state  = ref.watch(rideNotifierProvider);
+
+    return Scaffold(
+      backgroundColor: _kBackground,
+      body: Column(
+        children: [
+          Container(
+            color: _kBackground,
+            padding: EdgeInsets.fromLTRB(20, topPad + 16, 20, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.tabActivity, style: AppTextStyles.headline2),
+                const SizedBox(height: 12),
+                TabBar(
+                  controller: _tabs,
+                  labelColor: _kPrimaryColor,
+                  unselectedLabelColor: _kSecondaryText,
+                  indicatorColor: _kPrimaryColor,
+                  dividerColor: _kSoftElements,
+                  tabs: [
+                    Tab(text: state.isRiding ? l10n.tabLive : l10n.startRide),
+                    Tab(text: l10n.rideHistory),
+                    Tab(text: l10n.tabAnalytics),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabs,
+              children: [
+                _RideTab(state: state, onStart: _startRide, onStop: _stopRide),
+                _HistoryTab(
+                  history: _history,
+                  loading: _historyLoading,
+                  onRefresh: _loadHistory,
+                  onDelete: (id) async {
+                    await ref.read(rideRepositoryProvider).deleteRide(id);
+                    ref.read(rideSyncServiceProvider).deleteRide(id).catchError((_) {});
+                    await _loadHistory();
+                  },
+                ),
+                const _AnalyticsTab(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Ride Tab ─────────────────────────────────────────────────────────────────
+
+class _RideTab extends ConsumerStatefulWidget {
+  const _RideTab({required this.state, required this.onStart, required this.onStop});
+  final RideState state;
+  final VoidCallback onStart;
+  final VoidCallback onStop;
+
+  @override
+  ConsumerState<_RideTab> createState() => _RideTabState();
+}
+
+class _RideTabState extends ConsumerState<_RideTab> {
+  void _pauseRide() {
+    ref.read(rideNotifierProvider.notifier).pauseRide();
+  }
+
+  void _resumeRide() {
+    ref.read(rideNotifierProvider.notifier).resumeRide();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final state = widget.state;
+    
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+      child: Column(
+        children: [
+          // Hero card with start/stop button
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: state.isRiding
+                    ? [const Color(0xFF4A7C59), const Color(0xFF3D6B4A)]
+                    : [const Color(0xFFE8F5E9), const Color(0xFFC8E6C9)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: _kPrimaryColor.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Icon
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: state.isRiding
+                        ? Colors.white.withValues(alpha: 0.2)
+                        : _kPrimaryColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    state.isRiding ? Icons.directions_bike_rounded : Icons.play_arrow_rounded,
+                    size: 28,
+                    color: state.isRiding ? Colors.white : _kPrimaryColor,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Status text
+                Text(
+                  state.isRiding ? l10n.tabLive : l10n.startRide,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: state.isRiding ? Colors.white : _kPrimaryText,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  state.isRiding ? '${l10n.rideTime}: ${state.elapsedLabel}' : l10n.longPressHint,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: state.isRiding
+                        ? Colors.white.withValues(alpha: 0.8)
+                        : _kSecondaryText,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 14),
+                // Start/Stop button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: state.isRiding ? widget.onStop : widget.onStart,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: state.isRiding ? Colors.white : _kPrimaryColor,
+                      foregroundColor: state.isRiding ? _kPrimaryColor : Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          state.isRiding ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          state.isRiding ? l10n.stopRide : l10n.startRide,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Pause/Resume button (shown during ride)
+                if (state.isRiding) ...[
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: state.isPaused ? _resumeRide : _pauseRide,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: state.isPaused ? _kPrimaryColor : Colors.orange,
+                        side: BorderSide(
+                          color: state.isPaused ? _kPrimaryColor : Colors.orange,
+                          width: 2,
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            state.isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            state.isPaused ? l10n.resumeRide : l10n.pauseRide,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Stats cards (shown when riding or after ride)
+          if (state.isRiding || state.distanceMeters > 0) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: _ModernStatCard(
+                    icon: Icons.straighten_rounded,
+                    label: l10n.distanceLabel,
+                    value: state.distanceLabel,
+                    color: _kPrimaryColor,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _ModernStatCard(
+                    icon: Icons.timer_rounded,
+                    label: l10n.rideTime,
+                    value: state.elapsedLabel,
+                    color: AppColors.info,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _ModernStatCard(
+                    icon: Icons.speed_rounded,
+                    label: l10n.speed,
+                    value: state.speedLabel,
+                    color: AppColors.warning,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _ModernStatCard(
+                    icon: Icons.trending_up_rounded,
+                    label: l10n.maxSpeed,
+                    value: state.maxSpeedLabel,
+                    color: AppColors.error,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _ModernStatCard(
+                    icon: Icons.local_fire_department_rounded,
+                    label: l10n.calories,
+                    value: '${state.caloriesBurned} kcal',
+                    color: Colors.deepOrange,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _ModernStatCard(
+                    icon: Icons.landscape_rounded,
+                    label: l10n.elevation,
+                    value: state.elevationLabel,
+                    color: AppColors.success,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ModernStatCard extends StatelessWidget {
+  const _ModernStatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _kCardBackground,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _kSoftElements, width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 16),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: _kPrimaryText,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: _kSecondaryText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── History Tab ──────────────────────────────────────────────────────────────
+
+class _HistoryTab extends StatelessWidget {
+  const _HistoryTab({required this.history, required this.loading,
+      required this.onRefresh, required this.onDelete});
+  final List<Ride> history;
+  final bool loading;
+  final Future<void> Function() onRefresh;
+  final void Function(String id) onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    if (loading) return const Center(child: CircularProgressIndicator());
+    if (history.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(width: 88, height: 88,
+              decoration: BoxDecoration(color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+                  shape: BoxShape.circle),
+              child: const Icon(Icons.history_rounded, size: 44, color: Colors.white)),
+            const SizedBox(height: 20),
+            Text(l10n.noRidesYet, style: AppTextStyles.headline3),
+            const SizedBox(height: 8),
+            Text(l10n.noRidesSubtitle,
+                style: AppTextStyles.bodyMedium.copyWith(color: _kSecondaryText),
+                textAlign: TextAlign.center),
+          ]),
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      color: _kPrimaryColor,
+      child: CustomScrollView(
+        slivers: [
+          // CO₂ impact summary card
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Co2SummaryCard(),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+            sliver: SliverList.separated(
+              itemCount: history.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (_, i) => _RideCard(
+                ride: history[i],
+                onDelete: () => onDelete(history[i].id),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RideCard extends StatelessWidget {
+  const _RideCard({required this.ride, required this.onDelete});
+  final Ride ride;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Dismissible(
+      key: Key(ride.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(16)),
+        child: const Icon(Icons.delete_rounded, color: AppColors.error)),
+      onDismissed: (_) => onDelete(),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _kCardBackground,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _kSoftElements),
+        ),
+        child: Column(children: [
+          Row(children: [
+            Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(
+                color: _kPrimaryColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.directions_bike_rounded,
+                color: _kPrimaryColor,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  ride.distanceLabel,
+                  style: AppTextStyles.headline3.copyWith(
+                    color: _kPrimaryText,
+                  ),
+                ),
+                Text(ride.dateLabel, style: AppTextStyles.bodySmall
+                    .copyWith(color: _kSecondaryText)),
+              ],
+            )),
+            Text(ride.durationLabel, style: AppTextStyles.bodyMedium
+                .copyWith(color: _kSecondaryText)),
+          ]),
+          const SizedBox(height: 10),
+          Row(children: [
+            Expanded(
+              child: Row(children: [
+                Flexible(
+                  child: _MiniStat(
+                      icon: Icons.speed_rounded,
+                      label: l10n.avgSpeed,
+                      value: '${ride.avgSpeedKmh.toStringAsFixed(1)} km/h'),
+                ),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: _MiniStat(
+                      icon: Icons.trending_up_rounded,
+                      label: l10n.maxSpeed,
+                      value: '${ride.maxSpeedKmh.toStringAsFixed(1)} km/h'),
+                ),
+                if (ride.elevationGainM > 0) ...[
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: _MiniStat(
+                        icon: Icons.landscape_rounded,
+                        label: l10n.elevation,
+                        value: ride.elevationLabel),
+                  ),
+                ],
+              ]),
+            ),
+            // Replay button — only shown if there is a GPS path
+            if (ride.path.isNotEmpty)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  InkWell(
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => RouteReplayScreen(ride: ride),
+                      ),
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _kPrimaryColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(
+                          Icons.play_circle_outline_rounded,
+                          size: 15,
+                          color: _kPrimaryColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          l10n.replay,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: _kPrimaryColor,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  InkWell(
+                    onTap: () => _exportGpx(context, ride),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _kSoftElements,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(
+                          Icons.download_rounded,
+                          size: 15,
+                          color: _kSecondaryText,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          l10n.gpxLabel,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: _kSecondaryText,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ),
+                ],
+              ),
+          ]),
+        ]),
+      ),
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  const _MiniStat({required this.icon, required this.label, required this.value});
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: _kSecondaryText),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: AppTextStyles.bodySmall.copyWith(
+                      color: _kSecondaryText, fontSize: 10),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+                Text(
+                  value,
+                  style: AppTextStyles.bodySmall.copyWith(
+                      color: _kPrimaryText,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+}
+
+// ─── Analytics Tab ────────────────────────────────────────────────────────────
+
+class _AnalyticsTab extends ConsumerWidget {
+  const _AnalyticsTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final isPremium = ref.watch(isPremiumProvider);
+    if (!isPremium) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.workspace_premium_rounded,
+                  size: 64, color: _kPrimaryColor),
+              const SizedBox(height: 16),
+              Text(l10n.premiumFeature,
+                  style: AppTextStyles.headline3
+                      .copyWith(color: _kPrimaryText)),
+              const SizedBox(height: 8),
+              Text(
+                l10n.premiumAnalyticsBody,
+                style: AppTextStyles.bodyMedium
+                    .copyWith(color: _kSecondaryText),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final weekAsync   = ref.watch(weeklyRideSummaryProvider);
+    final monthAsync  = ref.watch(monthlyRideSummaryProvider);
+    final yearAsync   = ref.watch(yearlyRideSummaryProvider);
+    final recordsAsync = ref.watch(personalRecordsProvider);
+    final dailyAsync  = ref.watch(weeklyDailyDistanceProvider);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Period switcher summary cards ──────────────────────────────────
+          Text(l10n.periodSummaries, style: AppTextStyles.headline3),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _PeriodCard(
+                  label: l10n.thisWeek,
+                  asyncValue: weekAsync,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _PeriodCard(
+                  label: l10n.thisMonth,
+                  asyncValue: monthAsync,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _PeriodCard(label: l10n.thisYear, asyncValue: yearAsync, wide: true),
+
+          // ── Weekly bar chart ───────────────────────────────────────────────
+          const SizedBox(height: 24),
+          Text(l10n.thisWeek, style: AppTextStyles.headline3),
+          const SizedBox(height: 12),
+          dailyAsync.when(
+            loading: () => const SizedBox(
+              height: 80,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (_, e) => const SizedBox.shrink(),
+            data: (daily) => _WeeklyBarChart(daily: daily),
+          ),
+
+          // ── Personal Records ───────────────────────────────────────────────
+          const SizedBox(height: 24),
+          Text(l10n.personalRecords, style: AppTextStyles.headline3),
+          const SizedBox(height: 12),
+          recordsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, e) => const SizedBox.shrink(),
+            data: (records) => records.hasRecords
+                ? _PersonalRecordsCard(records: records)
+                : Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Text(
+                        l10n.completeFirstRide,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                            color: _kSecondaryText),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Period Summary Card ──────────────────────────────────────────────────────
+
+class _PeriodCard extends StatelessWidget {
+  const _PeriodCard({
+    required this.label,
+    required this.asyncValue,
+    this.wide = false,
+  });
+  final String label;
+  final AsyncValue<RideSummary> asyncValue;
+  final bool wide;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: Theme.of(context).brightness == Brightness.dark
+                  ? [
+                      Colors.black.withValues(alpha: 0.4),
+                      Colors.black.withValues(alpha: 0.2),
+                    ]
+                  : [
+                      Colors.white.withValues(alpha: 0.4),
+                      Colors.white.withValues(alpha: 0.2),
+                    ],
+            ),
+            border: Border.all(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.1),
+              width: 1,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+              BoxShadow(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.05),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+          Text(label,
+              style: AppTextStyles.labelSmall
+                  .copyWith(color: _kSecondaryText)),
+          const SizedBox(height: 8),
+          asyncValue.when(
+            loading: () => const SizedBox(
+                height: 40,
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
+            error: (_, e) => const SizedBox.shrink(),
+            data: (s) => wide
+                ? Row(
+                    children: [
+                      _SummaryKV('🚲', s.distanceLabel, l10n.distanceLabel),
+                      const SizedBox(width: 16),
+                      _SummaryKV('⏱', s.durationLabel, l10n.timeLabel),
+                      const SizedBox(width: 16),
+                      _SummaryKV('🔥', '${s.caloriesBurned}', l10n.kcalUnit),
+                      const SizedBox(width: 16),
+                      _SummaryKV('⛰', s.elevationLabel, l10n.climb),
+                      const SizedBox(width: 16),
+                      _SummaryKV('💰', s.dkkLabel, l10n.savedLabel),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SummaryKV('🚲', s.distanceLabel, l10n.distanceLabel),
+                      const SizedBox(height: 4),
+                      _SummaryKV('🔥', '${s.caloriesBurned}', l10n.kcalUnit),
+                      const SizedBox(height: 4),
+                      _SummaryKV('${s.rideCount}', '', l10n.ridesLabel),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryKV extends StatelessWidget {
+  const _SummaryKV(this.emoji, this.value, this.label);
+  final String emoji;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('$emoji $value',
+              style: AppTextStyles.bodyMedium
+                  .copyWith(fontWeight: FontWeight.w600, fontSize: 13)),
+          Text(label,
+              style: AppTextStyles.bodySmall
+                  .copyWith(color: _kSecondaryText, fontSize: 10)),
+        ],
+      );
+}
+
+// ─── Weekly Bar Chart ─────────────────────────────────────────────────────────
+
+class _WeeklyBarChart extends StatelessWidget {
+  const _WeeklyBarChart({required this.daily});
+  final List<double> daily; // 7 elements, Mon–Sun
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final days = [l10n.dayMon, l10n.dayTue, l10n.dayWed, l10n.dayThu, l10n.dayFri, l10n.daySat, l10n.daySun];
+    final maxVal = daily.reduce((a, b) => a > b ? a : b);
+    final today = DateTime.now().weekday - 1; // 0=Mon
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          height: 120,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: Theme.of(context).brightness == Brightness.dark
+                  ? [
+                      Colors.black.withValues(alpha: 0.4),
+                      Colors.black.withValues(alpha: 0.2),
+                    ]
+                  : [
+                      Colors.white.withValues(alpha: 0.4),
+                      Colors.white.withValues(alpha: 0.2),
+                    ],
+            ),
+            border: Border.all(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.1),
+              width: 1,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+              BoxShadow(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.05),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: List.generate(7, (i) {
+          final km = daily[i];
+          final frac = maxVal > 0 ? km / maxVal : 0.0;
+          final isToday = i == today;
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (km > 0)
+                    Text(
+                      km.toStringAsFixed(1),
+                      style: AppTextStyles.bodySmall.copyWith(
+                          fontSize: 8, color: _kSecondaryText),
+                    ),
+                  const SizedBox(height: 2),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 500),
+                    height: (frac * 60).clamp(4, 60),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: isToday
+                            ? [
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black,
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white.withValues(alpha: 0.7)
+                                    : Colors.black.withValues(alpha: 0.7),
+                              ]
+                            : [
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white.withValues(alpha: 0.4)
+                                    : Colors.black.withValues(alpha: 0.4),
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white.withValues(alpha: 0.2)
+                                    : Colors.black.withValues(alpha: 0.2),
+                              ],
+                      ),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(days[i],
+                      style: AppTextStyles.bodySmall.copyWith(
+                        fontSize: 9,
+                        fontWeight: isToday
+                            ? FontWeight.w700
+                            : FontWeight.normal,
+                        color: isToday
+                            ? (Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black)
+                            : _kSecondaryText,
+                      )),
+                ],
+              ),
+            ),
+          );
+        }),
+      ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Personal Records Card ────────────────────────────────────────────────────
+
+class _PersonalRecordsCard extends StatelessWidget {
+  const _PersonalRecordsCard({required this.records});
+  final PersonalRecords records;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: Theme.of(context).brightness == Brightness.dark
+                  ? [
+                      Colors.black.withValues(alpha: 0.4),
+                      Colors.black.withValues(alpha: 0.2),
+                    ]
+                  : [
+                      Colors.white.withValues(alpha: 0.4),
+                      Colors.white.withValues(alpha: 0.2),
+                    ],
+            ),
+            border: Border.all(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.1),
+              width: 1,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+              BoxShadow(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.05),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+          _RecordRow(
+            icon: Icons.straighten_rounded,
+            label: l10n.longestRide,
+            value: records.longestRide?.distanceLabel ?? '—',
+            sub: records.longestRide?.dateLabel ?? '',
+            color: _kPrimaryColor,
+          ),
+          const Divider(height: 16),
+          _RecordRow(
+            icon: Icons.bolt_rounded,
+            label: l10n.fastestAvgSpeed,
+            value: records.fastestRide != null
+                ? '${records.fastestRide!.avgSpeedKmh.toStringAsFixed(1)} km/h'
+                : '—',
+            sub: records.fastestRide?.dateLabel ?? '',
+            color: AppColors.warning,
+          ),
+          const Divider(height: 16),
+          _RecordRow(
+            icon: Icons.landscape_rounded,
+            label: l10n.mostElevation,
+            value: records.mostElevation?.elevationLabel ?? '—',
+            sub: records.mostElevation?.dateLabel ?? '',
+            color: AppColors.success,
+          ),
+          const Divider(height: 16),
+          _RecordRow(
+            icon: Icons.local_fire_department_rounded,
+            label: l10n.mostCalories,
+            value: records.mostCalories != null
+                ? '${records.mostCalories!.caloriesBurned} kcal'
+                : '—',
+            sub: records.mostCalories?.dateLabel ?? '',
+            color: AppColors.error,
+          ),
+          const Divider(height: 16),
+          _RecordRow(
+            icon: Icons.emoji_events_rounded,
+            label: l10n.longestStreak,
+            value: '${records.longestStreak} days',
+            sub: '${records.totalRides} total rides · '
+                '${records.totalDistanceKm.toStringAsFixed(0)} km total',
+            color: const Color(0xFFFF9800),
+          ),
+        ],
+      ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RecordRow extends StatelessWidget {
+  const _RecordRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.sub,
+    required this.color,
+  });
+  final IconData icon;
+  final String label;
+  final String value;
+  final String sub;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: Theme.of(context).brightness == Brightness.dark
+                    ? [
+                        Colors.white.withValues(alpha: 0.15),
+                        Colors.white.withValues(alpha: 0.05),
+                      ]
+                    : [
+                        Colors.black.withValues(alpha: 0.08),
+                        Colors.black.withValues(alpha: 0.02),
+                      ],
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black87,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: _kSecondaryText)),
+                Text(value,
+                    style: AppTextStyles.bodyMedium
+                        .copyWith(fontWeight: FontWeight.w600)),
+                if (sub.isNotEmpty)
+                  Text(sub,
+                      style: AppTextStyles.bodySmall.copyWith(
+                          color: _kSecondaryText, fontSize: 10)),
+              ],
+            ),
+          ),
+        ],
+      );
+}
+
+// ─── GPX Helpers ─────────────────────────────────────────────────────────────
+
+/// Generates a GPX XML string for [ride].
+String _gpxFromRide(Ride ride) {
+  final sb = StringBuffer();
+  sb.writeln('<?xml version="1.0" encoding="UTF-8"?>');
+  sb.writeln(
+      '<gpx version="1.1" creator="CYKEL" xmlns="http://www.topografix.com/GPX/1/1">');
+  sb.writeln('  <trk>');
+  sb.writeln('    <name>${ride.dateLabel}</name>');
+  sb.writeln('    <trkseg>');
+  for (final pt in ride.path) {
+    sb.writeln(
+        '      <trkpt lat="${pt.latitude}" lon="${pt.longitude}"></trkpt>');
+  }
+  sb.writeln('    </trkseg>');
+  sb.writeln('  </trk>');
+  sb.writeln('</gpx>');
+  return sb.toString();
+}
+
+/// Exports [ride] to a GPX temp file and shows a share/copy sheet.
+Future<void> _exportGpx(BuildContext context, Ride ride) async {
+  if (ride.path.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.noGpsPathToExport)),
+    );
+    return;
+  }
+  final gpx = _gpxFromRide(ride);
+  try {
+    final dir = Directory.systemTemp;
+    final file = File('${dir.path}/cykel_${ride.id}.gpx');
+    await file.writeAsString(gpx);
+    if (context.mounted) {
+      showModalBottomSheet<void>(
+        context: context,
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        builder: (_) => _GpxSheet(gpxPath: file.path, gpxContent: gpx),
+      );
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.exportFailed(e.toString()))),
+      );
+    }
+  }
+}
+
+class _GpxSheet extends StatelessWidget {
+  const _GpxSheet({required this.gpxPath, required this.gpxContent});
+  final String gpxPath;
+  final String gpxContent;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.gpxExportTitle, style: AppTextStyles.headline3),
+          const SizedBox(height: 8),
+          Text(l10n.gpxFileSavedTo(gpxPath),
+              style: AppTextStyles.bodySmall
+                  .copyWith(color: _kSecondaryText)),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.copy_rounded, size: 16),
+              label: Text(l10n.copyGpxToClipboard),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: _kPrimaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12))),
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: gpxContent));
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(context.l10n.gpxCopiedToClipboard)),
+                  );
+                }
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}

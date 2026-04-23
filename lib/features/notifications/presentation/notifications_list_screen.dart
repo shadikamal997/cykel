@@ -145,8 +145,6 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
@@ -209,7 +207,7 @@ class _NotificationCard extends StatelessWidget {
                             notification.title,
                             style: AppTextStyles.labelLarge.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white : Colors.black,
+                              color: context.colors.textPrimary,
                             ),
                           ),
                         ),

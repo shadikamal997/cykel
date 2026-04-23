@@ -95,8 +95,8 @@ class PrivacyScreen extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 16, vertical: 16),
                 child: Row(children: [
-                  Icon(Icons.policy_outlined,
-                      size: 20, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+                  const Icon(Icons.policy_outlined,
+                      size: 20, color: AppColors.primary),
                   const SizedBox(width: 14),
                   Expanded(
                       child: Text(l10n.privacyPolicy,
@@ -115,7 +115,7 @@ class PrivacyScreen extends ConsumerWidget {
             child: Text(
               l10n.revokeConsent,
               style: AppTextStyles.bodyMedium
-                  .copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, fontWeight: FontWeight.w600),
+                  .copyWith(color: AppColors.error, fontWeight: FontWeight.w600),
             ),
           ),
           const SizedBox(height: 40),
@@ -138,7 +138,7 @@ class PrivacyScreen extends ConsumerWidget {
           TextButton(
               onPressed: () => Navigator.pop(context, true),
               child: Text(l10n.yes,
-                  style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black))),
+                  style: const TextStyle(color: AppColors.error))),
         ],
       ),
     );
@@ -168,11 +168,10 @@ class _ConsentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(children: [
-        Icon(icon, size: 20, color: isDark ? Colors.white : Colors.black),
+        Icon(icon, size: 20, color: AppColors.primary),
         const SizedBox(width: 14),
         Expanded(
           child: Column(
@@ -188,7 +187,9 @@ class _ConsentTile extends StatelessWidget {
         Switch(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: isDark ? Colors.white.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.5)),
+            activeTrackColor: AppColors.primary,
+            activeThumbColor: Colors.white,
+            inactiveTrackColor: context.colors.border),
       ]),
     );
   }
@@ -338,11 +339,11 @@ class _BiometricLockSectionState extends State<_BiometricLockSection> {
       child: Row(
         children: [
           Icon(
-            _biometricType.contains('Face') 
-              ? Icons.face_rounded 
+            _biometricType.contains('Face')
+              ? Icons.face_rounded
               : Icons.fingerprint_rounded,
             size: 20,
-            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+            color: AppColors.primary,
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -365,7 +366,9 @@ class _BiometricLockSectionState extends State<_BiometricLockSection> {
           Switch(
             value: _isEnabled,
             onChanged: _toggleBiometric,
-            activeTrackColor: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.5),
+            activeTrackColor: AppColors.primary,
+            activeThumbColor: Colors.white,
+            inactiveTrackColor: context.colors.border,
           ),
         ],
       ),

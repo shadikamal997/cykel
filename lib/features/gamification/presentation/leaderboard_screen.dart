@@ -1,7 +1,6 @@
 import '../../../core/widgets/app_image.dart';
 import '../../auth/domain/app_user.dart';
 /// CYKEL — Leaderboard Screen
-/// View rankings across different categories and time periods
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,38 +50,40 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     );
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
         title: Text(context.l10n.leaderboard),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: context.colors.surface,
+        foregroundColor: context.colors.textPrimary,
         elevation: 0,
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-          unselectedLabelColor: AppColors.textSecondary,
-          indicatorColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-          tabs: LeaderboardPeriod.values.map((p) => Tab(text: _getPeriodName(context, p))).toList(),
+          labelColor: AppColors.primary,
+          unselectedLabelColor: context.colors.textSecondary,
+          indicatorColor: AppColors.primary,
+          indicatorSize: TabBarIndicatorSize.label,
+          tabs: LeaderboardPeriod.values
+              .map((p) => Tab(text: _getPeriodName(context, p)))
+              .toList(),
         ),
       ),
       body: Column(
         children: [
-          // Category Selector
+          // Category chips
           _CategorySelector(
             selected: _selectedCategory,
             onChanged: (category) => setState(() => _selectedCategory = category),
           ),
-          
-          // Leaderboard
+
+          // Leaderboard list
           Expanded(
             child: leaderboardAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(child: Text(context.l10n.errorPrefix(e.toString()))),
               data: (entries) {
                 if (entries.isEmpty) {
-                  return _EmptyLeaderboard(context: context);
+                  return _EmptyLeaderboard(leaderboardContext: context);
                 }
-
                 return ListView.builder(
                   padding: const EdgeInsets.only(top: 8, bottom: 100),
                   itemCount: entries.length,
@@ -103,38 +104,43 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
 // ─── Category Selector ────────────────────────────────────────────────────────
 
 class _CategorySelector extends StatelessWidget {
-  const _CategorySelector({
-    required this.selected,
-    required this.onChanged,
-  });
+  const _CategorySelector({required this.selected, required this.onChanged});
 
   final LeaderboardCategory selected;
   final ValueChanged<LeaderboardCategory> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: 50,
-      padding: const EdgeInsets.symmetric(vertical: 8),
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         children: LeaderboardCategory.values.map((category) {
           final isSelected = category == selected;
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: ChoiceChip(
-              label: Text(_getCategoryName(context, category)),
-              selected: isSelected,
-              onSelected: (_) => onChanged(category),
-              selectedColor: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.1),
-              labelStyle: AppTextStyles.labelMedium.copyWith(
-                color: isSelected ? (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black) : AppColors.textSecondary,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(
-                  color: isSelected ? (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black) : AppColors.border,
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: () => onChanged(category),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primary.withValues(alpha: 0.12)
+                      : context.colors.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected ? AppColors.primary : context.colors.border,
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Text(
+                  _getCategoryName(context, category),
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: isSelected ? AppColors.primary : context.colors.textSecondary,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  ),
                 ),
               ),
             ),
@@ -148,10 +154,7 @@ class _CategorySelector extends StatelessWidget {
 // ─── Leaderboard Tile ─────────────────────────────────────────────────────────
 
 class _LeaderboardTile extends StatelessWidget {
-  const _LeaderboardTile({
-    required this.entry,
-    required this.category,
-  });
+  const _LeaderboardTile({required this.entry, required this.category});
 
   final LeaderboardEntry entry;
   final LeaderboardCategory category;
@@ -159,78 +162,97 @@ class _LeaderboardTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isTop3 = entry.rank <= 3;
-    
+    final isMe = entry.isCurrentUser;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: entry.isCurrentUser 
-            ? (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)
-            : (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
-        borderRadius: BorderRadius.circular(12),
+        color: isMe
+            ? AppColors.primary.withValues(alpha: 0.07)
+            : context.colors.surface,
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: entry.isCurrentUser ? (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black) : (Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.3)),
-          width: entry.isCurrentUser ? 2 : 1,
+          color: isMe ? AppColors.primary.withValues(alpha: 0.5) : context.colors.border,
+          width: isMe ? 1.5 : 1,
         ),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading: Row(
-          mainAxisSize: MainAxisSize.min,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
           children: [
             // Rank
             SizedBox(
-              width: 32,
+              width: 36,
               child: isTop3
                   ? Text(
                       _getRankMedal(entry.rank),
                       style: const TextStyle(fontSize: 24),
+                      textAlign: TextAlign.center,
                     )
                   : Text(
                       '${entry.rank}',
                       style: AppTextStyles.headline3.copyWith(
-                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.white,
+                        color: context.colors.textSecondary,
+                        fontSize: 16,
                       ),
                       textAlign: TextAlign.center,
                     ),
             ),
             const SizedBox(width: 12),
+
             // Avatar
             AppAvatar(
               url: entry.photoUrl,
               thumbnailUrl: AppUser.getThumbnailUrl(entry.photoUrl),
               size: 40,
-              fallbackText: entry.displayName.isNotEmpty ? entry.displayName[0].toUpperCase() : '?',
+              fallbackText: entry.displayName.isNotEmpty
+                  ? entry.displayName[0].toUpperCase()
+                  : '?',
             ),
-          ],
-        ),
-        title: Text(
-          entry.displayName,
-          style: AppTextStyles.bodyMedium.copyWith(
-            fontWeight: entry.isCurrentUser ? FontWeight.w600 : FontWeight.normal,
-            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.white,
-          ),
-        ),
-        subtitle: entry.isCurrentUser
-            ? Text(
-                context.l10n.leaderboardYou,
-                style: AppTextStyles.caption.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.7) : Colors.white.withValues(alpha: 0.7)),
-              )
-            : null,
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              _formatValue(entry.value),
-              style: AppTextStyles.headline3.copyWith(
-                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.white,
+            const SizedBox(width: 12),
+
+            // Name + "You" label
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.displayName,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: isMe ? FontWeight.w700 : FontWeight.w500,
+                      color: context.colors.textPrimary,
+                    ),
+                  ),
+                  if (isMe)
+                    Text(
+                      context.l10n.leaderboardYou,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                ],
               ),
             ),
-            Text(
-              category.unit,
-              style: AppTextStyles.caption.copyWith(
-                color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.7) : Colors.white.withValues(alpha: 0.7),
-              ),
+
+            // Value + unit
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  _formatValue(entry.value),
+                  style: AppTextStyles.headline3.copyWith(
+                    color: isMe ? AppColors.primary : context.colors.textPrimary,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  category.unit,
+                  style: AppTextStyles.caption.copyWith(
+                    color: context.colors.textSecondary,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -239,22 +261,16 @@ class _LeaderboardTile extends StatelessWidget {
   }
 
   String _getRankMedal(int rank) {
-    switch (rank) {
-      case 1:
-        return '🥇';
-      case 2:
-        return '🥈';
-      case 3:
-        return '🥉';
-      default:
-        return '';
-    }
+    return switch (rank) {
+      1 => '🥇',
+      2 => '🥈',
+      3 => '🥉',
+      _ => '',
+    };
   }
 
   String _formatValue(double value) {
-    if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(1)}k';
-    }
+    if (value >= 1000) return '${(value / 1000).toStringAsFixed(1)}k';
     return value.toStringAsFixed(value == value.roundToDouble() ? 0 : 1);
   }
 }
@@ -262,12 +278,11 @@ class _LeaderboardTile extends StatelessWidget {
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
 class _EmptyLeaderboard extends StatelessWidget {
-  const _EmptyLeaderboard({required this.context});
-
-  final BuildContext context;
+  const _EmptyLeaderboard({required this.leaderboardContext});
+  final BuildContext leaderboardContext;
 
   @override
-  Widget build(BuildContext _) {
+  Widget build(BuildContext context) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -275,15 +290,13 @@ class _EmptyLeaderboard extends StatelessWidget {
           const Text('🏆', style: TextStyle(fontSize: 64)),
           const SizedBox(height: 16),
           Text(
-            context.l10n.noDataYet,
-            style: AppTextStyles.headline3.copyWith(color: AppColors.textSecondary),
+            leaderboardContext.l10n.noDataYet,
+            style: AppTextStyles.headline3.copyWith(color: context.colors.textSecondary),
           ),
           const SizedBox(height: 8),
           Text(
-            context.l10n.startRidingToJoin,
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
-            ),
+            leaderboardContext.l10n.startRidingToJoin,
+            style: AppTextStyles.bodyMedium.copyWith(color: context.colors.textSecondary),
             textAlign: TextAlign.center,
           ),
         ],
@@ -292,32 +305,24 @@ class _EmptyLeaderboard extends StatelessWidget {
   }
 }
 
-/// Helper function to get localized period name
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 String _getPeriodName(BuildContext context, LeaderboardPeriod period) {
   final l10n = context.l10n;
-  switch (period) {
-    case LeaderboardPeriod.weekly:
-      return l10n.periodThisWeek;
-    case LeaderboardPeriod.monthly:
-      return l10n.periodThisMonth;
-    case LeaderboardPeriod.allTime:
-      return l10n.periodAllTime;
-  }
+  return switch (period) {
+    LeaderboardPeriod.weekly  => l10n.periodThisWeek,
+    LeaderboardPeriod.monthly => l10n.periodThisMonth,
+    LeaderboardPeriod.allTime => l10n.periodAllTime,
+  };
 }
 
-/// Helper function to get localized category name
 String _getCategoryName(BuildContext context, LeaderboardCategory category) {
   final l10n = context.l10n;
-  switch (category) {
-    case LeaderboardCategory.distance:
-      return l10n.challengeTypeDistance;
-    case LeaderboardCategory.rides:
-      return l10n.challengeTypeRideCount;
-    case LeaderboardCategory.points:
-      return l10n.points;
-    case LeaderboardCategory.elevation:
-      return l10n.challengeTypeElevation;
-    case LeaderboardCategory.streak:
-      return l10n.challengeTypeStreak;
-  }
+  return switch (category) {
+    LeaderboardCategory.distance  => l10n.challengeTypeDistance,
+    LeaderboardCategory.rides     => l10n.challengeTypeRideCount,
+    LeaderboardCategory.points    => l10n.points,
+    LeaderboardCategory.elevation => l10n.challengeTypeElevation,
+    LeaderboardCategory.streak    => l10n.challengeTypeStreak,
+  };
 }
